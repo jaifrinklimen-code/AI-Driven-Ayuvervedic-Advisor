@@ -8,6 +8,8 @@ ABS navigation, legal corpus catalog, and automated evaluation.
 import os
 import time
 import json
+from dotenv import load_dotenv
+load_dotenv()
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware

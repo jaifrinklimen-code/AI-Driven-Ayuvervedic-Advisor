@@ -122,7 +122,7 @@ export const LandingPage: React.FC = () => {
             {/* Editorial Badge */}
             <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-parchment-100/90 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 shadow-subtle-luxury animate-in fade-in-50">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
-              <span className="font-cinzel tracking-wider uppercase">SIH26045 • Ministry of Ayush & AIIA</span>
+              <span className="font-cinzel tracking-wider uppercase">National Regulatory Intelligence Portal • Ministry of Ayush & AIIA</span>
             </div>
 
             {/* Majestic Serif Title */}
@@ -299,7 +299,7 @@ export const LandingPage: React.FC = () => {
             6 Specialized Modules for the Modern Ayurvedic Innovator
           </h2>
           <p className="mt-3 text-xs sm:text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
-            Every module addresses a distinct pillar of SIH26045: statutory formulation classification, jurisdiction isolation, verifiable citations, and biodiversity compliance.
+            Every module addresses a distinct pillar of Ayurvedic sovereignty: statutory formulation classification, jurisdiction isolation, verifiable citations, and biodiversity compliance.
           </p>
         </div>
 

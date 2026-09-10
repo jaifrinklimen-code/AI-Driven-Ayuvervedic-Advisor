@@ -5,6 +5,8 @@ import { FormulationClassifier } from "./components/pages/FormulationClassifier"
 import { JurisdictionComparison } from "./components/pages/JurisdictionComparison";
 import { ABSKioskPage } from "./components/pages/ABSKioskPage";
 import { SourcesCatalog } from "./components/pages/SourcesCatalog";
+import { LaunchStudioPage } from "./components/pages/LaunchStudioPage";
+import { PrakrutiAnalyzerPage } from "./components/pages/PrakrutiAnalyzerPage";
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
         <Route path="/jurisdictions" element={<JurisdictionComparison />} />
         <Route path="/abs-navigator" element={<ABSKioskPage />} />
         <Route path="/sources" element={<SourcesCatalog />} />
+        <Route path="/studio" element={<LaunchStudioPage />} />
+        <Route path="/prakruti" element={<PrakrutiAnalyzerPage />} />
       </Routes>
     </Router>
   );

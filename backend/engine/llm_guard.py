@@ -25,6 +25,35 @@ class LLMGuard:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
 
+    def call_gemini_synthesis(self, query: str, retrieved_docs: List[Dict[str, Any]], category: str, jurisdiction: str) -> Optional[str]:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return None
+        try:
+            import requests
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            doc_context = "\n".join([
+                f"- [{d['document']['section']}] {d['document']['title']}: {d['document']['text'][:180]}"
+                for d in retrieved_docs[:3]
+            ])
+            prompt = (
+                f"You are IP-SAKTI Sahayak, an authoritative regulatory intelligence AI for the Ministry of Ayush & AIIA.\n"
+                f"Question: {query}\n"
+                f"Jurisdiction: {jurisdiction}\n"
+                f"Statutory Context:\n{doc_context}\n\n"
+                f"Provide a clear, authoritative 2-3 paragraph statutory analysis explaining patentability/regulatory pathway. "
+                f"Cite Section 3(p), 3(e), Rule 158B, or NBA Form III where relevant. Do not invent non-existent sections."
+            )
+            resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=3.5)
+            if resp.status_code == 200:
+                data = resp.json()
+                text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if text and len(text.strip()) > 40:
+                    return text.strip()
+        except Exception:
+            pass
+        return None
+
     def detect_prompt_injection(self, query: str) -> Optional[str]:
         for pattern in ADVERSARIAL_PATTERNS:
             if re.search(pattern, query, re.IGNORECASE):
@@ -188,7 +217,32 @@ class LLMGuard:
         # Legal summary synthesis
         is_patent_query = "patent" in lower_q or "ip" in lower_q or "protect" in lower_q
         
-        if is_patent_query:
+        # Try dynamic Gemini synthesis first with strict timeout
+        gemini_answer = self.call_gemini_synthesis(query, retrieved, category, jurisdiction)
+        if gemini_answer:
+            short_answer = gemini_answer
+            if is_patent_query:
+                if jurisdiction.lower() == "india":
+                    ip_regimes = [
+                        "Patents Act, 1970 (Sections 3(p), 3(e), 3(d), 10(4)(d)(ii))",
+                        "Biological Diversity Act, 2002 / 2023 Amendments (Section 6 NBA Form III)",
+                        "Trade Marks Act, 1999 (Brand name protection - excluding generic herbal names)",
+                        "Geographical Indications Act, 1999 (Applicable if tied to specific agro-climatic terroir)"
+                    ]
+                else:
+                    ip_regimes = [
+                        "WIPO Treaty on IP, Genetic Resources & Traditional Knowledge (2024 - Mandatory Origin Disclosure)",
+                        "WTO TRIPS Agreement (Article 27 Patentable Subject Matter)",
+                        "Nagoya Protocol on Access and Benefit-Sharing (Prior Informed Consent & Mutually Agreed Terms)",
+                        "Patent Cooperation Treaty (PCT) for coordinated multi-country filings"
+                    ]
+            else:
+                ip_regimes = [
+                    "Drugs & Cosmetics Act, 1940 & Rules 1945",
+                    "Biological Diversity Act, 2002",
+                    "Trade Marks Act, 1999"
+                ]
+        elif is_patent_query:
             if jurisdiction.lower() == "india":
                 short_answer = (
                     f"Under Indian Patent Law, pure Ayurvedic herbal formulations face stringent statutory exclusions under "

@@ -19,7 +19,7 @@ export const Footer: React.FC = () => {
                   IP-SAKTI SAHAYAK
                 </span>
                 <p className="text-[10px] tracking-widest uppercase text-amber-400/80 font-medium">
-                  SIH26045 • Ministry of Ayush / AIIA
+                  National Regulatory Initiative • Ministry of Ayush / AIIA
                 </p>
               </div>
             </div>
@@ -170,7 +170,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Ribbon with Statutory Legal Notice */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-parchment-300/60 space-y-4 sm:space-y-0">
           <p>
-            © 2026 IP-SAKTI Sahayak. Developed for Smart India Hackathon 2026 (SIH26045).
+            © 2026 IP-SAKTI Sahayak. Developed in collaboration with Ministry of Ayush & All India Institute of Ayurveda.
           </p>
           <div className="flex items-center space-x-4">
             <span className="font-mono text-[10px] text-amber-400/80">

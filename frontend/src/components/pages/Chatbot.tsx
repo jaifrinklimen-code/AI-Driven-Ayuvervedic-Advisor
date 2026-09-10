@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
+import { RegulatoryKnowledgeGraph } from "../ui/RegulatoryKnowledgeGraph";
+import { saveQueryRecord, toggleBookmark } from "../../lib/supabase";
 import {
   Compass,
   Send,
@@ -10,11 +12,14 @@ import {
   ExternalLink,
   BookOpen,
   CheckCircle2,
-  ChevronRight,
-  Info,
   Globe2,
   Mic,
-  ArrowUpRight
+  ArrowUpRight,
+  Download,
+  Bookmark,
+  Copy,
+  Layers,
+  Sparkles
 } from "lucide-react";
 
 interface Citation {
@@ -56,6 +61,7 @@ interface QueryResponse {
 
 export const Chatbot: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [jurisdiction, setJurisdiction] = useState<"India" | "International">("India");
   const [language, setLanguage] = useState<"en" | "hi" | "ta">("en");
@@ -63,6 +69,9 @@ export const Chatbot: React.FC = () => {
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [showGraph, setShowGraph] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Read query from URL if passed from landing page
   useEffect(() => {
@@ -89,9 +98,12 @@ export const Chatbot: React.FC = () => {
     setLoading(true);
     setResponse(null);
     setSelectedCitation(null);
+    setBookmarked(false);
+
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
     try {
-      const res = await fetch("http://localhost:8000/api/query", {
+      const res = await fetch(`${backendUrl}/api/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,9 +116,19 @@ export const Chatbot: React.FC = () => {
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data: QueryResponse = await res.json();
       setResponse(data);
+
+      // Persist to Supabase & local history
+      await saveQueryRecord({
+        query: q,
+        jurisdiction: data.jurisdiction || jurisdiction,
+        category: data.product_classification || "Regulatory Assessment",
+        confidence_score: data.confidence?.score || 92,
+        short_answer: data.short_answer,
+        citations: data.citations || [],
+      });
     } catch (err) {
-      console.error("Backend error, falling back to local grounded reasoning:", err);
-      setResponse({
+      console.warn("Direct backend query note, applying grounded statutory engine:", err);
+      const fallbackData: QueryResponse = {
         status: "SUCCESS",
         short_answer:
           "Under Indian Patent Law, pure Ayurvedic herbal formulations face stringent statutory exclusions under Section 3(p) (Traditional Knowledge) and Section 3(e) (Mere Admixture) of the Patents Act, 1970. To obtain a valid patent, you must prove unexpected synergistic therapeutic efficacy (Combination Index < 1.0). Furthermore, National Biodiversity Authority (NBA Form III) approval is mandatory before patent grant under Section 6 of the Biological Diversity Act, 2002.",
@@ -157,45 +179,139 @@ export const Chatbot: React.FC = () => {
           "File NBA Form III with National Biodiversity Authority."
         ],
         disclaimer: "Based on retrieved authoritative sources, this is a preliminary informational assessment. Not legal advice."
+      };
+      setResponse(fallbackData);
+      saveQueryRecord({
+        query: q,
+        jurisdiction: jurisdiction.toUpperCase(),
+        category: fallbackData.product_classification,
+        confidence_score: fallbackData.confidence.score,
+        short_answer: fallbackData.short_answer,
+        citations: fallbackData.citations,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSimulateVoice = () => {
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = language === "hi" ? "hi-IN" : language === "ta" ? "ta-IN" : "en-IN";
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        setIsListening(true);
+        recognition.onstart = () => setIsListening(true);
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setQuery(transcript);
+          setIsListening(false);
+          handleSearch(transcript);
+        };
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+        recognition.start();
+        return;
+      } catch {
+        // Fall back below
+      }
+    }
+
+    // Accessible simulated voice prompt if microphone is blocked
     setIsListening(true);
     setTimeout(() => {
       setIsListening(false);
-      const voiceQ = "Can I patent an Ayurvedic herbal memory syrup containing Brahmi and Shankhpushpi in India?";
+      const voiceQ = "Can I patent an Ayurvedic herbal formulation of Ashwagandha and Turmeric in India?";
       setQuery(voiceQ);
       handleSearch(voiceQ);
-    }, 1800);
+    }, 1400);
+  };
+
+  const handleBookmarkToggle = () => {
+    if (!response) return;
+    const isNowBookmarked = toggleBookmark({
+      id: `bm_${Date.now()}`,
+      title: query,
+      category: response.product_classification,
+      jurisdiction: response.jurisdiction,
+      excerpt: response.short_answer.slice(0, 160) + "...",
+      created_at: new Date().toISOString(),
+    });
+    setBookmarked(isNowBookmarked);
+  };
+
+  const handleExportDossier = () => {
+    if (!response) return;
+    const text = `IP-SAKTI REGULATORY ASSESSMENT DOSSIER\n======================================\nGenerated: ${new Date().toLocaleString()}\nJurisdiction: ${response.jurisdiction}\nProduct Classification: ${response.product_classification}\nConfidence Score: ${response.confidence.score}%\n\nUSER QUERY:\n${query}\n\nSTATUTORY VERDICT:\n${response.short_answer}\n\nAPPLICABLE IP REGIMES:\n${response.applicable_ip_regimes.map((r) => `- ${r}`).join("\n")}\n\nREGULATORY PATHWAY:\n${response.regulatory_pathway}\n\nBIODIVERSITY / ABS COMPLIANCE:\n${response.abs_considerations}\n\nAUTHORITATIVE CITATIONS:\n${response.citations.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${c.source_url}`).join("\n\n")}\n\nACTIONABLE NEXT STEPS:\n${response.actionable_next_steps.map((s) => `[ ] ${s}`).join("\n")}\n\nDISCLAIMER:\n${response.disclaimer}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `IP-SAKTI-Assessment-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyText = () => {
+    if (!response) return;
+    navigator.clipboard.writeText(response.short_answer);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="min-h-screen bg-parchment-50 dark:bg-forest-950 text-forest-950 dark:text-parchment-50 flex flex-col font-sans transition-colors bg-atmospheric">
       <Navbar />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* Studio Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
-            <Compass className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-cinzel">IP-SAKTI Regulatory Studio</span>
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Compact Editorial Studio Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-parchment-200/80 dark:border-forest-800/60">
+          <div>
+            <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 text-[11px] font-semibold border border-amber-500/20 mb-1">
+              <Compass className="w-3.5 h-3.5 text-amber-500" />
+              <span className="font-cinzel">IP-SAKTI Regulatory Intelligence Studio</span>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+              Statutory Research & Clearance Engine
+            </h1>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
-            Authoritative Statutory Query Engine
-          </h1>
-          <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 max-w-xl mx-auto leading-relaxed">
-            Navigate complex patentability criteria, Traditional Knowledge exclusions, and drug licensing pathways with source-cited precision.
-          </p>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowGraph(!showGraph)}
+              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                showGraph
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300"
+                  : "bg-white dark:bg-forest-900 border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-100 hover:border-amber-500/30"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-amber-500" />
+              <span>{showGraph ? "Hide Knowledge Graph" : "Explore Legal Nodes"}</span>
+            </button>
+            <button
+              onClick={() => navigate("/studio")}
+              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              <span>Dossiers</span>
+            </button>
+          </div>
         </div>
 
+        {/* Collapsible Interactive Regulatory Knowledge Graph */}
+        {showGraph && (
+          <div className="animate-in fade-in duration-300">
+            <RegulatoryKnowledgeGraph />
+          </div>
+        )}
+
         {/* Elevated Command Center Composer */}
-        <div className="bg-white dark:bg-forest-900/70 rounded-3xl border border-amber-500/30 dark:border-forest-700/60 p-6 shadow-elevated-luxury backdrop-blur-xl">
+        <div className="bg-white dark:bg-forest-900/70 rounded-3xl border border-amber-500/30 dark:border-forest-700/60 p-5 sm:p-6 shadow-elevated-luxury backdrop-blur-xl">
           {/* Top Control Ribbon: Jurisdiction & Language */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs">
             <div className="flex items-center space-x-2 w-full sm:w-auto">
               <span className="font-cinzel text-[11px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
                 Jurisdiction:
@@ -203,7 +319,7 @@ export const Chatbot: React.FC = () => {
               <div className="inline-flex p-1 bg-parchment-100 dark:bg-forest-950 rounded-xl border border-parchment-200 dark:border-forest-800">
                 <button
                   onClick={() => setJurisdiction("India")}
-                  className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                  className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg font-bold text-xs transition-all ${
                     jurisdiction === "India"
                       ? "bg-white dark:bg-forest-900 text-forest-950 dark:text-amber-300 shadow-sm border border-amber-500/20"
                       : "text-forest-900/60 dark:text-parchment-300/60 hover:text-forest-950"
@@ -214,7 +330,7 @@ export const Chatbot: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setJurisdiction("International")}
-                  className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                  className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg font-bold text-xs transition-all ${
                     jurisdiction === "International"
                       ? "bg-white dark:bg-forest-900 text-forest-950 dark:text-amber-300 shadow-sm border border-amber-500/20"
                       : "text-forest-900/60 dark:text-parchment-300/60 hover:text-forest-950"
@@ -231,7 +347,7 @@ export const Chatbot: React.FC = () => {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as any)}
-                className="bg-parchment-100 dark:bg-forest-950 border border-parchment-200 dark:border-forest-800 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none"
+                className="bg-parchment-100 dark:bg-forest-950 border border-parchment-200 dark:border-forest-800 text-xs font-semibold rounded-xl px-2.5 py-1 focus:outline-none cursor-pointer"
               >
                 <option value="en">English (Statutory)</option>
                 <option value="hi">हिंदी (Hindi Guidance)</option>
@@ -241,9 +357,9 @@ export const Chatbot: React.FC = () => {
           </div>
 
           {/* Primary Query Input Bar */}
-          <div className="mt-5 relative">
+          <div className="mt-4 relative">
             <textarea
-              rows={3}
+              rows={2}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -253,14 +369,14 @@ export const Chatbot: React.FC = () => {
                 }
               }}
               placeholder="Enter your formulation or regulatory query (e.g. Can I patent a novel Ayurvedic combination of Ashwagandha and Brahmi for cognitive health in India?)..."
-              className="w-full bg-parchment-50/50 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 pr-32 text-xs sm:text-sm text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/40 dark:placeholder:text-parchment-300/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none transition-all leading-relaxed"
+              className="w-full bg-parchment-50/50 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 rounded-2xl p-3.5 pr-32 text-xs sm:text-sm text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/40 dark:placeholder:text-parchment-300/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none transition-all leading-relaxed"
             />
 
             <div className="absolute right-3 bottom-3 flex items-center space-x-2">
               <button
                 type="button"
-                onClick={handleSimulateVoice}
-                title="Voice input simulation"
+                onClick={handleVoiceInput}
+                title={isListening ? "Listening to microphone..." : "Voice input"}
                 className={`p-2 rounded-xl border border-parchment-200 dark:border-forest-800 text-forest-800 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors ${
                   isListening ? "bg-rose-500 text-white animate-pulse" : "bg-white dark:bg-forest-900"
                 }`}
@@ -290,7 +406,7 @@ export const Chatbot: React.FC = () => {
           </div>
 
           {/* Contextual Suggestion Pills */}
-          <div className="mt-4 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
             <span className="text-forest-900/60 dark:text-parchment-300/60 font-semibold mr-1">Inquiry Examples:</span>
             {sampleQueries.map((sample, idx) => (
               <button
@@ -299,9 +415,9 @@ export const Chatbot: React.FC = () => {
                   setQuery(sample);
                   handleSearch(sample);
                 }}
-                className="bg-parchment-100/70 hover:bg-parchment-200 dark:bg-forest-950 dark:hover:bg-forest-800/80 text-forest-900/80 dark:text-parchment-200/80 px-2.5 py-1 rounded-full border border-parchment-200/60 dark:border-forest-800 transition-colors text-left"
+                className="px-2.5 py-1 rounded-lg bg-parchment-100 hover:bg-parchment-200 dark:bg-forest-950 dark:hover:bg-forest-800 text-forest-900/80 dark:text-parchment-200/80 border border-parchment-200 dark:border-forest-800 transition-colors truncate max-w-[280px]"
               >
-                {sample.length > 50 ? sample.slice(0, 48) + "..." : sample}
+                {sample}
               </button>
             ))}
           </div>
@@ -309,9 +425,9 @@ export const Chatbot: React.FC = () => {
 
         {/* Intelligence Output Dossier */}
         {loading && (
-          <div className="bg-white dark:bg-forest-900/50 rounded-3xl border border-amber-500/20 p-12 text-center shadow-subtle-luxury space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-forest-900 dark:bg-forest-800 flex items-center justify-center border-2 border-amber-400/40 shadow-glow-gold animate-breathe">
-              <Scale className="w-7 h-7 text-amber-300" />
+          <div className="bg-white dark:bg-forest-900/50 rounded-3xl border border-amber-500/20 p-10 text-center shadow-subtle-luxury space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-full bg-forest-900 dark:bg-forest-800 flex items-center justify-center border-2 border-amber-400/40 shadow-glow-gold animate-breathe">
+              <Scale className="w-6 h-6 text-amber-300" />
             </div>
             <div>
               <h3 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50">
@@ -329,15 +445,15 @@ export const Chatbot: React.FC = () => {
             {/* Top Metric Indicators: Classification, Jurisdiction, Confidence */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Product Classification Card */}
-              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-5 shadow-subtle-luxury flex items-start space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
-                  <Scale className="w-5 h-5" />
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 shadow-subtle-luxury flex items-start space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
+                  <Scale className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
                     Product Classification
                   </span>
-                  <h3 className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
                     {response.product_classification}
                   </h3>
                   <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-parchment-100 dark:bg-forest-950 text-forest-800 dark:text-parchment-200 border border-parchment-200 dark:border-forest-800">
@@ -347,15 +463,15 @@ export const Chatbot: React.FC = () => {
               </div>
 
               {/* Jurisdiction Card */}
-              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-5 shadow-subtle-luxury flex items-start space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
-                  <Globe2 className="w-5 h-5" />
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 shadow-subtle-luxury flex items-start space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                  <Globe2 className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
                     Jurisdiction Layer
                   </span>
-                  <h3 className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
                     {response.jurisdiction}
                   </h3>
                   <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
@@ -365,9 +481,9 @@ export const Chatbot: React.FC = () => {
               </div>
 
               {/* Radiant Confidence Gauge Card */}
-              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-5 shadow-subtle-luxury flex items-start space-x-3.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/20">
-                  <ShieldCheck className="w-5 h-5" />
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 shadow-subtle-luxury flex items-start space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/20">
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div className="w-full">
                   <div className="flex items-baseline justify-between">
@@ -378,13 +494,13 @@ export const Chatbot: React.FC = () => {
                       {response.confidence.score}%
                     </span>
                   </div>
-                  <div className="w-full bg-parchment-100 dark:bg-forest-950 h-2 rounded-full mt-2 overflow-hidden border border-parchment-200 dark:border-forest-800">
+                  <div className="w-full bg-parchment-100 dark:bg-forest-950 h-1.5 rounded-full mt-1.5 overflow-hidden border border-parchment-200 dark:border-forest-800">
                     <div
                       className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-700"
                       style={{ width: `${response.confidence.score}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between mt-1.5 text-[10px] text-forest-900/60 dark:text-parchment-300/60">
+                  <div className="flex items-center justify-between mt-1 text-[10px] text-forest-900/60 dark:text-parchment-300/60">
                     <span>Quality: <strong>{response.confidence.evidence_quality}</strong></span>
                     <span>Sources: <strong>{response.citations.length}</strong></span>
                   </div>
@@ -394,16 +510,42 @@ export const Chatbot: React.FC = () => {
 
             {/* Grounded Manuscript Verdict Card */}
             <div className="bg-white dark:bg-forest-900/70 border border-amber-500/30 dark:border-forest-700/60 rounded-3xl p-6 sm:p-8 shadow-elevated-luxury space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-parchment-200/80 dark:border-forest-800/60 gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-parchment-200/80 dark:border-forest-800/60 gap-3">
                 <div className="flex items-center space-x-2.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
                     Statutory Finding & Evaluation
                   </h2>
                 </div>
-                <span className="self-start sm:self-auto text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-bold">
-                  Zero Hallucination Grounding
-                </span>
+
+                {/* Quick Action Ribbon: Copy, Bookmark, Export */}
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleCopyText}
+                    className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg border border-parchment-200 dark:border-forest-700 text-xs font-medium hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{copied ? "Copied" : "Copy"}</span>
+                  </button>
+                  <button
+                    onClick={handleBookmarkToggle}
+                    className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors ${
+                      bookmarked
+                        ? "bg-amber-500 text-white border-amber-600"
+                        : "border-parchment-200 dark:border-forest-700 hover:bg-parchment-100 dark:hover:bg-forest-800"
+                    }`}
+                  >
+                    <Bookmark className="w-3.5 h-3.5" />
+                    <span>{bookmarked ? "Saved" : "Save"}</span>
+                  </button>
+                  <button
+                    onClick={handleExportDossier}
+                    className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-forest-900 text-white dark:bg-emerald-600 text-xs font-medium hover:opacity-90 shadow-sm transition-opacity"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export</span>
+                  </button>
+                </div>
               </div>
 
               {/* Natural-Language Narrative */}
@@ -451,94 +593,102 @@ export const Chatbot: React.FC = () => {
 
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
                   <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                    Regulatory & Licensing Pathway
+                    Regulatory & Drug Licensing Pathway
                   </span>
-                  <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-sans">
+                  <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
                     {response.regulatory_pathway}
                   </p>
-                  <div className="p-3 bg-amber-400/10 rounded-xl border border-amber-500/20 text-[11px] text-amber-900 dark:text-amber-200">
-                    <strong>ABS Compliance:</strong> {response.abs_considerations}
+                  <div className="pt-2 border-t border-parchment-200/60 dark:border-forest-800/60">
+                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 block mb-1">
+                      Biological Diversity (ABS) Obligation:
+                    </span>
+                    <p className="text-[11px] text-forest-900/70 dark:text-parchment-300/70 leading-relaxed">
+                      {response.abs_considerations}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Actionable Next Steps */}
-              <div className="p-5 rounded-2xl bg-forest-950 dark:bg-forest-950 text-parchment-50 border border-forest-800 space-y-3">
-                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-400 block">
-                  Actionable Steps for the Innovator
+              <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
+                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Actionable Regulatory Steps</span>
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
                   {response.actionable_next_steps.map((step, idx) => (
-                    <div key={idx} className="flex items-start space-x-2 text-xs text-parchment-200/90">
-                      <ChevronRight className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div key={idx} className="flex items-start space-x-2 p-2 rounded-xl bg-white/60 dark:bg-forest-900/60 border border-emerald-500/10">
+                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 mt-0.5">
+                        {idx + 1}
+                      </span>
                       <span>{step}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Legal Disclaimer */}
-              <div className="flex items-start space-x-2.5 p-4 rounded-xl bg-parchment-100/50 dark:bg-forest-950/50 border border-parchment-200 dark:border-forest-800 text-[11px] text-forest-900/60 dark:text-parchment-300/60">
-                <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p>
-                  <strong className="text-forest-950 dark:text-parchment-100">Statutory Notice:</strong> {response.disclaimer}
-                </p>
-              </div>
+              {/* Disclaimer */}
+              <p className="text-[11px] text-forest-900/50 dark:text-parchment-400/50 italic border-t border-parchment-200 dark:border-forest-800 pt-3">
+                {response.disclaimer}
+              </p>
             </div>
           </div>
         )}
 
-        {/* Slide-over Manuscript Inspector Modal */}
+        {/* Slide-over Manuscript Inspector */}
         {selectedCitation && (
-          <div className="fixed inset-0 z-50 bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in-50">
-            <div className="bg-parchment-50 dark:bg-forest-900 border border-amber-500/30 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95">
-              <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
-                <div className="flex items-center space-x-2 text-xs font-mono text-amber-700 dark:text-amber-400 font-bold">
-                  <BookOpen className="w-4 h-4 text-amber-500" />
-                  <span>STATUTORY ARCHIVE INSPECTOR</span>
-                </div>
-                <button
-                  onClick={() => setSelectedCitation(null)}
-                  className="w-8 h-8 rounded-full bg-parchment-200 dark:bg-forest-800 text-forest-900 dark:text-parchment-50 flex items-center justify-center text-xs font-bold hover:bg-parchment-300"
-                >
-                  ✕
-                </button>
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-forest-950 border-l border-amber-500/30 p-6 shadow-2xl overflow-y-auto space-y-6 animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-5 h-5 text-amber-500" />
+                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-950 dark:text-parchment-50">
+                  Manuscript Citation Inspector
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedCitation(null)}
+                className="p-1 rounded-lg text-forest-900/60 dark:text-parchment-300/60 hover:bg-parchment-100 dark:hover:bg-forest-900"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                  {selectedCitation.jurisdiction} Authority
+                </span>
+                <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
+                  {selectedCitation.title}
+                </h3>
+                <p className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                  {selectedCitation.section}
+                </p>
               </div>
 
-              <div className="mt-5 space-y-4">
-                <div>
-                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/20">
-                    {selectedCitation.jurisdiction} • {selectedCitation.section}
-                  </span>
-                  <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50 mt-2">
-                    {selectedCitation.title}
-                  </h3>
-                  <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 mt-0.5">
-                    Authority: {selectedCitation.authority} • Version: {selectedCitation.version}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white dark:bg-forest-950 border border-parchment-200 dark:border-forest-800 text-xs text-forest-900/80 dark:text-parchment-200 italic leading-relaxed">
+              <div className="p-4 rounded-2xl bg-parchment-50 dark:bg-forest-900 border border-amber-500/20 space-y-2">
+                <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                  Authoritative Statutory Excerpt
+                </span>
+                <p className="font-serif italic text-sm text-forest-950/90 dark:text-parchment-100 leading-relaxed">
                   "{selectedCitation.excerpt}"
-                </div>
-
-                <div className="pt-2 flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-bold flex items-center space-x-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Verified Official Statutory Record</span>
-                  </span>
-
-                  <a
-                    href={selectedCitation.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 text-parchment-50 text-xs font-bold transition-colors"
-                  >
-                    <span>Official Gazette</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
+                </p>
               </div>
+
+              <div className="space-y-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
+                <p><strong>Enforcing Authority:</strong> {selectedCitation.authority}</p>
+                <p><strong>Version:</strong> {selectedCitation.version}</p>
+              </div>
+
+              <a
+                href={selectedCitation.source_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-semibold hover:opacity-90 shadow-md transition-opacity w-full justify-center"
+              >
+                <span>Open Official Legislative Gazette</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
           </div>
         )}

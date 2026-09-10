@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Compass,
@@ -9,13 +9,54 @@ import {
   Monitor,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  User,
+  LogOut
 } from "lucide-react";
+import { AuthModal } from "../auth/AuthModal";
+import { supabase } from "../../lib/supabase";
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [language, setLanguage] = useState<"en" | "hi" | "ta">("en");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        const demo = localStorage.getItem("ipsakti_demo_user");
+        if (demo) {
+          try { setUser(JSON.parse(demo)); } catch {}
+        }
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        const demo = localStorage.getItem("ipsakti_demo_user");
+        if (demo) {
+          try { setUser(JSON.parse(demo)); } catch {}
+        } else {
+          setUser(null);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem("ipsakti_demo_user");
+    setUser(null);
+  };
 
   const navLinks = [
     { name: "Ask IP-SAKTI", path: "/ask", icon: <Compass className="w-3.5 h-3.5" /> },
@@ -28,14 +69,15 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full transition-all duration-300 backdrop-blur-xl bg-parchment-50/90 dark:bg-forest-950/85 border-b border-parchment-200/70 dark:border-forest-900/60 shadow-subtle-luxury">
-      {/* Top Ministerial & Institutional Ribbon */}
+      {/* Top Ministerial & Institutional Ribbon - Clean Official Design */}
       <div className="bg-forest-950 dark:bg-black/90 text-parchment-100 text-[11px] px-4 sm:px-8 py-1.5 flex justify-between items-center tracking-wide border-b border-forest-900/50">
         <div className="flex items-center space-x-2.5">
-          <span className="font-cinzel text-amber-400 font-bold tracking-widest text-[10px] px-1.5 py-0.5 rounded border border-amber-400/30 bg-amber-400/10">
-            SIH26045
-          </span>
-          <span className="hidden sm:inline font-sans text-parchment-200/90 font-medium">
+          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          <span className="font-serif italic font-semibold text-amber-300/90 text-[11px]">
             Ministry of Ayush • All India Institute of Ayurveda (AIIA)
+          </span>
+          <span className="hidden md:inline text-parchment-400/60 text-[10px]">
+            | Sovereign Intellectual Property & Regulatory Clearance Portal
           </span>
         </div>
 
@@ -52,18 +94,42 @@ export const Navbar: React.FC = () => {
               onChange={(e) => setLanguage(e.target.value as any)}
               className="bg-transparent text-parchment-100 text-[10px] font-semibold focus:outline-none cursor-pointer"
             >
-              <option value="en" className="text-slate-900">EN</option>
+              <option value="en" className="text-slate-900">EN (Statutory)</option>
               <option value="hi" className="text-slate-900">हिंदी</option>
               <option value="ta" className="text-slate-900">தமிழ்</option>
             </select>
           </div>
+
+          {/* User Profile / Auth Action */}
+          {user ? (
+            <div className="flex items-center space-x-2 pl-2 border-l border-forest-800">
+              <span className="hidden sm:inline text-[10px] text-amber-300 font-semibold truncate max-w-[130px]">
+                {user.user_metadata?.full_name || user.email?.split("@")[0]}
+              </span>
+              <button
+                onClick={handleSignOut}
+                title="Sign out"
+                className="p-1 text-parchment-300/60 hover:text-rose-400 transition-colors"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="inline-flex items-center space-x-1 text-[10px] text-amber-300 hover:text-amber-200 font-semibold px-2 py-0.5 rounded border border-amber-500/30 hover:border-amber-400 transition-colors"
+            >
+              <User className="w-3 h-3" />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18 py-2">
-          {/* Brand Logo & Editorial Wordmark */}
+          {/* Brand Logo & Wordmark */}
           <Link to="/" className="flex items-center space-x-3.5 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-forest-800 to-forest-950 dark:from-forest-700 dark:to-forest-900 flex items-center justify-center text-amber-300 border border-amber-500/30 shadow-md group-hover:scale-105 transition-all duration-300">
               <Scale className="w-5 h-5 text-amber-300 group-hover:rotate-6 transition-transform duration-300" />
@@ -107,7 +173,7 @@ export const Navbar: React.FC = () => {
           {/* Action CTA & Mobile Trigger */}
           <div className="flex items-center space-x-3">
             <Link
-              to="/ask"
+              to="/studio"
               className="hidden sm:inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-xs font-semibold text-parchment-50 bg-gradient-to-r from-forest-800 to-forest-950 hover:from-forest-700 hover:to-forest-900 dark:from-emerald-600 dark:to-teal-700 border border-amber-400/30 shadow-subtle-luxury hover:shadow-glow-gold transition-all duration-300 group"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:rotate-12 transition-transform" />
@@ -143,16 +209,23 @@ export const Navbar: React.FC = () => {
           ))}
           <div className="pt-3">
             <Link
-              to="/ask"
+              to="/studio"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-forest-900 text-parchment-50 text-xs font-bold shadow-md"
             >
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Launch Ask IP-SAKTI Studio</span>
+              <span>Launch Innovation Studio</span>
             </Link>
           </div>
         </div>
       )}
+
+      {/* Supabase Authentication Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthSuccess={(u) => setUser(u)}
+      />
     </header>
   );
 };
