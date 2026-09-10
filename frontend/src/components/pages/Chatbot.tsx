@@ -265,34 +265,91 @@ export const Chatbot: React.FC = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  // Audio player reference for native multilingual TTS streaming
+  const chatbotAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const handleSpeakAnswer = () => {
-    if (!("speechSynthesis" in window) || !response) {
-      alert("Text-to-speech is not supported in this browser.");
-      return;
-    }
+    if (!response || !response.short_answer) return;
+
     if (isSpeakingAnswer) {
-      window.speechSynthesis.cancel();
+      if (chatbotAudioRef.current) {
+        chatbotAudioRef.current.pause();
+        chatbotAudioRef.current.currentTime = 0;
+        chatbotAudioRef.current = null;
+      }
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
       setIsSpeakingAnswer(false);
       return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(response.short_answer);
-    const langLocales: Record<SupportedLanguage, string> = {
-      en: "en-IN",
-      hi: "hi-IN",
-      ta: "ta-IN"
+
+    // Stop any existing audio
+    if (chatbotAudioRef.current) {
+      chatbotAudioRef.current.pause();
+      chatbotAudioRef.current = null;
+    }
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    const textToSpeak = response.short_answer.replace(/[*_#`[\]()]/g, '').trim().slice(0, 350);
+
+    // Auto-detect language script
+    let targetLang: SupportedLanguage = language;
+    if (/[\u0B80-\u0BFF]/.test(textToSpeak)) {
+      targetLang = 'ta';
+    } else if (/[\u0900-\u097F]/.test(textToSpeak)) {
+      targetLang = 'hi';
+    }
+
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(textToSpeak)}&lang=${targetLang}`;
+
+    const audio = new Audio(streamUrl);
+    chatbotAudioRef.current = audio;
+    setIsSpeakingAnswer(true);
+
+    audio.onended = () => {
+      setIsSpeakingAnswer(false);
+      chatbotAudioRef.current = null;
     };
-    utterance.lang = langLocales[language] || "en-IN";
-    utterance.rate = 0.95;
-    utterance.onstart = () => setIsSpeakingAnswer(true);
-    utterance.onend = () => setIsSpeakingAnswer(false);
-    utterance.onerror = () => setIsSpeakingAnswer(false);
-    window.speechSynthesis.speak(utterance);
+
+    audio.onerror = () => {
+      console.warn("Backend audio failed, falling back to Web Speech API");
+      chatbotAudioRef.current = null;
+      if ("speechSynthesis" in window) {
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
+        utterance.onend = () => setIsSpeakingAnswer(false);
+        utterance.onerror = () => setIsSpeakingAnswer(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setIsSpeakingAnswer(false);
+      }
+    };
+
+    audio.play().catch((err) => {
+      console.warn("Audio autoplay blocked, falling back to Web Speech:", err);
+      if ("speechSynthesis" in window) {
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
+        utterance.onstart = () => setIsSpeakingAnswer(true);
+        utterance.onend = () => setIsSpeakingAnswer(false);
+        utterance.onerror = () => setIsSpeakingAnswer(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setIsSpeakingAnswer(false);
+      }
+    });
   };
 
   useEffect(() => {
     return () => {
+      if (chatbotAudioRef.current) {
+        chatbotAudioRef.current.pause();
+        chatbotAudioRef.current = null;
+      }
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }

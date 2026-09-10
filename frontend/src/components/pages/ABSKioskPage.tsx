@@ -134,31 +134,76 @@ export const ABSKioskPage: React.FC = () => {
     }
   };
 
-  const speakTextAloud = (text: string) => {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const langLocales: Record<SupportedLanguage, string> = {
-      en: "en-IN",
-      hi: "hi-IN",
-      ta: "ta-IN"
-    };
-    utterance.lang = langLocales[language] || "en-IN";
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
+  // Audio player reference for native multilingual TTS streaming
+  const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
 
-    const voices = window.speechSynthesis.getVoices();
-    const matchedVoice = voices.find(v => v.lang.startsWith(utterance.lang) || v.lang.startsWith(language));
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
+  const speakTextAloud = (text: string) => {
+    if (!text || !text.trim()) return;
+
+    // Stop any ongoing audio playback
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+      audioPlayerRef.current = null;
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
     }
 
-    utterance.onstart = () => setKioskSpeaking(true);
-    utterance.onend = () => setKioskSpeaking(false);
-    utterance.onerror = () => setKioskSpeaking(false);
+    // Auto-detect language script: Tamil, Hindi, or English
+    let targetLang: SupportedLanguage = language;
+    if (/[\u0B80-\u0BFF]/.test(text)) {
+      targetLang = 'ta';
+    } else if (/[\u0900-\u097F]/.test(text)) {
+      targetLang = 'hi';
+    }
 
-    window.speechSynthesis.speak(utterance);
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+    // Limit text length to 350 chars for prompt, responsive kiosk speech
+    const cleanSnippet = text.replace(/[*_#`[\]()]/g, '').trim().slice(0, 350);
+    const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(cleanSnippet)}&lang=${targetLang}`;
+
+    const audio = new Audio(streamUrl);
+    audioPlayerRef.current = audio;
+    setKioskSpeaking(true);
+
+    audio.onended = () => {
+      setKioskSpeaking(false);
+      audioPlayerRef.current = null;
+    };
+
+    audio.onerror = (e) => {
+      console.warn("Backend audio stream error, falling back to Web Speech API:", e);
+      audioPlayerRef.current = null;
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(cleanSnippet);
+        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
+        utterance.rate = 0.92;
+        utterance.onstart = () => setKioskSpeaking(true);
+        utterance.onend = () => setKioskSpeaking(false);
+        utterance.onerror = () => setKioskSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setKioskSpeaking(false);
+      }
+    };
+
+    audio.play().catch((err) => {
+      console.warn("Audio autoplay blocked or playback failed:", err);
+      // Fallback to Web Speech API
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(cleanSnippet);
+        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
+        utterance.onstart = () => setKioskSpeaking(true);
+        utterance.onend = () => setKioskSpeaking(false);
+        utterance.onerror = () => setKioskSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setKioskSpeaking(false);
+      }
+    });
   };
+
 
   const handleProcessKioskQuery = async (userQuery: string) => {
     if (!userQuery.trim()) return;
@@ -234,13 +279,15 @@ export const ABSKioskPage: React.FC = () => {
   };
 
   const handleSpeak = () => {
-    if (!("speechSynthesis" in window)) {
-      alert("Text-to-speech is not supported in this browser.");
-      return;
-    }
-
     if (kioskSpeaking) {
-      window.speechSynthesis.cancel();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+        audioPlayerRef.current = null;
+      }
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
       setKioskSpeaking(false);
       return;
     }
@@ -251,6 +298,10 @@ export const ABSKioskPage: React.FC = () => {
   // Clean up any speaking when unmounting
   useEffect(() => {
     return () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }

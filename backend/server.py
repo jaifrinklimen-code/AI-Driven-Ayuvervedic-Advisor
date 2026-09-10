@@ -10,10 +10,13 @@ import time
 import json
 from dotenv import load_dotenv
 load_dotenv()
+import io
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from gtts import gTTS
 
 from engine.retriever import retriever_instance
 from engine.classifier import classifier_instance
@@ -164,6 +167,38 @@ def run_evaluation():
         "average_latency_seconds": round(total_latency / total, 4),
         "abstention_safety": "VERIFIED_ACTIVE"
     }
+
+@app.get("/api/tts")
+async def text_to_speech(text: str, lang: str = "en"):
+    """
+    Multilingual Text-to-Speech endpoint using gTTS for crystal-clear
+    Tamil, Hindi, and English audio playback across all browsers and devices.
+    """
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    # Auto-detect language if Tamil or Hindi script is present in text
+    if any('\u0b80' <= c <= '\u0bff' for c in text):
+        lang = "ta"
+    elif any('\u0900' <= c <= '\u097f' for c in text):
+        lang = "hi"
+    elif lang not in ["ta", "hi", "en"]:
+        lang = "en"
+        
+    try:
+        fp = io.BytesIO()
+        # Limit to 400 characters for snappy auditory playback
+        clean_text = text.strip()[:400]
+        tts = gTTS(text=clean_text, lang=lang)
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        return StreamingResponse(
+            fp,
+            media_type="audio/mpeg",
+            headers={"Content-Disposition": "inline; filename=speech.mp3"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS Generation Error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
