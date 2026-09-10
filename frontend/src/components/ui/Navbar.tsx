@@ -13,7 +13,8 @@ import {
   User,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  Activity
 } from "lucide-react";
 import { AuthModal } from "../auth/AuthModal";
 import { supabase } from "../../lib/supabase";
@@ -66,6 +67,7 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { name: t("nav_ask"), path: "/ask", icon: <Compass className="w-3.5 h-3.5" /> },
     { name: t("nav_classify"), path: "/classify", icon: <Scale className="w-3.5 h-3.5" /> },
+    { name: t("nav_prakruti"), path: "/prakruti", icon: <Activity className="w-3.5 h-3.5 text-emerald-500" /> },
     { name: t("nav_jurisdictions"), path: "/jurisdictions", icon: <Globe2 className="w-3.5 h-3.5" /> },
     { name: t("nav_abs"), path: "/abs-navigator", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
     { name: t("nav_archive"), path: "/sources", icon: <BookOpen className="w-3.5 h-3.5" /> },
@@ -78,7 +80,7 @@ export const Navbar: React.FC = () => {
       <div className="bg-forest-950 dark:bg-black/90 text-parchment-100 text-[11px] px-4 sm:px-8 py-1.5 flex justify-between items-center tracking-wide border-b border-forest-900/50">
         <div className="flex items-center space-x-2.5">
           <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          <span className="font-serif italic font-semibold text-amber-300/90 text-[11px]">
+          <span className="font-display font-semibold text-amber-300/90 text-[11px] tracking-wide">
             {t("portal_subtitle")}
           </span>
           <span className="hidden md:inline text-parchment-400/60 text-[10px]">
@@ -156,10 +158,10 @@ export const Navbar: React.FC = () => {
             </div>
             <div>
               <div className="flex items-baseline space-x-2">
-                <span className="font-cinzel text-lg font-extrabold tracking-wider text-forest-950 dark:text-parchment-50">
+                <span className="font-display text-lg font-extrabold tracking-wider text-forest-950 dark:text-parchment-50">
                   IP-SAKTI
                 </span>
-                <span className="font-serif italic text-xs px-2 py-0.5 rounded-full bg-parchment-200/70 text-forest-800 dark:bg-forest-900 dark:text-amber-300/90 border border-amber-500/20">
+                <span className="font-display text-xs px-2 py-0.5 rounded-full bg-parchment-200/70 text-forest-800 dark:bg-forest-900 dark:text-amber-300/90 border border-amber-500/20 font-medium">
                   Sahayak
                 </span>
               </div>

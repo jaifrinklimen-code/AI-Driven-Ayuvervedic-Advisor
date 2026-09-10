@@ -116,31 +116,31 @@ export const LandingPage: React.FC = () => {
       <Navbar />
 
       {/* Cinematic Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-24 lg:pt-24 lg:pb-32 border-b border-parchment-200/80 dark:border-forest-900/60">
+      <section className="relative overflow-hidden pt-20 pb-28 lg:pt-28 lg:pb-36 border-b border-parchment-200/80 dark:border-forest-900/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-4xl mx-auto space-y-6">
+          <div className="text-center max-w-4xl mx-auto space-y-8">
             {/* Editorial Badge */}
             <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-parchment-100/90 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 shadow-subtle-luxury animate-in fade-in-50">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
-              <span className="font-cinzel tracking-wider uppercase">National Regulatory Intelligence Portal • Ministry of Ayush & AIIA</span>
+              <span className="font-display tracking-[0.2em] uppercase text-[10px]">National Regulatory Intelligence Portal • Ministry of Ayush & AIIA</span>
             </div>
 
-            {/* Majestic Serif Title */}
-            <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-light tracking-tight text-forest-950 dark:text-parchment-50 leading-[1.08]">
+            {/* Modern Display Title */}
+            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-forest-950 dark:text-parchment-50 leading-[1.05]">
               Ancient Ayurvedic Wisdom,{" "}
-              <span className="italic font-normal text-forest-800 dark:text-amber-300">
+              <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400 bg-clip-text text-transparent">
                 Grounded
               </span>{" "}
               in Precision Law.
             </h1>
 
             {/* Sub-headline */}
-            <p className="text-base sm:text-lg text-forest-900/70 dark:text-parchment-200/80 max-w-2xl mx-auto leading-relaxed font-sans font-normal">
+            <p className="text-base sm:text-lg text-forest-900/70 dark:text-parchment-200/80 max-w-2xl mx-auto leading-relaxed font-sans font-normal mt-2">
               An enterprise-grade regulatory navigator that classifies Ayurvedic products, retrieves authoritative statutory law, calculates confidence, and prevents biopiracy across Indian and International regimes.
             </p>
 
             {/* Direct Command Center Composer Bar */}
-            <div className="pt-4 max-w-2xl mx-auto">
+            <div className="pt-8 max-w-2xl mx-auto">
               <form
                 onSubmit={handleHeroSubmit}
                 className="relative flex items-center bg-white dark:bg-forest-900/80 rounded-2xl border border-amber-500/30 dark:border-forest-700/60 p-2 shadow-elevated-luxury backdrop-blur-md focus-within:ring-2 focus-within:ring-amber-500/40 transition-all duration-300"
@@ -212,7 +212,7 @@ export const LandingPage: React.FC = () => {
                 {/* Central Luminous Core */}
                 <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-forest-800 via-forest-950 to-black dark:from-forest-700 dark:to-forest-950 flex flex-col items-center justify-center text-center p-3 border-2 border-amber-400/40 shadow-glow-gold animate-breathe">
                   <Scale className="w-7 h-7 text-amber-300 mb-1" />
-                  <span className="font-cinzel text-[11px] font-bold text-parchment-50 tracking-wider">
+                  <span className="font-display text-[11px] font-bold text-parchment-50 tracking-wider">
                     IP-SAKTI
                   </span>
                   <span className="text-[9px] uppercase tracking-widest text-amber-300/80 font-mono">
@@ -226,20 +226,20 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Live Benchmark Performance Metrics Ribbon */}
-      <section className="bg-white/80 dark:bg-forest-900/40 border-b border-parchment-200/80 dark:border-forest-900/60 py-10 backdrop-blur-md">
+      <section className="bg-white/80 dark:bg-forest-900/40 border-b border-parchment-200/80 dark:border-forest-900/60 py-14 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+          <div className="text-center mb-10">
+            <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
               Rigorous Evaluation Standard
             </span>
-            <h2 className="font-serif text-2xl font-light text-forest-950 dark:text-parchment-50 mt-1">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-2">
               Empirical Benchmarks Across 100 Statutory Queries
             </h2>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
-              <div className="font-serif text-3xl sm:text-4xl font-light text-emerald-700 dark:text-emerald-400">
+              <div className="font-display text-3xl sm:text-4xl font-bold text-emerald-700 dark:text-emerald-400">
                 86.9%
               </div>
               <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
@@ -251,7 +251,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
-              <div className="font-serif text-3xl sm:text-4xl font-light text-amber-600 dark:text-amber-300">
+              <div className="font-display text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-300">
                 100.0%
               </div>
               <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
@@ -263,7 +263,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
-              <div className="font-serif text-3xl sm:text-4xl font-light text-blue-600 dark:text-blue-400">
+              <div className="font-display text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
                 100.0%
               </div>
               <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
@@ -275,7 +275,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
-              <div className="font-serif text-3xl sm:text-4xl font-light text-purple-600 dark:text-purple-400">
+              <div className="font-display text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400">
                 &lt; 1 ms
               </div>
               <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
@@ -290,25 +290,25 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Asymmetric Core Pillars Grid */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-12">
-          <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
+      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mb-14">
+          <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400 block mb-2">
             Engineered Capabilities
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-light text-forest-950 dark:text-parchment-50 leading-tight">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-forest-950 dark:text-parchment-50 leading-tight">
             6 Specialized Modules for the Modern Ayurvedic Innovator
           </h2>
-          <p className="mt-3 text-xs sm:text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
+          <p className="mt-4 text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
             Every module addresses a distinct pillar of Ayurvedic sovereignty: statutory formulation classification, jurisdiction isolation, verifiable citations, and biodiversity compliance.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {corePillars.map((pillar, idx) => (
             <Link
               key={idx}
               to={pillar.path}
-              className="bg-white dark:bg-forest-900/60 rounded-2xl border border-parchment-200/80 dark:border-forest-800/80 p-6 shadow-subtle-luxury hover:shadow-elevated-luxury hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between group"
+              className="bg-white dark:bg-forest-900/60 rounded-2xl border border-parchment-200/80 dark:border-forest-800/80 p-7 shadow-subtle-luxury hover:shadow-elevated-luxury hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between group"
             >
               <div>
                 <div className="flex items-center justify-between pb-4">
@@ -320,15 +320,15 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
 
-                <span className="font-serif text-xs text-amber-700 dark:text-amber-400/90 font-medium block">
+                <span className="font-mono text-[11px] text-amber-700 dark:text-amber-400/90 font-medium block tracking-wide">
                   {pillar.subtitle}
                 </span>
 
-                <h3 className="font-cinzel text-base font-bold text-forest-950 dark:text-parchment-50 mt-1 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
+                <h3 className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 mt-1.5 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
                   {pillar.title}
                 </h3>
 
-                <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-2.5 leading-relaxed font-sans">
+                <p className="text-sm text-forest-900/70 dark:text-parchment-300/70 mt-3 leading-relaxed font-sans">
                   {pillar.description}
                 </p>
               </div>
@@ -343,28 +343,28 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Curated Showcase Scenarios */}
-      <section className="py-20 bg-parchment-100/60 dark:bg-forest-900/20 border-t border-b border-parchment-200/80 dark:border-forest-900/60">
+      <section className="py-24 bg-parchment-100/60 dark:bg-forest-900/20 border-t border-b border-parchment-200/80 dark:border-forest-900/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
               Interactive Case Demonstrations
             </span>
-            <h2 className="font-serif text-3xl font-light text-forest-950 dark:text-parchment-50 mt-1">
+            <h2 className="font-display text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-2">
               How IP-SAKTI Evaluates Real Innovations
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {showcaseScenarios.map((sc, i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-forest-950 rounded-2xl border border-parchment-200 dark:border-forest-800/80 p-6 shadow-subtle-luxury space-y-4"
+                className="bg-white dark:bg-forest-950 rounded-2xl border border-parchment-200 dark:border-forest-800/80 p-7 shadow-subtle-luxury space-y-5"
               >
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold block">
                     Case #{i + 1}
                   </span>
-                  <h3 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 mt-1">
                     {sc.title}
                   </h3>
                   <p className="text-[11px] text-forest-900/60 dark:text-parchment-300/60 italic mt-0.5">
@@ -408,17 +408,17 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* The 5-Step Innovator Journey */}
-      <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+      <section className="py-24 max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14">
+          <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
             Systematic Methodology
           </span>
-          <h2 className="font-serif text-3xl font-light text-forest-950 dark:text-parchment-50 mt-1">
+          <h2 className="font-display text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-2">
             The 5-Phase Regulatory Journey
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 text-sm">
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
             <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[10px]">PHASE 1</span>
             <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1">Product Intake</h4>

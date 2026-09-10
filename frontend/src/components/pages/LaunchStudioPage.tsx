@@ -10,7 +10,8 @@ import {
   Trash2,
   FileText,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Printer
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -48,6 +49,105 @@ export const LaunchStudioPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handlePrintPDF = () => {
+    if (!selectedRecord) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const citationsHtml = (selectedRecord.citations || []).map((c: any, i: number) => `
+      <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 8px; font-family: monospace; font-size: 11px;">#${i + 1}</td>
+        <td style="padding: 8px; font-weight: bold; font-size: 12px;">${c.title || c.document_id}</td>
+        <td style="padding: 8px; font-size: 12px; color: #1e3a8a;">${c.section || "Statutory Rule"}</td>
+        <td style="padding: 8px; font-size: 11px;">${c.authority || "Ministry of Ayush / CDSCO"}</td>
+      </tr>
+    `).join("");
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>IP-SAKTI Dossier - ${selectedRecord.query.slice(0, 40)}</title>
+          <style>
+            @media print {
+              body { margin: 15mm; font-family: 'Segoe UI', system-ui, sans-serif; color: #0f172a; }
+              .no-print { display: none; }
+            }
+            body { font-family: 'Segoe UI', system-ui, sans-serif; color: #0f172a; padding: 24px; line-height: 1.5; }
+            .header-bar { border-bottom: 2px solid #047857; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+            .badge { display: inline-block; padding: 3px 8px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 4px; font-size: 11px; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            th { text-align: left; padding: 8px; background: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 11px; text-transform: uppercase; }
+            .disclaimer { margin-top: 24px; padding: 12px; background: #fffbeb; border-left: 4px solid #f59e0b; font-size: 11px; color: #78350f; }
+          </style>
+        </head>
+        <body>
+          <div class="header-bar">
+            <div>
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #047857; font-weight: bold;">
+                Government of India • Ministry of Ayush / AIIA
+              </div>
+              <h1 style="margin: 4px 0 0 0; font-size: 22px; color: #064e3b;">IP-SAKTI Sahayak Regulatory Assessment Dossier</h1>
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #64748b;">
+              Generated: ${new Date().toLocaleDateString("en-IN")} • Official AI Protocol
+            </div>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <span class="badge">${selectedRecord.category}</span>
+            <span class="badge" style="margin-left: 6px;">Jurisdiction: ${selectedRecord.jurisdiction}</span>
+            <span class="badge" style="margin-left: 6px; background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">Confidence: ${selectedRecord.confidence_score}%</span>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #64748b; margin-bottom: 4px;">Subject Formulation Query</div>
+            <div style="font-size: 14px; font-weight: 600; padding: 10px; background: #f1f5f9; border-radius: 6px;">
+              ${selectedRecord.query}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #64748b; margin-bottom: 4px;">Authoritative Legal & Statutory Verdict</div>
+            <div style="font-size: 13px; text-align: justify; line-height: 1.6; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+              ${selectedRecord.short_answer.replace(/\\n/g, "<br>")}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #64748b;">Verified Statutory Authorities & Gazette Citations (${(selectedRecord.citations || []).length})</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Index</th>
+                  <th>Statutory Instrument</th>
+                  <th>Section / Rule</th>
+                  <th>Regulatory Authority</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${citationsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="disclaimer">
+            <strong>Statutory Notice:</strong> This dossier was generated by the IP-SAKTI Sahayak RAG Intelligence Engine based on authoritative Indian and International IP statutes. It provides preliminary regulatory orientation and NOT legal advice. Always consult an authorized AYUSH consultant or patent attorney before commercial filing.
+          </div>
+
+          <div class="no-print" style="margin-top: 20px; text-align: center;">
+            <button onclick="window.print()" style="padding: 8px 16px; background: #047857; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+              Print / Save as PDF
+            </button>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const handleDownload = () => {
     if (!selectedRecord) return;
     const text = `IP-SAKTI REGULATORY ASSESSMENT REPORT\n======================================\nDate: ${selectedRecord.created_at || new Date().toISOString()}\nQuery: ${selectedRecord.query}\nJurisdiction: ${selectedRecord.jurisdiction}\nProduct Classification: ${selectedRecord.category}\nConfidence Score: ${selectedRecord.confidence_score}%\n\nSTATUTORY FINDING:\n${selectedRecord.short_answer}\n\nVERIFIED CITATIONS:\n${selectedRecord.citations.map((c: any, i: number) => `${i + 1}. ${c.title} (${c.section}) - ${c.source_url}`).join("\n")}\n\nDISCLAIMER:\nThis report is an automated regulatory intelligence assessment generated via IP-SAKTI Sahayak. Not legal advice.`;
@@ -70,9 +170,9 @@ export const LaunchStudioPage: React.FC = () => {
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span className="font-cinzel">Executive Research Console</span>
+              <span className="font-display">Executive Research Console</span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+            <h1 className="font-display text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
               IP-SAKTI Innovation Studio
             </h1>
             <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 mt-1 max-w-2xl">
@@ -99,7 +199,7 @@ export const LaunchStudioPage: React.FC = () => {
           {/* History Sidebar */}
           <div className="lg:col-span-4 bg-white dark:bg-forest-900/60 rounded-3xl border border-amber-500/20 dark:border-forest-700/60 p-5 shadow-subtle-luxury space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-parchment-200 dark:border-forest-800">
-              <div className="flex items-center space-x-2 text-xs font-bold font-cinzel text-forest-950 dark:text-parchment-100">
+              <div className="flex items-center space-x-2 text-xs font-bold font-display text-forest-950 dark:text-parchment-100">
                 <Clock className="w-4 h-4 text-amber-500" />
                 <span>Research Sessions ({history.length})</span>
               </div>
@@ -164,7 +264,7 @@ export const LaunchStudioPage: React.FC = () => {
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                       {selectedRecord.category}
                     </span>
-                    <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
+                    <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
                       {selectedRecord.query}
                     </h3>
                   </div>
@@ -178,27 +278,34 @@ export const LaunchStudioPage: React.FC = () => {
                       <span>{copied ? "Copied!" : "Copy"}</span>
                     </button>
                     <button
+                      onClick={handlePrintPDF}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 dark:border-amber-400/30 text-amber-800 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold shadow-xs transition-colors"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Print / PDF</span>
+                    </button>
+                    <button
                       onClick={handleDownload}
                       className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-medium hover:opacity-90 shadow-sm transition-opacity"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Export Report</span>
+                      <span>Export Text</span>
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                    <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
                       Statutory Finding
                     </span>
-                    <p className="font-serif text-base text-forest-950/90 dark:text-parchment-100 leading-relaxed">
+                    <p className="font-display text-base text-forest-950/90 dark:text-parchment-100 leading-relaxed">
                       {selectedRecord.short_answer}
                     </p>
                   </div>
 
                   <div>
-                    <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-2">
+                    <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-2">
                       Cited Statutory Authorities ({selectedRecord.citations?.length || 0})
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -230,7 +337,7 @@ export const LaunchStudioPage: React.FC = () => {
             ) : (
               <div className="text-center py-16 space-y-3">
                 <FileText className="w-12 h-12 mx-auto text-forest-900/30 dark:text-parchment-400/30" />
-                <h4 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50">
+                <h4 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50">
                   Select a Research Dossier
                 </h4>
                 <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 max-w-sm mx-auto">

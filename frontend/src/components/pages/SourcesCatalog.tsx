@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import { GazetteReaderModal, GazetteDocument } from "../ui/GazetteReaderModal";
+import { getApiUrl } from "../../lib/api";
 import {
   BookOpen,
   ExternalLink,
@@ -18,7 +19,7 @@ export const SourcesCatalog: React.FC = () => {
   const [selectedDoc, setSelectedDoc] = useState<GazetteDocument | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/corpus")
+    fetch(getApiUrl("/api/corpus"))
       .then((res) => res.json())
       .then((data) => {
         if (data && data.documents) {
@@ -53,9 +54,9 @@ export const SourcesCatalog: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
             <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-cinzel">Official Gazette Repository</span>
+            <span className="font-display">Official Gazette Repository</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+          <h1 className="font-display text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
             Digital Statutory Archive
           </h1>
           <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-xl mx-auto">
@@ -116,7 +117,7 @@ export const SourcesCatalog: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 leading-snug">
+                  <h3 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 leading-snug">
                     {doc.title}
                   </h3>
 
@@ -135,7 +136,7 @@ export const SourcesCatalog: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-parchment-50/70 dark:bg-forest-950/70 rounded-2xl border border-parchment-200/60 dark:border-forest-800/60 text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-serif italic line-clamp-3">
+                  <div className="p-4 bg-parchment-50/70 dark:bg-forest-950/70 rounded-2xl border border-parchment-200/60 dark:border-forest-800/60 text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-display italic line-clamp-3">
                     "{doc.text}"
                   </div>
                 </div>

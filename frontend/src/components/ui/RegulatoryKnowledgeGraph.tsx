@@ -103,9 +103,9 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
         <div className="space-y-1">
           <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-semibold border border-amber-500/20">
             <Layers className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-cinzel">Interactive Topology</span>
+            <span className="font-display">Interactive Topology</span>
           </div>
-          <h3 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
+          <h3 className="font-display text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
             Ayurvedic Regulatory Knowledge Graph
           </h3>
         </div>
@@ -214,12 +214,12 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: activeNode.color }}
             />
-            <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
               Statutory Node Inspector
             </span>
           </div>
 
-          <h4 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 leading-tight">
+          <h4 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 leading-tight">
             {activeNode.label}
           </h4>
 

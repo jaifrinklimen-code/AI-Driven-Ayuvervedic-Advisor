@@ -66,7 +66,7 @@ export const GazetteReaderModal: React.FC<GazetteReaderModalProps> = ({ document
                 {doc.jurisdiction} Authority
               </span>
             </div>
-            <h3 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50 leading-tight">
+            <h3 className="font-display text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50 leading-tight">
               {doc.title}
             </h3>
             <p className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400">
@@ -116,11 +116,11 @@ export const GazetteReaderModal: React.FC<GazetteReaderModalProps> = ({ document
 
           {/* Verbatim Gazette Text */}
           <div className="space-y-2">
-            <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center space-x-1.5">
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center space-x-1.5">
               <BookOpen className="w-3.5 h-3.5" />
               <span>Verbatim Authoritative Statutory Text</span>
             </span>
-            <div className="p-5 bg-parchment-100/50 dark:bg-forest-900/80 rounded-2xl border border-amber-500/20 text-sm font-serif text-forest-950 dark:text-parchment-50 leading-relaxed space-y-3">
+            <div className="p-5 bg-parchment-100/50 dark:bg-forest-900/80 rounded-2xl border border-amber-500/20 text-sm font-display text-forest-950 dark:text-parchment-50 leading-relaxed space-y-3">
               <p className="whitespace-pre-line">{doc.text}</p>
             </div>
           </div>

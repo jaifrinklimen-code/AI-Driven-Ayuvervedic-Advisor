@@ -24,6 +24,7 @@ import {
   VolumeX
 } from "lucide-react";
 import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
+import { getApiUrl } from "../../lib/api";
 
 interface Citation {
   citation_index: number;
@@ -104,10 +105,8 @@ export const Chatbot: React.FC = () => {
     setSelectedCitation(null);
     setBookmarked(false);
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-
     try {
-      const res = await fetch(`${backendUrl}/api/query`, {
+      const res = await fetch(getApiUrl("/api/query"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -303,8 +302,7 @@ export const Chatbot: React.FC = () => {
       targetLang = 'hi';
     }
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-    const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(textToSpeak)}&lang=${targetLang}`;
+    const streamUrl = getApiUrl(`/api/tts?text=${encodeURIComponent(textToSpeak)}&lang=${targetLang}`);
 
     const audio = new Audio(streamUrl);
     chatbotAudioRef.current = audio;
@@ -366,9 +364,9 @@ export const Chatbot: React.FC = () => {
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 text-[11px] font-semibold border border-amber-500/20 mb-1">
               <Compass className="w-3.5 h-3.5 text-amber-500" />
-              <span className="font-cinzel">{t("studio_badge")}</span>
+              <span className="font-display">{t("studio_badge")}</span>
             </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+            <h1 className="font-display text-2xl sm:text-3xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
               {t("studio_title")}
             </h1>
           </div>
@@ -407,7 +405,7 @@ export const Chatbot: React.FC = () => {
           {/* Top Control Ribbon: Jurisdiction & Language */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs">
             <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="font-cinzel text-[11px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
+              <span className="font-display text-[11px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
                 {t("jurisdiction_label")}
               </span>
               <div className="inline-flex p-1 bg-parchment-100 dark:bg-forest-950 rounded-xl border border-parchment-200 dark:border-forest-800">
@@ -524,7 +522,7 @@ export const Chatbot: React.FC = () => {
               <Scale className="w-6 h-6 text-amber-300" />
             </div>
             <div>
-              <h3 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50">
+              <h3 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50">
                 Retrieving Statutory Authorities...
               </h3>
               <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 mt-1 max-w-sm mx-auto">
@@ -544,10 +542,10 @@ export const Chatbot: React.FC = () => {
                   <Scale className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
+                  <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
                     Product Classification
                   </span>
-                  <h3 className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-display text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
                     {response.product_classification}
                   </h3>
                   <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-parchment-100 dark:bg-forest-950 text-forest-800 dark:text-parchment-200 border border-parchment-200 dark:border-forest-800">
@@ -562,10 +560,10 @@ export const Chatbot: React.FC = () => {
                   <Globe2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
+                  <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
                     Jurisdiction Layer
                   </span>
-                  <h3 className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-display text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
                     {response.jurisdiction}
                   </h3>
                   <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
@@ -581,10 +579,10 @@ export const Chatbot: React.FC = () => {
                 </div>
                 <div className="w-full">
                   <div className="flex items-baseline justify-between">
-                    <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50">
+                    <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50">
                       Evidence Confidence
                     </span>
-                    <span className="font-serif text-sm font-bold text-amber-700 dark:text-amber-300">
+                    <span className="font-display text-sm font-bold text-amber-700 dark:text-amber-300">
                       {response.confidence.score}%
                     </span>
                   </div>
@@ -607,7 +605,7 @@ export const Chatbot: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-parchment-200/80 dark:border-forest-800/60 gap-3">
                 <div className="flex items-center space-x-2.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                  <h2 className="font-display text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
                     {t("statutory_verdict")}
                   </h2>
                 </div>
@@ -655,13 +653,13 @@ export const Chatbot: React.FC = () => {
               </div>
 
               {/* Natural-Language Narrative */}
-              <div className="font-serif text-base sm:text-lg text-forest-950/90 dark:text-parchment-100 leading-relaxed space-y-4">
+              <div className="font-display text-base sm:text-lg text-forest-950/90 dark:text-parchment-100 leading-relaxed space-y-4">
                 <p>{response.short_answer}</p>
               </div>
 
               {/* Authoritative Citation Seals */}
               <div className="pt-4 border-t border-parchment-200/80 dark:border-forest-800/60">
-                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-3">
+                <span className="font-display text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-3">
                   {t("authoritative_citations")} ({response.citations.length})
                 </span>
                 <div className="flex flex-wrap gap-2.5">
@@ -684,7 +682,7 @@ export const Chatbot: React.FC = () => {
               {/* Detailed Breakdown Columns */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
-                  <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                  <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
                     {t("applicable_regimes")}
                   </span>
                   <ul className="space-y-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
@@ -698,7 +696,7 @@ export const Chatbot: React.FC = () => {
                 </div>
 
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
-                  <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                  <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
                     {t("regulatory_pathway")}
                   </span>
                   <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
@@ -717,7 +715,7 @@ export const Chatbot: React.FC = () => {
 
               {/* Actionable Next Steps */}
               <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
-                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center space-x-2">
+                <span className="font-display text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center space-x-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>{t("actionable_steps")}</span>
                 </span>
@@ -747,7 +745,7 @@ export const Chatbot: React.FC = () => {
             <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
               <div className="flex items-center space-x-2">
                 <BookOpen className="w-5 h-5 text-amber-500" />
-                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-950 dark:text-parchment-50">
+                <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-950 dark:text-parchment-50">
                   Manuscript Citation Inspector
                 </span>
               </div>
@@ -764,7 +762,7 @@ export const Chatbot: React.FC = () => {
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
                   {selectedCitation.jurisdiction} Authority
                 </span>
-                <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
+                <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
                   {selectedCitation.title}
                 </h3>
                 <p className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 mt-0.5">
@@ -773,10 +771,10 @@ export const Chatbot: React.FC = () => {
               </div>
 
               <div className="p-4 rounded-2xl bg-parchment-50 dark:bg-forest-900 border border-amber-500/20 space-y-2">
-                <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
                   Authoritative Statutory Excerpt
                 </span>
-                <p className="font-serif italic text-sm text-forest-950/90 dark:text-parchment-100 leading-relaxed">
+                <p className="font-display italic text-sm text-forest-950/90 dark:text-parchment-100 leading-relaxed">
                   "{selectedCitation.excerpt}"
                 </p>
               </div>

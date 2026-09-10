@@ -69,6 +69,11 @@ const translations: Translations = {
     hi: "स्मार्ट कियोस्क",
     ta: "ஸ்மார்ட் கியோஸ்க்",
   },
+  nav_prakruti: {
+    en: "Prakruti Diagnostic",
+    hi: "प्रकृति परीक्षण",
+    ta: "பிரகிருதி பரிசோதனை",
+  },
   nav_studio: {
     en: "Launch Studio",
     hi: "अनुसंधान स्टूडियो",

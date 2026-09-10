@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
                 <Scale className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-cinzel text-lg font-bold tracking-wider text-parchment-50">
+                <span className="font-display text-lg font-bold tracking-wider text-parchment-50">
                   IP-SAKTI SAHAYAK
                 </span>
                 <p className="text-[10px] tracking-widest uppercase text-amber-400/80 font-medium">
@@ -36,7 +36,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 1: Regulatory Engines */}
           <div className="space-y-3">
-            <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-300 block">
+            <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-300 block">
               Regulatory Engines
             </span>
             <ul className="space-y-2 text-xs text-parchment-300/70">
@@ -70,7 +70,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 2: Statutory Frameworks */}
           <div className="space-y-3">
-            <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-300 block">
+            <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-300 block">
               Statutory Regimes
             </span>
             <ul className="space-y-2 text-xs text-parchment-300/70">
@@ -104,7 +104,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 3: Institutional Authority */}
           <div className="space-y-3">
-            <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-300 block">
+            <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-300 block">
               Institutional Links
             </span>
             <ul className="space-y-2 text-xs text-parchment-300/70">
