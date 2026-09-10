@@ -278,6 +278,156 @@ const translations: Translations = {
     hi: "SHA-256 सत्यापित राजपत्र",
     ta: "SHA-256 சரிபார்க்கப்பட்ட அரசிதழ்",
   },
+  abs_badge: {
+    en: "Biological Diversity Act (2002 & 2023)",
+    hi: "जैविक विविधता अधिनियम (2002 एवं 2023)",
+    ta: "உயிரியல் பன்முகத்தன்மை சட்டம் (2002 & 2023)",
+  },
+  abs_title: {
+    en: "ABS & Traditional Knowledge Terminal",
+    hi: "ABS एवं पारंपरिक ज्ञान टर्मिनल",
+    ta: "உயிரியல் பன்முகத்தன்மை மற்றும் பாரம்பரிய அறிவு தளம்",
+  },
+  abs_subtitle: {
+    en: "Evaluate National Biodiversity Authority (NBA Form I/III) filings, SBB commercial intimation, and TKDL defensive prior-art pointers.",
+    hi: "राष्ट्रीय जैव विविधता प्राधिकरण (NBA फॉर्म I/III) फाइलिंग, SBB सूचना और TKDL संदर्भों का मूल्यांकन करें।",
+    ta: "தேசிய பல்லுயிர் ஆணையம் (NBA படிவம் I/III) மனுக்கள், மாநில பல்லுயிர் வாரிய அறிவிப்பு மற்றும் பாரம்பரிய அறிவு நூலக (TKDL) வழிகாட்டல்களை மதிப்பிடுங்கள்.",
+  },
+  bio_profile: {
+    en: "Biological Resource Profile",
+    hi: "जैविक संसाधन प्रोफ़ाइल",
+    ta: "உயிரியல் வள விபரம்",
+  },
+  botanical_name: {
+    en: "Resource Botanical / Sanskrit Name",
+    hi: "संसाधन का वानस्पतिक / संस्कृत नाम",
+    ta: "தாவரவியல் / சமஸ்கிருத பெயர்",
+  },
+  applicant_entity: {
+    en: "Applicant Legal Entity Type",
+    hi: "आवेदक कानूनी इकाई का प्रकार",
+    ta: "விண்ணப்பதாரர் சட்டப்பூர்வ வகை",
+  },
+  indian_entity_opt: {
+    en: "Indian Entity (Section 7 SBB Intimation Only)",
+    hi: "भारतीय इकाई (केवल धारा 7 SBB सूचना)",
+    ta: "இந்திய நிறுவனம் (பிரிவு 7 SBB தகவல் மட்டும்)",
+  },
+  foreign_entity_opt: {
+    en: "Foreign Entity / Co. with Foreign Equity (Section 3 NBA Prior Approval Mandatory)",
+    hi: "विदेशी इकाई / विदेशी पूंजी युक्त कंपनी (धारा 3 NBA पूर्व अनुमोदन अनिवार्य)",
+    ta: "வெளிநாட்டு நிறுவனம் / முதலீடு (பிரிவு 3 NBA முன்அனுமதி கட்டாயம்)",
+  },
+  nri_opt: {
+    en: "Non-Resident Indian (NRI / OCI)",
+    hi: "अनिवासी भारतीय (NRI / OCI)",
+    ta: "வெளிநாடு வாழ் இந்தியர் (NRI / OCI)",
+  },
+  resource_origin_label: {
+    en: "Resource Biological Origin",
+    hi: "संसाधन का जैविक उद्गम",
+    ta: "உயிரியல் வளத்தின் மூலம்",
+  },
+  cultivated_opt: {
+    en: "Cultivated / Agro-Farmed (Cultivator Exemption under Section 7)",
+    hi: "कृषि-उत्पादित / खेती (धारा 7 के तहत छूट)",
+    ta: "பயிரிடப்பட்டது / விவசாயம் (பிரிவு 7 கீழ் விலக்கு)",
+  },
+  wild_harvested_opt: {
+    en: "Wild-Harvested / Forest Produce (Strict NBA/SBB Access Clearance)",
+    hi: "जंगल से एकत्र / वन उत्पाद (सख्त NBA/SBB अनुमति आवश्यक)",
+    ta: "காட்டு விளைபொருள் / காட்டில் சேகரிப்பு (கட்டாய NBA/SBB அனுமதி)",
+  },
+  mandi_commodity_opt: {
+    en: "Commercial Mandi Commodity / Value Added (Section 40 Exemption)",
+    hi: "व्यावसायिक मंडी वस्तु (धारा 40 छूट)",
+    ta: "சந்தை வணிகப் பொருள் (பிரிவு 40 கீழ் விலக்கு)",
+  },
+  imported_opt: {
+    en: "Imported from outside India",
+    hi: "भारत के बाहर से आयातित",
+    ta: "இந்தியாவிற்கு வெளியே இருந்து இறக்குமதி செய்யப்பட்டது",
+  },
+  commercial_purpose: {
+    en: "Commercial Utilization Purpose",
+    hi: "व्यावसायिक उपयोग का उद्देश्य",
+    ta: "வணிக பயன்பாட்டின் நோக்கம்",
+  },
+  commercial_mfg_opt: {
+    en: "Commercial Utilization / Manufacturing Drug",
+    hi: "व्यावसायिक उपयोग / औषधि निर्माण",
+    ta: "மருந்து உற்பத்தி / வணிகப் பயன்பாடு",
+  },
+  bio_survey_opt: {
+    en: "Bio-Survey / Bio-Utilization",
+    hi: "जैव सर्वेक्षण / जैव उपयोग",
+    ta: "உயிரியல் ஆய்வு / பயன்பாடு",
+  },
+  patent_filing_opt: {
+    en: "Filing Patent / IP Rights (Section 6 Form III Compulsory)",
+    hi: "पेटेंट / बौद्धिक संपदा फाइलिंग (धारा 6 फॉर्म III अनिवार्य)",
+    ta: "காப்புரிமை விண்ணப்பம் (பிரிவு 6 படிவம் III கட்டாயம்)",
+  },
+  academic_research_opt: {
+    en: "Research / Academic Non-Commercial Study",
+    hi: "अनुसंधान / गैर-व्यावसायिक अध्ययन",
+    ta: "கல்வி ஆராய்ச்சி / வணிகமற்ற ஆய்வு",
+  },
+  tk_checkbox: {
+    en: "Traditional Knowledge / Classical Monograph Involved",
+    hi: "पारंपरिक ज्ञान / शास्त्रीय ग्रंथ का संदर्भ शामिल है",
+    ta: "பாரம்பரிய அறிவு / சாஸ்திர நூல்கள் தொடர்பு கொண்டது",
+  },
+  eval_abs_btn: {
+    en: "Evaluate Mandatory Statutory Filings",
+    hi: "अनिवार्य वैधानिक फाइलिंग का मूल्यांकन करें",
+    ta: "சட்டப்பூர்வ விண்ணப்பங்களை மதிப்பிடுங்கள்",
+  },
+  evaluating_abs: {
+    en: "Evaluating NBA Compliance...",
+    hi: "NBA अनुपालन का विश्लेषण जारी...",
+    ta: "பல்லுயிர் விதிமுறைகளை ஆராய்கிறது...",
+  },
+  abs_audit_title: {
+    en: "Run Biodiversity Clearance Audit",
+    hi: "जैव विविधता क्लीयरेंस ऑडिट चलाएं",
+    ta: "பல்லுயிர் அனுமதி ஆய்வை இயக்கவும்",
+  },
+  abs_audit_desc: {
+    en: "Specify whether biological material was wild-harvested or cultivated to determine Section 6 / Section 7 NBA filing mandates.",
+    hi: "धारा 6 / धारा 7 के तहत आवश्यक फॉर्म निर्धारित करने के लिए सामग्री का विवरण चुनें।",
+    ta: "பிரிவு 6 / 7 விதிகளின் கீழ் தேவையான படிவங்களை அறிய மூலப்பொருளை தேர்வு செய்யவும்.",
+  },
+  compliance_flags_title: {
+    en: "Statutory Compliance Flags",
+    hi: "वैधानिक अनुपालन चेतावनी",
+    ta: "சட்டப்பூர்வ எச்சரிக்கைகள்",
+  },
+  required_filings_title: {
+    en: "Mandatory Statutory Filings Required",
+    hi: "आवश्यक अनिवार्य वैधानिक फॉर्म",
+    ta: "சமர்ப்பிக்க வேண்டிய கட்டாய படிவங்கள்",
+  },
+  tkdl_pointer_title: {
+    en: "Traditional Knowledge Digital Library (TKDL) Pointer",
+    hi: "पारंपरिक ज्ञान डिजिटल लाइब्रेरी (TKDL) संदर्भ",
+    ta: "பாரம்பரிய அறிவு டிஜிட்டல் நூலக (TKDL) வழிகாட்டல்",
+  },
+  kiosk_hardware_title: {
+    en: "IP-SAKTI Smart Kiosk Simulator",
+    hi: "IP-SAKTI स्मार्ट कियोस्क सिम्युलेटर",
+    ta: "IP-SAKTI ஸ்மார்ட் கியோஸ்க் மாதிரி",
+  },
+  kiosk_hardware_sub: {
+    en: "Tactile hardware kiosk interface designed for deployment across Ayurvedic colleges, incubation centers, and herbal farmer mandis.",
+    hi: "आयुर्वेदिक कॉलेजों, ऊष्मायन केंद्रों और किसान मंडियों के लिए स्पर्श-सुलभ हार्डवेयर इंटरफ़ेस।",
+    ta: "ஆயுர்வேத கல்லூரிகள், ஆராய்ச்சி மையங்கள் மற்றும் மூலிகை விவசாயிகளுக்கான தொடுதிரை கியோஸ்க் இடைமுகம்.",
+  },
+  physical_layer_badge: {
+    en: "Accessible Physical Deployment Layer",
+    hi: "सुलभ भौतिक उपकरण प्रणाली",
+    ta: "நேரடி பயன்பாட்டுக்கான உபகரணம்",
+  },
 };
 
 interface LanguageContextType {

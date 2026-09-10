@@ -25,7 +25,7 @@ class LLMGuard:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
 
-    def call_gemini_synthesis(self, query: str, retrieved_docs: List[Dict[str, Any]], category: str, jurisdiction: str) -> Optional[str]:
+    def call_gemini_synthesis(self, query: str, retrieved_docs: List[Dict[str, Any]], category: str, jurisdiction: str, language: str = "en") -> Optional[str]:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             return None
@@ -36,19 +36,27 @@ class LLMGuard:
                 f"- [{d['document']['section']}] {d['document']['title']}: {d['document']['text'][:180]}"
                 for d in retrieved_docs[:3]
             ])
+            lang_instruction = ""
+            if language == "ta":
+                lang_instruction = "IMPORTANT: You MUST write your entire answer in authentic, natural Tamil (தமிழ்). Explain statutory patentability clearly in Tamil."
+            elif language == "hi":
+                lang_instruction = "IMPORTANT: You MUST write your entire answer in authentic, clear Hindi (हिंदी). Explain statutory patentability clearly in Hindi."
+
             prompt = (
                 f"You are IP-SAKTI Sahayak, an authoritative regulatory intelligence AI for the Ministry of Ayush & AIIA.\n"
                 f"Question: {query}\n"
                 f"Jurisdiction: {jurisdiction}\n"
+                f"Delivery Language: {language}\n"
                 f"Statutory Context:\n{doc_context}\n\n"
+                f"{lang_instruction}\n"
                 f"Provide a clear, authoritative 2-3 paragraph statutory analysis explaining patentability/regulatory pathway. "
                 f"Cite Section 3(p), 3(e), Rule 158B, or NBA Form III where relevant. Do not invent non-existent sections."
             )
-            resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=3.5)
+            resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=4.0)
             if resp.status_code == 200:
                 data = resp.json()
                 text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                if text and len(text.strip()) > 40:
+                if text and len(text.strip()) > 30:
                     return text.strip()
         except Exception:
             pass
@@ -146,27 +154,60 @@ class LLMGuard:
 
         # Step 3: Safe Abstention Protocol
         if confidence["abstain_recommended"]:
-            return {
-                "status": "ABSTAINED",
-                "short_answer": (
+            if language == "ta":
+                abstain_answer = (
+                    "இந்தக் கேள்விக்கு போதிய அதிகாரப்பூர்வ சட்ட சான்றுகள் கிடைக்கவில்லை. "
+                    "சட்ட விதிகளைத் தவறாக ஊகிக்க இயலாது. உங்கள் மூலப்பொருள், நோக்கம் அல்லது அதிகார வரம்பு பற்றிய கூடுதல் விவரங்களை வழங்கவும்."
+                )
+                abstain_class = "தெளிவற்றது / போதிய தகவல் இல்லை"
+                abstain_limits = "நம்பகத்தன்மை வரம்பு குறைவாக உள்ளதால் கற்பனைத் தகவல் (hallucination) தடுப்பதற்காக விலகல் முறை பயன்படுத்தப்பட்டது."
+                abstain_steps = [
+                    "தாவர மூலப்பொருட்கள் மற்றும் பாரம்பரிய நூல்களின் பெயர்களைக் குறிப்பிடவும்.",
+                    "இது சிகிச்சை மருந்தா அல்லது உணவுப் பொருளா என்பதைத் தெளிவுபடுத்தவும்.",
+                    "அங்கீகரிக்கப்பட்ட காப்புரிமை ஆலோசகர் அல்லது ஆயுஷ் அதிகாரியிடம் ஆலோசனை பெறவும்."
+                ]
+                abstain_disc = "முதற்கட்ட தகவல் மதிப்பீடு மட்டுமே — இது சட்ட ஆலோசனை அல்ல."
+            elif language == "hi":
+                abstain_answer = (
+                    "इस प्रश्न का विश्वसनीय उत्तर देने के लिए पर्याप्त आधिकारिक वैधानिक साक्ष्य उपलब्ध नहीं हैं। "
+                    "हम कानूनी नियमों का मनमाना अनुमान नहीं लगा सकते। कृपया घटक, प्रयोजन या क्षेत्राधिकार का स्पष्ट विवरण दें।"
+                )
+                abstain_class = "अनिश्चित / अपर्याप्त डेटा"
+                abstain_limits = "विश्वसनीयता सुरक्षित सीमा से कम होने के कारण काल्पनिक उत्तर रोकने हेतु सुरक्षित निष्कासन सक्रिय हुआ।"
+                abstain_steps = [
+                    "सटीक वानस्पतिक घटकों और शास्त्रीय ग्रंथों के नाम स्पष्ट करें।",
+                    "यह स्पष्ट करें कि उपयोग चिकित्सीय है अथवा खाद्य पूरक।",
+                    "अधिकृत पेटेंट एजेंट या आयुष विनियामक विशेषज्ञ से परामर्श करें।"
+                ]
+                abstain_disc = "प्रारंभिक सूचनात्मक मूल्यांकन — यह कानूनी सलाह नहीं है।"
+            else:
+                abstain_answer = (
                     "I could not find sufficient authoritative statutory evidence to answer this query reliably. "
                     "I will not guess or fabricate legal provisions. Please provide more specific details regarding "
                     "the formulation, ingredients, intended therapeutic claim, or jurisdiction."
-                ),
-                "product_classification": "Uncertain / Insufficient Data",
+                )
+                abstain_class = "Uncertain / Insufficient Data"
+                abstain_limits = "Confidence score is below safe threshold. Abstention triggered to prevent hallucination."
+                abstain_steps = [
+                    "Specify exact botanical ingredients and classical text sources if known.",
+                    "Clarify whether the intended use is therapeutic, cosmetic, or a dietary food supplement.",
+                    "Consult an authorized patent agent or AYUSH regulatory consultant."
+                ]
+                abstain_disc = "Preliminary informational assessment — not legal advice."
+
+            return {
+                "status": "ABSTAINED",
+                "short_answer": abstain_answer,
+                "product_classification": abstain_class,
                 "jurisdiction": jurisdiction.upper(),
                 "applicable_ip_regimes": [],
                 "regulatory_pathway": "Unverified without additional formulation facts.",
                 "abs_considerations": "Unable to verify biological origin.",
                 "citations": [],
                 "confidence": confidence,
-                "important_limitations": "Confidence score is below safe threshold. Abstention triggered to prevent hallucination.",
-                "actionable_next_steps": [
-                    "Specify exact botanical ingredients and classical text sources if known.",
-                    "Clarify whether the intended use is therapeutic, cosmetic, or a dietary food supplement.",
-                    "Consult an authorized patent agent or AYUSH regulatory consultant."
-                ],
-                "disclaimer": "Preliminary informational assessment — not legal advice."
+                "important_limitations": abstain_limits,
+                "actionable_next_steps": abstain_steps,
+                "disclaimer": abstain_disc
             }
 
         # Step 4: Extract Grounded Citations from Retrieved Corpus
@@ -218,7 +259,7 @@ class LLMGuard:
         is_patent_query = "patent" in lower_q or "ip" in lower_q or "protect" in lower_q
         
         # Try dynamic Gemini synthesis first with strict timeout
-        gemini_answer = self.call_gemini_synthesis(query, retrieved, category, jurisdiction)
+        gemini_answer = self.call_gemini_synthesis(query, retrieved, category, jurisdiction, language=language)
         if gemini_answer:
             short_answer = gemini_answer
             if is_patent_query:
@@ -242,6 +283,46 @@ class LLMGuard:
                     "Biological Diversity Act, 2002",
                     "Trade Marks Act, 1999"
                 ]
+        elif language == "ta":
+            if is_patent_query:
+                short_answer = (
+                    "இந்திய காப்புரிமை சட்டத்தின் கீழ், தூய ஆயுர்வேத மூலிகை கலவைகளுக்கு காப்புரிமை சட்டம் 1970 பிரிவு 3(p) "
+                    "(பாரம்பரிய அறிவு) மற்றும் பிரிவு 3(e) (வெறும் கலவை) ஆகியவற்றின் கீழ் கடுமையான விலக்குகள் உள்ளன. "
+                    "அஸ்வகந்தா, பிராமி போன்ற அறியப்பட்ட மூலிகைகளை வெறுமனே கலப்பதால் காப்புரிமை பெற முடியாது; வியக்கத்தக்க கூட்டு சிகிச்சை "
+                    "விளைவை (சினர்ஜி விளைவு) அறிவியல் பூர்வமாக நிரூபிக்க வேண்டும். மேலும், உயிரியல் பன்முகத்தன்மை சட்டம் 2002 பிரிவு 6-ன் கீழ், "
+                    "காப்புரிமை பெறுவதற்கு முன் தேசிய பல்லுயிர் ஆணையத்தின் (NBA படிவம் 3) முன்அனுமதி பெறுவது கட்டாயமாகும்."
+                )
+            else:
+                short_answer = (
+                    f"ஆதாரப்பூர்வ சட்ட விதிகளின்படி, உங்கள் தயாரிப்பு {category} கீழ் கட்டுப்படுத்தப்படுகிறது. "
+                    f"உற்பத்தி மற்றும் வணிகமயமாக்கலுக்கு {reg_pathway} விதிமுறைகளுக்கு இணங்குவது கட்டாயமாகும். "
+                    f"இந்தியாவில் பெறப்படும் உயிரியல் மூலப்பொருட்களுக்கு உயிரியல் பன்முகத்தன்மை சட்டம் 2002 பிரிவு 7 அல்லது பிரிவு 3-ன் கீழ் அனுமதி தேவை."
+                )
+            ip_regimes = [
+                "Patents Act 1970 (Section 3(p) & 3(e))",
+                "Biological Diversity Act 2002 (Section 6 NBA Form III)",
+                "Drugs & Cosmetics Act 1940 (Section 3(h))"
+            ]
+        elif language == "hi":
+            if is_patent_query:
+                short_answer = (
+                    "भारतीय पेटेंट कानून के तहत, शुद्ध आयुर्वेदिक हर्बल फॉर्मूलेशन को पेटेंट अधिनियम, 1970 की धारा 3(p) "
+                    "(पारंपरिक ज्ञान) और धारा 3(e) (मात्र मिश्रण) के तहत सख्त वैधानिक प्रतिबंधों का सामना करना पड़ता है। "
+                    "केवल अश्वगंधा, ब्राह्मी या हल्दी जैसी जड़ी-बूटियों को मिलाकर पेटेंट प्राप्त नहीं किया जा सकता; आपको अप्रत्याशित "
+                    "सिनर्जिस्टिक चिकित्सीय प्रभाव सिद्ध करना होगा। इसके अतिरिक्त, जैविक विविधता अधिनियम, 2002 की धारा 6 के तहत, "
+                    "पेटेंट अनुदान से पहले राष्ट्रीय जैव विविधता प्राधिकरण (NBA फॉर्म 3) की अनुमति अनिवार्य है।"
+                )
+            else:
+                short_answer = (
+                    f"प्रामाणिक वैधानिक स्रोतों के अनुसार, आपका उत्पाद {category} के तहत विनियमित होता है। "
+                    f"निर्माण एवं व्यावसायिक उपयोग के लिए {reg_pathway} का पालन आवश्यक है। "
+                    f"भारत से प्राप्त जैविक संसाधनों के लिए जैविक विविधता अधिनियम, 2002 के तहत अनुमति आवश्यक है।"
+                )
+            ip_regimes = [
+                "Patents Act 1970 (Section 3(p) & 3(e))",
+                "Biological Diversity Act 2002 (Section 6 NBA Form III)",
+                "Drugs & Cosmetics Act 1940 (Section 3(h))"
+            ]
         elif is_patent_query:
             if jurisdiction.lower() == "india":
                 short_answer = (

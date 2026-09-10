@@ -54,6 +54,29 @@ export const ABSKioskPage: React.FC = () => {
   const [kioskClassification, setKioskClassification] = useState<string>("Patent / Proprietary Ayurvedic Medicine");
   const [kioskStatute, setKioskStatute] = useState<string>("Regulated under Drugs & Cosmetics Act Section 3(h) & BD Act Section 6");
 
+  // Keep kiosk demo text in sync when user toggles language
+  useEffect(() => {
+    if (language === "ta") {
+      setKioskQuery("அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?");
+      setKioskAnswer("ஆதாரப்பூர்வ சட்ட விதிகளின்படி, மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் பிரிவு 3(h) கீழ் உங்கள் தயாரிப்பு கட்டுப்படுத்தப்படுகிறது. காப்புரிமை வழங்கும் முன் உயிரியல் பன்முகத்தன்மை சட்டம் பிரிவு 6-ன் கீழ் தேசிய பல்லுயிர் ஆணைய (NBA Form III) முன் அனுமதி பெறுவது கட்டாயமாகும்.");
+      setKioskClassification("தனியுரிம ஆயுர்வேத மருந்து (பிரிவு 3(h))");
+      setKioskStatute("பல்லுயிர் சட்டம் பிரிவு 6 மற்றும் காப்புரிமை சட்டம் பிரிவு 3(p)");
+      setResourceName("விதானியா சோம்னிஃபெரா (அஸ்வகந்தா)");
+    } else if (language === "hi") {
+      setKioskQuery("क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?");
+      setKioskAnswer("औषधि एवं प्रसाधन सामग्री अधिनियम, 1940 की धारा 3(h) के अनुसार, पारंपरिक आयुर्वेदिक योग पेटेंट या प्रोप्राइटरी दवाओं के रूप में विनियमित होते हैं। किसी भी पेटेंट अनुदान से पूर्व जैविक विविधता अधिनियम की धारा 6 के तहत राष्ट्रीय जैव विविधता प्राधिकरण (NBA Form III) की पूर्व अनुमति अनिवार्य है।");
+      setKioskClassification("पेटेंट / प्रोप्राइटरी आयुर्वेदिक औषधि");
+      setKioskStatute("ड्रग्स एंड कॉस्मेटिक्स एक्ट धारा 3(h) एवं जैव विविधता अधिनियम धारा 6");
+      setResourceName("विथानिया सोम्निफेरा (अश्वगंधा)");
+    } else {
+      setKioskQuery("Can I patent an Ayurvedic brain syrup made with Ashwagandha and Brahmi?");
+      setKioskAnswer("Under Section 3(h) of the Drugs & Cosmetics Act, 1940, classical Ayurvedic formulations are regulated as Patent or Proprietary Medicines. Prior National Biodiversity Authority (NBA Form III) approval is mandatory under Section 6 of the Biological Diversity Act before any patent grant.");
+      setKioskClassification("Patent / Proprietary Ayurvedic Medicine");
+      setKioskStatute("Regulated under Drugs & Cosmetics Act Section 3(h) & BD Act Section 6");
+      setResourceName("Withania somnifera (Ashwagandha)");
+    }
+  }, [language]);
+
   const handleEvaluateABS = async () => {
     setLoading(true);
     try {
@@ -176,18 +199,18 @@ export const ABSKioskPage: React.FC = () => {
         return;
       }
 
-      // Query the live RAG backend
+      // Query the live RAG backend with language
       const res = await fetch("http://localhost:8000/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userQuery })
+        body: JSON.stringify({ query: userQuery, language: language })
       });
 
       if (res.ok) {
         const data = await res.json();
         const answerText = data.short_answer || data.answer || "Query analyzed under statutory provisions.";
         setKioskAnswer(answerText);
-        setKioskClassification(data.product_classification || "Statutory Formulation Evaluation");
+        setKioskClassification(data.product_classification || (language === "ta" ? "சட்டப்பூர்வ மருந்து மதிப்பீடு" : language === "hi" ? "वैधानिक औषधि मूल्यांकन" : "Statutory Formulation Evaluation"));
         setKioskStatute(`Regulated under ${data.jurisdiction || "India"} Patents & Ayush Norms`);
         setIsProcessingKiosk(false);
         speakTextAloud(answerText);
@@ -203,8 +226,8 @@ export const ABSKioskPage: React.FC = () => {
       };
       const fbAnswer = fallbackAnswers[language] || fallbackAnswers.en;
       setKioskAnswer(fbAnswer);
-      setKioskClassification("Patent / Proprietary Ayurvedic Medicine");
-      setKioskStatute("Regulated under Drugs & Cosmetics Act Section 3(h)");
+      setKioskClassification(language === "ta" ? "தனியுரிம ஆயுர்வேத மருந்து" : language === "hi" ? "पेटेंट / प्रोप्राइटरी आयुर्वेदिक औषधि" : "Patent / Proprietary Ayurvedic Medicine");
+      setKioskStatute(language === "ta" ? "மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் பிரிவு 3(h)" : language === "hi" ? "ड्रग्स एंड कॉस्मेटिक्स एक्ट धारा 3(h)" : "Regulated under Drugs & Cosmetics Act Section 3(h)");
       setIsProcessingKiosk(false);
       speakTextAloud(fbAnswer);
     }
@@ -261,7 +284,12 @@ export const ABSKioskPage: React.FC = () => {
         recognition.onerror = (err: any) => {
           console.warn("Speech recognition error:", err);
           setIsRecording(false);
-          const sample = "Can I patent an Ayurvedic brain syrup with Ashwagandha and Brahmi?";
+          const sampleQueries: Record<SupportedLanguage, string> = {
+            en: "Can I patent an Ayurvedic brain syrup with Ashwagandha and Brahmi?",
+            hi: "क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?",
+            ta: "அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?"
+          };
+          const sample = sampleQueries[language] || sampleQueries.en;
           setKioskQuery(sample);
           handleProcessKioskQuery(sample);
         };
@@ -277,7 +305,12 @@ export const ABSKioskPage: React.FC = () => {
     setIsRecording(true);
     setTimeout(() => {
       setIsRecording(false);
-      const sample = "Can I patent an Ayurvedic brain syrup with Ashwagandha and Brahmi?";
+      const sampleQueries: Record<SupportedLanguage, string> = {
+        en: "Can I patent an Ayurvedic brain syrup with Ashwagandha and Brahmi?",
+        hi: "क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?",
+        ta: "அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?"
+      };
+      const sample = sampleQueries[language] || sampleQueries.en;
       setKioskQuery(sample);
       handleProcessKioskQuery(sample);
     }, 1500);
@@ -291,81 +324,82 @@ export const ABSKioskPage: React.FC = () => {
         {/* SECTION 1: ABS Clearance Engine */}
         <section className="space-y-8">
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-              <span className="font-cinzel">Biological Diversity Act (2002 & 2023)</span>
+            <div className="inline-flex items-center space-x-2 px-4 py-1 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-xs font-semibold border border-emerald-500/30 neon-border-emerald">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="font-cinzel">{t("abs_badge")}</span>
             </div>
             <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
-              ABS & Traditional Knowledge Terminal
+              {t("abs_title")}
             </h1>
             <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-xl mx-auto">
-              Evaluate National Biodiversity Authority (NBA Form I/III) filings, SBB commercial intimation, and TKDL defensive prior-art pointers.
+              {t("abs_subtitle")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Form Input Card */}
-            <div className="lg:col-span-5 bg-white dark:bg-forest-900/70 rounded-3xl p-6 sm:p-8 border border-amber-500/30 dark:border-forest-700/60 shadow-elevated-luxury space-y-5 backdrop-blur-xl">
-              <h2 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 pb-3 border-b border-parchment-200 dark:border-forest-800">
-                Biological Resource Profile
+            {/* Form Input Card with Neon Border Accent */}
+            <div className="lg:col-span-5 bg-white dark:bg-forest-900/70 rounded-3xl p-6 sm:p-8 border border-emerald-500/30 dark:border-emerald-500/40 shadow-elevated-luxury space-y-5 backdrop-blur-xl neon-glow-emerald">
+              <h2 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 pb-3 border-b border-parchment-200 dark:border-forest-800 flex items-center justify-between">
+                <span>{t("bio_profile")}</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               </h2>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70 mb-1.5">
-                  Resource Botanical / Sanskrit Name
+                  {t("botanical_name")}
                 </label>
                 <input
                   type="text"
                   value={resourceName}
                   onChange={(e) => setResourceName(e.target.value)}
-                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70 mb-1.5">
-                  Entity Legal Status
+                  {t("applicant_entity")}
                 </label>
                 <select
                   value={entityType}
                   onChange={(e) => setEntityType(e.target.value)}
                   className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none"
                 >
-                  <option value="indian_entity">Indian Citizen / Domestic Corporate Entity</option>
-                  <option value="foreign_entity">Foreign National / Foreign-Controlled Entity (Section 3)</option>
-                  <option value="nri">Non-Resident Indian (NRI)</option>
+                  <option value="indian_entity">{t("indian_entity_opt")}</option>
+                  <option value="foreign_entity">{t("foreign_entity_opt")}</option>
+                  <option value="nri">{t("nri_opt")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70 mb-1.5">
-                  Source of Biological Resource
+                  {t("resource_origin_label")}
                 </label>
                 <select
                   value={resourceOrigin}
                   onChange={(e) => setResourceOrigin(e.target.value)}
                   className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none"
                 >
-                  <option value="cultivated">Cultivated from Indian Agricultural Lands</option>
-                  <option value="wild_harvested">Wild-Harvested from Indian Forests (High ABS Exposure)</option>
-                  <option value="market_commodity">Normally Traded Commodity (NTAC Exemption Sec 40)</option>
-                  <option value="imported">Imported from Outside India</option>
+                  <option value="cultivated">{t("cultivated_opt")}</option>
+                  <option value="wild_harvested">{t("wild_harvested_opt")}</option>
+                  <option value="market_commodity">{t("mandi_commodity_opt")}</option>
+                  <option value="imported">{t("imported_opt")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70 mb-1.5">
-                  Intended Activity Purpose
+                  {t("commercial_purpose")}
                 </label>
                 <select
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
                   className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none"
                 >
-                  <option value="commercial_utilization">Commercial Utilization / Manufacturing</option>
-                  <option value="ip_application">Filing Patent / IP Right Application (Section 6)</option>
-                  <option value="research">Collaborative Academic / Industrial Research</option>
-                  <option value="bio_survey">Bio-survey and Bio-utilization</option>
+                  <option value="commercial_utilization">{t("commercial_mfg_opt")}</option>
+                  <option value="ip_application">{t("patent_filing_opt")}</option>
+                  <option value="research">{t("academic_research_opt")}</option>
+                  <option value="bio_survey">{t("bio_survey_opt")}</option>
                 </select>
               </div>
 
@@ -374,10 +408,10 @@ export const ABSKioskPage: React.FC = () => {
                   type="checkbox"
                   checked={tkInvolved}
                   onChange={(e) => setTkInvolved(e.target.checked)}
-                  className="text-amber-600 rounded"
+                  className="text-emerald-600 rounded focus:ring-emerald-500"
                 />
                 <span className="text-forest-900/80 dark:text-parchment-200">
-                  Associated Traditional Knowledge involved
+                  {t("tk_checkbox")}
                 </span>
               </label>
 
@@ -385,9 +419,9 @@ export const ABSKioskPage: React.FC = () => {
                 type="button"
                 onClick={handleEvaluateABS}
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-parchment-50 dark:text-forest-950 text-xs font-bold shadow-md transition-all mt-4"
+                className="w-full py-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-parchment-50 dark:text-forest-950 text-xs font-bold shadow-md transition-all mt-4 border border-emerald-400/30"
               >
-                {loading ? "Analyzing NBA / SBB Statutes..." : "Evaluate ABS & TKDL Requirements"}
+                {loading ? t("evaluating_abs") : t("eval_abs_btn")}
               </button>
             </div>
 
@@ -398,13 +432,13 @@ export const ABSKioskPage: React.FC = () => {
                   <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
                     <div>
                       <span className="font-cinzel text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-0.5">
-                        ABS Compliance Assessment
+                        {t("abs_audit_title")}
                       </span>
                       <h3 className="font-serif text-2xl font-bold text-forest-950 dark:text-parchment-50">
                         {result.resource_analyzed}
                       </h3>
                     </div>
-                    <span className="px-3.5 py-1 rounded-full bg-amber-500/15 text-amber-900 dark:text-amber-300 text-xs font-bold border border-amber-500/30">
+                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 text-xs font-bold border border-emerald-500/30">
                       {result.overall_status}
                     </span>
                   </div>
@@ -412,7 +446,7 @@ export const ABSKioskPage: React.FC = () => {
                   {/* Compliance Flags */}
                   <div className="space-y-3">
                     <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                      Statutory Compliance Flags
+                      {t("compliance_flags_title")}
                     </span>
                     {result.compliance_flags.map((flag, idx) => (
                       <div
@@ -435,7 +469,7 @@ export const ABSKioskPage: React.FC = () => {
                   {/* Mandatory Filings */}
                   <div className="space-y-2">
                     <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                      Mandatory Filings Required
+                      {t("required_filings_title")}
                     </span>
                     {result.required_statutory_filings.map((filing, i) => (
                       <div
@@ -451,7 +485,7 @@ export const ABSKioskPage: React.FC = () => {
                   {/* TKDL Guidance */}
                   <div className="p-4 rounded-2xl bg-parchment-100 dark:bg-forest-950 border border-amber-500/20 text-xs space-y-1.5">
                     <span className="font-cinzel font-bold text-amber-700 dark:text-amber-400 block">
-                      Traditional Knowledge Digital Library (TKDL) Pointer
+                      {t("tkdl_pointer_title")}
                     </span>
                     <p className="text-forest-900/80 dark:text-parchment-300/80 leading-relaxed font-sans">
                       {result.tkdl_guidance.status_note}
@@ -462,19 +496,19 @@ export const ABSKioskPage: React.FC = () => {
                   </div>
 
                   <div className="text-[11px] text-forest-900/60 dark:text-parchment-300/60 bg-parchment-50 dark:bg-forest-950 p-3 rounded-xl border border-parchment-200 dark:border-forest-800">
-                    <strong>Statutory Disclaimer:</strong> {result.disclaimer}
+                    <strong>{t("statutory_disclaimer")}:</strong> {result.disclaimer}
                   </div>
                 </div>
               ) : (
                 <div className="h-full bg-white dark:bg-forest-900/60 rounded-3xl p-12 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury flex flex-col items-center justify-center text-center space-y-3">
-                  <div className="w-14 h-14 rounded-2xl bg-parchment-100 dark:bg-forest-800 flex items-center justify-center text-amber-500">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 dark:bg-forest-800 flex items-center justify-center text-emerald-500">
                     <ShieldCheck className="w-8 h-8" />
                   </div>
                   <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50">
-                    Run Biodiversity Clearance Audit
+                    {t("abs_audit_title")}
                   </h3>
                   <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 max-w-sm">
-                    Specify whether biological material was wild-harvested or cultivated to determine Section 6 / Section 7 NBA filing mandates.
+                    {t("abs_audit_desc")}
                   </p>
                 </div>
               )}
@@ -485,24 +519,24 @@ export const ABSKioskPage: React.FC = () => {
         {/* SECTION 2: IP-SAKTI Smart Kiosk Showcase */}
         <section id="kiosk" className="pt-12 border-t border-parchment-200/80 dark:border-forest-900/60 space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-3">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-rose-500/10 text-rose-800 dark:text-rose-300 text-xs font-semibold border border-rose-500/20 shadow-subtle-luxury">
               <Monitor className="w-3.5 h-3.5 text-rose-600" />
-              <span className="font-cinzel">Accessible Physical Deployment Layer</span>
+              <span className="font-cinzel">{t("physical_layer_badge")}</span>
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-light text-forest-950 dark:text-parchment-50">
-              IP-SAKTI Smart Kiosk Simulator
+              {t("kiosk_hardware_title")}
             </h2>
             <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-md mx-auto">
-              Tactile hardware kiosk interface designed for deployment across Ayurvedic colleges, incubation centers, and herbal farmer mandis.
+              {t("kiosk_hardware_sub")}
             </p>
           </div>
 
-          {/* Luxury Hardware Kiosk Chassis */}
-          <div className="max-w-4xl mx-auto bg-gradient-to-b from-forest-950 to-black text-parchment-50 rounded-3xl p-6 sm:p-10 border-4 border-forest-900/80 shadow-2xl space-y-6">
+          {/* Luxury Hardware Kiosk Chassis with Neon Glow */}
+          <div className="max-w-4xl mx-auto bg-gradient-to-b from-forest-950 via-forest-900 to-black text-parchment-50 rounded-3xl p-6 sm:p-10 border-2 border-amber-400/40 shadow-2xl space-y-6 neon-glow-gold">
             {/* Kiosk Bezel Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-forest-900 text-xs">
+            <div className="flex items-center justify-between pb-6 border-b border-forest-800 text-xs">
               <div className="flex items-center space-x-3">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#10b981]" />
                 <span className="font-mono text-amber-300 font-bold tracking-widest text-[10px] uppercase">
                   {t("kiosk_badge")}
                 </span>
@@ -513,7 +547,7 @@ export const ABSKioskPage: React.FC = () => {
                   onClick={handleSpeak}
                   className={`px-3.5 py-1.5 rounded-xl flex items-center space-x-2 font-bold text-xs transition-all ${
                     kioskSpeaking
-                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.4)]"
                       : "bg-forest-900 hover:bg-forest-800 text-amber-300 border border-amber-500/30"
                   }`}
                   title={kioskSpeaking ? "Stop speech" : "Listen to audio explanation"}
@@ -525,21 +559,24 @@ export const ABSKioskPage: React.FC = () => {
             </div>
 
             {/* Touchscreen Glass Area */}
-            <div className="bg-forest-900/70 rounded-2xl p-6 sm:p-8 border border-forest-800 space-y-6 backdrop-blur-md">
+            <div className="bg-forest-900/80 rounded-2xl p-6 sm:p-8 border border-emerald-500/30 space-y-6 backdrop-blur-md neon-border-emerald">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-serif text-xl font-bold text-white">{t("kiosk_title")}</h3>
+                  <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+                    <span>{t("kiosk_title")}</span>
+                    <span className="px-2 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 rounded-md">LIVE AI</span>
+                  </h3>
                   <p className="text-xs text-parchment-300/70 font-sans">{t("kiosk_subtitle")}</p>
                 </div>
-                <div className="flex space-x-1.5">
+                <div className="flex space-x-1.5 bg-forest-950/80 p-1 rounded-xl border border-forest-800">
                   {(["en", "hi", "ta"] as const).map((l) => (
                     <button
                       key={l}
                       onClick={() => setLanguage(l)}
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                         language === l
-                          ? "bg-amber-400 text-forest-950 font-extrabold shadow-md"
-                          : "bg-forest-950 text-parchment-300 hover:bg-forest-800"
+                          ? "bg-amber-400 text-forest-950 font-extrabold shadow-[0_0_12px_rgba(251,191,36,0.6)]"
+                          : "text-parchment-300 hover:bg-forest-800"
                       }`}
                     >
                       {l.toUpperCase()}
@@ -549,20 +586,22 @@ export const ABSKioskPage: React.FC = () => {
               </div>
 
               {/* Central Audio Microphone Simulator */}
-              <div className="flex flex-col items-center justify-center py-8 bg-forest-950/80 rounded-2xl border border-forest-800 space-y-4">
+              <div className="flex flex-col items-center justify-center py-8 bg-forest-950/90 rounded-2xl border border-forest-800 space-y-4">
                 <button
                   onClick={handleVoiceSimulation}
                   className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isRecording
                       ? "bg-rose-600 scale-110 shadow-lg shadow-rose-600/50 animate-pulse"
-                      : "bg-gradient-to-br from-amber-400 to-amber-600 text-forest-950 hover:scale-105 shadow-glow-gold"
+                      : "bg-gradient-to-br from-amber-400 to-amber-600 text-forest-950 hover:scale-105 shadow-[0_0_20px_rgba(245,158,11,0.5)]"
                   }`}
                   title="Tap to speak"
                 >
                   <Mic className="w-8 h-8" />
                 </button>
                 <span className="text-xs font-bold text-parchment-200">
-                  {isRecording ? "Listening to Voice Input (Web Speech API)..." : t("speak_btn")}
+                  {isRecording
+                    ? (language === "ta" ? "உங்கள் குரல் கேட்கப்படுகிறது (பேசவும்)..." : language === "hi" ? "आपकी आवाज सुनी जा रही है (बोलें)..." : "Listening to Voice Input (Web Speech API)...")
+                    : t("speak_btn")}
                 </span>
 
                 {/* Animated Waveform Visualizer */}

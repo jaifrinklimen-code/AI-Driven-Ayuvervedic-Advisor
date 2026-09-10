@@ -12,6 +12,57 @@ from typing import List, Dict, Any, Optional
 
 CORPUS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "corpus", "legal_corpus.json")
 
+MULTILINGUAL_EXPANSION = {
+    # Tamil
+    "அஸ்வகந்தா": "ashwagandha withania somnifera medicinal plant",
+    "துளசி": "tulsi ocimum sanctum holy basil",
+    "மஞ்சள்": "turmeric curcuma longa",
+    "வேம்பு": "neem azadirachta indica",
+    "முருங்கை": "moringa oleifera",
+    "பிராமி": "brahmi bacopa monnieri",
+    "கடுக்காய்": "haritaki terminalia chebula",
+    "நெல்லிக்காய்": "amla amalaki phyllanthus emblica",
+    "சீந்தில்": "giloy tinospora cordifolia",
+    "நிலவேம்பு": "kalmegh andrographis paniculata",
+    "ஏற்றுமதி": "export commercial utilization form iii section 20 national biodiversity authority nba",
+    "காப்புரிமை": "patent patents act section 3(p) section 3(e) prior art novelty",
+    "உயிரியல்": "biological diversity act 2002 bda nba",
+    "பன்முகத்தன்மை": "biodiversity access benefit sharing abs",
+    "பாரம்பரிய": "traditional knowledge tkdl prior art",
+    "அறிவு": "knowledge tkdl digital library",
+    "ஆராய்ச்சி": "research form i section 3 nba approval",
+    "வணிக": "commercial utilization section 2(f)",
+    "அனுமதி": "approval mandatory nba sbb permission",
+    "விதிமுறைகள்": "regulations compliance rules act 2002 guidelines",
+    "சட்டம்": "act section statutory provision legal",
+    "ஆயுர்வேதம்": "ayurveda asu drugs and cosmetics rule 158b",
+    
+    # Hindi
+    "अश्वगंधा": "ashwagandha withania somnifera medicinal plant",
+    "तुलसी": "tulsi ocimum sanctum holy basil",
+    "हल्दी": "turmeric curcuma longa",
+    "नीम": "neem azadirachta indica",
+    "सहजन": "moringa oleifera",
+    "ब्राह्मी": "brahmi bacopa monnieri",
+    "हरड़": "haritaki terminalia chebula",
+    "आंवला": "amla amalaki phyllanthus emblica",
+    "गिलोय": "giloy tinospora cordifolia",
+    "कालमेघ": "kalmegh andrographis paniculata",
+    "निर्यात": "export commercial utilization form iii section 20 national biodiversity authority nba",
+    "पेटेंट": "patent patents act section 3(p) section 3(e) prior art novelty",
+    "जैव": "biological diversity act 2002 bda nba",
+    "विविधता": "biodiversity access benefit sharing abs",
+    "पारंपरिक": "traditional knowledge tkdl prior art",
+    "ज्ञान": "knowledge tkdl digital library",
+    "अनुसंधान": "research form i section 3 nba approval",
+    "शोध": "research form i section 3",
+    "व्यावसायिक": "commercial utilization section 2(f)",
+    "अनुमति": "approval mandatory nba sbb permission",
+    "नियम": "regulations rules compliance act 2002 guidelines",
+    "कानून": "act statutory provision legal section",
+    "आयुर्वेद": "ayurveda asu drugs and cosmetics rule 158b",
+}
+
 class HybridRetriever:
     def __init__(self, corpus_path: str = CORPUS_PATH):
         self.corpus_path = corpus_path
@@ -21,6 +72,14 @@ class HybridRetriever:
         self.avg_doc_len: float = 0.0
         self.idf: Dict[str, float] = {}
         self.load_corpus()
+
+    def expand_multilingual_query(self, query: str) -> str:
+        expanded_parts = [query]
+        q_lower = query.lower()
+        for term, expansion in MULTILINGUAL_EXPANSION.items():
+            if term in q_lower:
+                expanded_parts.append(expansion)
+        return " ".join(expanded_parts)
 
     def tokenize(self, text: str) -> List[str]:
         """Simple, robust multilingual and legal tokenizer."""
@@ -84,7 +143,8 @@ class HybridRetriever:
         jurisdiction: Optional[str] = None,
         top_k: int = 5
     ) -> List[Dict[str, Any]]:
-        query_tokens = self.tokenize(query)
+        expanded_query = self.expand_multilingual_query(query)
+        query_tokens = self.tokenize(expanded_query)
         if not query_tokens:
             return []
 
