@@ -36,6 +36,7 @@ interface Citation {
   source_url: string;
   excerpt: string;
   verification_status?: string;
+  supports_claim?: boolean;
 }
 
 interface QueryResponse {
@@ -249,7 +250,9 @@ export const Chatbot: React.FC = () => {
 
   const handleExportDossier = () => {
     if (!response) return;
-    const text = `IP-SAKTI REGULATORY ASSESSMENT DOSSIER\n======================================\nGenerated: ${new Date().toLocaleString()}\nJurisdiction: ${response.jurisdiction}\nProduct Classification: ${response.product_classification}\nConfidence Score: ${response.confidence.score}%\n\nUSER QUERY:\n${query}\n\nSTATUTORY VERDICT:\n${response.short_answer}\n\nAPPLICABLE IP REGIMES:\n${response.applicable_ip_regimes.map((r) => `- ${r}`).join("\n")}\n\nREGULATORY PATHWAY:\n${response.regulatory_pathway}\n\nBIODIVERSITY / ABS COMPLIANCE:\n${response.abs_considerations}\n\nAUTHORITATIVE CITATIONS:\n${response.citations.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${c.source_url}`).join("\n\n")}\n\nACTIONABLE NEXT STEPS:\n${response.actionable_next_steps.map((s) => `[ ] ${s}`).join("\n")}\n\nDISCLAIMER:\n${response.disclaimer}`;
+    const authCites = response.citations.filter((c) => c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true);
+    const suppCites = response.citations.filter((c) => !(c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true));
+    const text = `IP-SAKTI REGULATORY ASSESSMENT DOSSIER\n======================================\nGenerated: ${new Date().toLocaleString()}\nJurisdiction: ${response.jurisdiction}\nProduct Classification: ${response.product_classification}\nConfidence Score: ${response.confidence.score}%\n\nUSER QUERY:\n${query}\n\nSTATUTORY VERDICT:\n${response.short_answer}\n\nAPPLICABLE IP REGIMES:\n${response.applicable_ip_regimes.map((r) => `- ${r}`).join("\n")}\n\nREGULATORY PATHWAY:\n${response.regulatory_pathway}\n\nBIODIVERSITY / ABS COMPLIANCE:\n${response.abs_considerations}\n\nAUTHORITATIVE STATUTORY CITATIONS:\n${authCites.length > 0 ? authCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${c.source_url}`).join("\n\n") : "None"}${suppCites.length > 0 ? `\n\nSUPPLEMENTARY SOURCES:\n${suppCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${c.source_url}`).join("\n\n")}` : ""}\n\nACTIONABLE NEXT STEPS:\n${response.actionable_next_steps.map((s) => `[ ] ${s}`).join("\n")}\n\nDISCLAIMER:\n${response.disclaimer}`;
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -659,27 +662,65 @@ export const Chatbot: React.FC = () => {
                 <p>{response.short_answer}</p>
               </div>
 
-              {/* Authoritative Citation Seals */}
-              <div className="pt-4 border-t border-parchment-200/80 dark:border-forest-800/60">
-                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-3">
-                  {t("authoritative_citations")} ({response.citations.length})
-                </span>
-                <div className="flex flex-wrap gap-2.5">
-                  {response.citations.map((cite) => (
-                    <button
-                      key={cite.document_id}
-                      onClick={() => setSelectedCitation(cite)}
-                      className="group inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950 dark:hover:bg-forest-800 text-forest-950 dark:text-parchment-100 border border-amber-500/30 dark:border-forest-700 shadow-sm transition-all duration-200"
-                    >
-                      <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center text-[10px] font-mono font-bold">
-                        {cite.citation_index}
-                      </span>
-                      <span>{cite.section}</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Authoritative Citation Seals & Supplementary Sources */}
+              {(() => {
+                const authCites = response.citations.filter(
+                  (c) => c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true
+                );
+                const suppCites = response.citations.filter(
+                  (c) => !(c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true)
+                );
+
+                return (
+                  <div className="space-y-4 pt-4 border-t border-parchment-200/80 dark:border-forest-800/60">
+                    {authCites.length > 0 && (
+                      <div>
+                        <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block mb-3">
+                          {t("authoritative_citations")} ({authCites.length})
+                        </span>
+                        <div className="flex flex-wrap gap-2.5">
+                          {authCites.map((cite) => (
+                            <button
+                              key={cite.document_id}
+                              onClick={() => setSelectedCitation(cite)}
+                              className="group inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-950 dark:text-emerald-200 border border-emerald-500/30 dark:border-emerald-700 shadow-sm transition-all duration-200"
+                            >
+                              <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center text-[10px] font-mono font-bold">
+                                {cite.citation_index}
+                              </span>
+                              <span>{cite.title.replace(".pdf", "")} — {cite.section}</span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {suppCites.length > 0 && (
+                      <div className="pt-2">
+                        <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-2">
+                          {t("supplementary_sources")} ({suppCites.length})
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {suppCites.map((cite) => (
+                            <button
+                              key={cite.document_id}
+                              onClick={() => setSelectedCitation(cite)}
+                              className="group inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950/60 dark:hover:bg-forest-900 text-forest-900/70 dark:text-parchment-300/70 border border-parchment-200/80 dark:border-forest-800 shadow-sm transition-all duration-200"
+                            >
+                              <span className="w-3.5 h-3.5 rounded-full bg-parchment-200 dark:bg-forest-800 text-forest-700 dark:text-parchment-400 flex items-center justify-center text-[9px] font-mono">
+                                {cite.citation_index}
+                              </span>
+                              <span>{cite.title.replace(".pdf", "")} — {cite.section}</span>
+                              <ArrowUpRight className="w-3 h-3 text-forest-400/60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Detailed Breakdown Columns */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -761,9 +802,20 @@ export const Chatbot: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
-                  {selectedCitation.jurisdiction} Authority
-                </span>
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                    {selectedCitation.jurisdiction} Authority
+                  </span>
+                  {selectedCitation.supports_claim ? (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+                      Authoritative Citation
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-stone-500/10 text-stone-700 dark:text-stone-400 border border-stone-500/20">
+                      Supplementary Source
+                    </span>
+                  )}
+                </div>
                 <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
                   {selectedCitation.title}
                 </h3>
@@ -774,7 +826,7 @@ export const Chatbot: React.FC = () => {
 
               <div className="p-4 rounded-2xl bg-parchment-50 dark:bg-forest-900 border border-amber-500/20 space-y-2">
                 <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                  Authoritative Statutory Excerpt
+                  {selectedCitation.supports_claim ? "Authoritative Statutory Excerpt" : "Supplementary Context Excerpt"}
                 </span>
                 <p className="font-serif italic text-sm text-forest-950/90 dark:text-parchment-100 leading-relaxed">
                   "{selectedCitation.excerpt}"
