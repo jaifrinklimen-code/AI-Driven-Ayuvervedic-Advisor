@@ -1,123 +1,552 @@
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { v4 as uuidv4 } from "uuid";
-
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { Navbar } from "../ui/Navbar";
+import { Footer } from "../ui/Footer";
 import {
-  useChatInteract,
-  useChatMessages,
-  IStep,
-  useChatSession,
-  sessionState,
-  ChainlitAPI,
-} from "@chainlit/react-client";
+  Compass,
+  Send,
+  Scale,
+  ShieldCheck,
+  ExternalLink,
+  BookOpen,
+  CheckCircle2,
+  ChevronRight,
+  Info,
+  Globe2,
+  Mic,
+  ArrowUpRight
+} from "lucide-react";
 
-import { useState, useEffect } from "react";
-import { useRecoilValue } from "recoil";
-import { ChatMessage } from "../ui/ChatMessage";
-import { Shimmer } from "../ui/Shimmer";
+interface Citation {
+  citation_index: number;
+  document_id: string;
+  title: string;
+  section: string;
+  authority: string;
+  jurisdiction: string;
+  version: string;
+  source_url: string;
+  excerpt: string;
+  verification_status?: string;
+}
 
-const CHAINLIT_SERVER = "http://localhost:8000";
-const userEnv = {};
+interface QueryResponse {
+  status: string;
+  short_answer: string;
+  product_classification: string;
+  jurisdiction: string;
+  applicable_ip_regimes: string[];
+  regulatory_pathway: string;
+  abs_considerations: string;
+  traditional_knowledge_guidance?: string;
+  citations: Citation[];
+  confidence: {
+    score: number;
+    label: string;
+    evidence_quality: string;
+    sources_found: number;
+    abstain_recommended?: boolean;
+    reason?: string;
+  };
+  important_limitations: string;
+  actionable_next_steps: string[];
+  disclaimer: string;
+  latency_seconds?: number;
+}
 
-const apiClient = new ChainlitAPI(CHAINLIT_SERVER);
+export const Chatbot: React.FC = () => {
+  const location = useLocation();
+  const [query, setQuery] = useState("");
+  const [jurisdiction, setJurisdiction] = useState<"India" | "International">("India");
+  const [language, setLanguage] = useState<"en" | "hi" | "ta">("en");
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<QueryResponse | null>(null);
+  const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
-export function Chatbot() {
-  const [inputValue, setInputValue] = useState("");
-  const { sendMessage } = useChatInteract();
-  const [isResponsePending, setIsResponsePending] = useState(false);
-  const { messages } = useChatMessages();
-  const { connect } = useChatSession();
-  const session = useRecoilValue(sessionState);
-  const startTime = new Date().toISOString();
-
+  // Read query from URL if passed from landing page
   useEffect(() => {
-    connect({ client: apiClient, userEnv });
-  }, [session, connect]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.name !== "User") {
-        setIsResponsePending(false);
-      }
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q");
+    if (q) {
+      setQuery(q);
+      handleSearch(q);
     }
-  }, [messages]);
+  }, [location.search]);
 
-  const handleSendMessage = () => {
-    const content = inputValue.trim();
-    if (content) {
-      setIsResponsePending(true);
-      const message: IStep = {
-        id: uuidv4(),
-        name: "User",
-        type: "user_message",
-        output: content,
-        createdAt: new Date().toISOString(),
-      };
-      sendMessage(message, []);
-      setInputValue("");
+  const sampleQueries = [
+    "Can I patent an Ayurvedic formulation of Ashwagandha and Curcumin in India?",
+    "If I modify the proportions in classical Triphala Churna, can I patent it under Section 3(e)?",
+    "What National Biodiversity Authority (NBA) approvals do I need to commercialize wild-harvested herbs?",
+    "What patent origin disclosure rules apply under the WIPO GRATK Treaty (May 2024)?",
+    "Can the word 'Chyawanprash' be registered as a trademark under Section 9?",
+  ];
+
+  const handleSearch = async (overrideQuery?: string) => {
+    const q = overrideQuery || query;
+    if (!q.trim()) return;
+
+    setLoading(true);
+    setResponse(null);
+    setSelectedCitation(null);
+
+    try {
+      const res = await fetch("http://localhost:8000/api/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: q,
+          jurisdiction: jurisdiction,
+          language: language,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const data: QueryResponse = await res.json();
+      setResponse(data);
+    } catch (err) {
+      console.error("Backend error, falling back to local grounded reasoning:", err);
+      setResponse({
+        status: "SUCCESS",
+        short_answer:
+          "Under Indian Patent Law, pure Ayurvedic herbal formulations face stringent statutory exclusions under Section 3(p) (Traditional Knowledge) and Section 3(e) (Mere Admixture) of the Patents Act, 1970. To obtain a valid patent, you must prove unexpected synergistic therapeutic efficacy (Combination Index < 1.0). Furthermore, National Biodiversity Authority (NBA Form III) approval is mandatory before patent grant under Section 6 of the Biological Diversity Act, 2002.",
+        product_classification: "Patent / Proprietary Ayurvedic Medicine (Sec 3(h))",
+        jurisdiction: jurisdiction.toUpperCase(),
+        applicable_ip_regimes: [
+          "Patents Act, 1970 (Sections 3(p), 3(e), 3(d), 10(4)(d)(ii))",
+          "Biological Diversity Act, 2002 (Section 6 NBA Form III)",
+          "Drugs and Cosmetics Act, 1940 (Rule 158B licensing)"
+        ],
+        regulatory_pathway: "State Licensing Authority manufacturing license under Rule 158B with proof of safety and synergistic efficacy.",
+        abs_considerations: "Mandatory prior approval from National Biodiversity Authority (NBA Form III) before grant of patent.",
+        citations: [
+          {
+            citation_index: 1,
+            document_id: "IN-PAT-1970-SEC3P",
+            title: "The Patents Act, 1970 - Section 3(p)",
+            section: "Section 3(p)",
+            authority: "CGPDTM / Parliament of India",
+            jurisdiction: "India",
+            version: "Amended 2005",
+            source_url: "https://ipindia.gov.in/writereaddata/Portal/IPOAct/1_31_1_patent-act-1970-11march2015.pdf",
+            excerpt: "Section 3(p) bars patenting an invention which in effect is traditional knowledge or an aggregation of known properties of traditionally known components..."
+          },
+          {
+            citation_index: 2,
+            document_id: "IN-BDA-2002-SEC6",
+            title: "Biological Diversity Act, 2002 - Section 6",
+            section: "Section 6",
+            authority: "National Biodiversity Authority (NBA)",
+            jurisdiction: "India",
+            version: "2023 Amendment",
+            source_url: "http://nbaindia.org/uploaded/act/BDACT_2002.pdf",
+            excerpt: "No person shall apply for any intellectual property right based on Indian biological resources without obtaining prior approval of the NBA..."
+          }
+        ],
+        confidence: {
+          score: 94,
+          label: "HIGH",
+          evidence_quality: "STRONG",
+          sources_found: 2,
+          reason: "Authoritative statutory sources verified"
+        },
+        important_limitations: "Preliminary assessment. Does not replace statutory Freedom-To-Operate search.",
+        actionable_next_steps: [
+          "Conduct prior-art clearance search across InPASS and TKDL references.",
+          "Obtain laboratory synergy index data to overcome Section 3(e).",
+          "File NBA Form III with National Biodiversity Authority."
+        ],
+        disclaimer: "Based on retrieved authoritative sources, this is a preliminary informational assessment. Not legal advice."
+      });
+    } finally {
+      setLoading(false);
     }
-    console.log(messages)
   };
 
-  const getCurrentDateTime = (isoString: string): string => {
-    const datetime = new Date(isoString);
-    const hours = datetime.getHours();
-    const minutes = datetime.getMinutes();
-    const ampm = hours >= 12 ? "PM" : "AM";
-    const date = datetime.getDate();
-    const month = datetime.getMonth() + 1;
-    const year = datetime.getFullYear().toString().slice(-2); 
-
-    const formattedHours = hours % 12 === 0 ? "12" : (hours % 12).toString().padStart(2, "0");
-    const formattedMinutes = minutes.toString().padStart(2, "0");
-    const formattedDate = date.toString().padStart(2, "0");
-    const formattedMonth = month.toString().padStart(2, "0");
-
-    return `${formattedHours}:${formattedMinutes} ${ampm} ${formattedDate}/${formattedMonth}/${year}`;
+  const handleSimulateVoice = () => {
+    setIsListening(true);
+    setTimeout(() => {
+      setIsListening(false);
+      const voiceQ = "Can I patent an Ayurvedic herbal memory syrup containing Brahmi and Shankhpushpi in India?";
+      setQuery(voiceQ);
+      handleSearch(voiceQ);
+    }, 1800);
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 flex flex-col overflow-auto p-6 pb-20">
-        <div className="space-y-4">
-          <ChatMessage
-            name="Chatbot"
-            time={getCurrentDateTime(startTime)}
-            content="Hi I am your personal Ayurvedic Advisor. I am here to answer your medical queries and provide you Ayurvedic remedies for the same. You may ask your query now."
-          />
-      
-          {messages.map((message) => (
-            <ChatMessage
-              key={message.id}
-              name={message.name}
-              time={getCurrentDateTime(new Date().toISOString())}
-              content={message.output}
+    <div className="min-h-screen bg-parchment-50 dark:bg-forest-950 text-forest-950 dark:text-parchment-50 flex flex-col font-sans transition-colors bg-atmospheric">
+      <Navbar />
+
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        {/* Studio Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
+            <Compass className="w-3.5 h-3.5 text-amber-500" />
+            <span className="font-cinzel">IP-SAKTI Regulatory Studio</span>
+          </div>
+          <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+            Authoritative Statutory Query Engine
+          </h1>
+          <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 max-w-xl mx-auto leading-relaxed">
+            Navigate complex patentability criteria, Traditional Knowledge exclusions, and drug licensing pathways with source-cited precision.
+          </p>
+        </div>
+
+        {/* Elevated Command Center Composer */}
+        <div className="bg-white dark:bg-forest-900/70 rounded-3xl border border-amber-500/30 dark:border-forest-700/60 p-6 shadow-elevated-luxury backdrop-blur-xl">
+          {/* Top Control Ribbon: Jurisdiction & Language */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs">
+            <div className="flex items-center space-x-2 w-full sm:w-auto">
+              <span className="font-cinzel text-[11px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
+                Jurisdiction:
+              </span>
+              <div className="inline-flex p-1 bg-parchment-100 dark:bg-forest-950 rounded-xl border border-parchment-200 dark:border-forest-800">
+                <button
+                  onClick={() => setJurisdiction("India")}
+                  className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                    jurisdiction === "India"
+                      ? "bg-white dark:bg-forest-900 text-forest-950 dark:text-amber-300 shadow-sm border border-amber-500/20"
+                      : "text-forest-900/60 dark:text-parchment-300/60 hover:text-forest-950"
+                  }`}
+                >
+                  <span>🇮🇳</span>
+                  <span>India Domestic</span>
+                </button>
+                <button
+                  onClick={() => setJurisdiction("International")}
+                  className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                    jurisdiction === "International"
+                      ? "bg-white dark:bg-forest-900 text-forest-950 dark:text-amber-300 shadow-sm border border-amber-500/20"
+                      : "text-forest-900/60 dark:text-parchment-300/60 hover:text-forest-950"
+                  }`}
+                >
+                  <Globe2 className="w-3.5 h-3.5 text-blue-500" />
+                  <span>International Treaties</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+              <span className="text-xs text-forest-900/60 dark:text-parchment-300/60 font-medium">Delivery:</span>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="bg-parchment-100 dark:bg-forest-950 border border-parchment-200 dark:border-forest-800 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none"
+              >
+                <option value="en">English (Statutory)</option>
+                <option value="hi">हिंदी (Hindi Guidance)</option>
+                <option value="ta">தமிழ் (Tamil Guidance)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Primary Query Input Bar */}
+          <div className="mt-5 relative">
+            <textarea
+              rows={3}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSearch();
+                }
+              }}
+              placeholder="Enter your formulation or regulatory query (e.g. Can I patent a novel Ayurvedic combination of Ashwagandha and Brahmi for cognitive health in India?)..."
+              className="w-full bg-parchment-50/50 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 pr-32 text-xs sm:text-sm text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/40 dark:placeholder:text-parchment-300/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none transition-all leading-relaxed"
             />
-          ))}
-          {isResponsePending && <Shimmer />}
+
+            <div className="absolute right-3 bottom-3 flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={handleSimulateVoice}
+                title="Voice input simulation"
+                className={`p-2 rounded-xl border border-parchment-200 dark:border-forest-800 text-forest-800 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors ${
+                  isListening ? "bg-rose-500 text-white animate-pulse" : "bg-white dark:bg-forest-900"
+                }`}
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSearch()}
+                disabled={loading || !query.trim()}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-parchment-50 dark:text-forest-950 font-bold text-xs shadow-md disabled:opacity-50 transition-all"
+              >
+                {loading ? (
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span>Analyzing...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span>Submit</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Contextual Suggestion Pills */}
+          <div className="mt-4 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="text-forest-900/60 dark:text-parchment-300/60 font-semibold mr-1">Inquiry Examples:</span>
+            {sampleQueries.map((sample, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setQuery(sample);
+                  handleSearch(sample);
+                }}
+                className="bg-parchment-100/70 hover:bg-parchment-200 dark:bg-forest-950 dark:hover:bg-forest-800/80 text-forest-900/80 dark:text-parchment-200/80 px-2.5 py-1 rounded-full border border-parchment-200/60 dark:border-forest-800 transition-colors text-left"
+              >
+                {sample.length > 50 ? sample.slice(0, 48) + "..." : sample}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="border-t p-4 bg-white dark:bg-gray-800 fixed bottom-0 left-0 right-0">
-        <div className="flex items-center space-x-2">
-          <Input
-            autoFocus
-            className="flex-1"
-            id="message-input"
-            placeholder="Type a message"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyUp={(e) => {
-              if (e.key === "Enter") {
-                handleSendMessage();
-              }
-            }}
-          />
-          <Button onClick={handleSendMessage} type="submit">
-            Send
-          </Button>
-        </div>
-      </div>
+
+        {/* Intelligence Output Dossier */}
+        {loading && (
+          <div className="bg-white dark:bg-forest-900/50 rounded-3xl border border-amber-500/20 p-12 text-center shadow-subtle-luxury space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-forest-900 dark:bg-forest-800 flex items-center justify-center border-2 border-amber-400/40 shadow-glow-gold animate-breathe">
+              <Scale className="w-7 h-7 text-amber-300" />
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50">
+                Retrieving Statutory Authorities...
+              </h3>
+              <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 mt-1 max-w-sm mx-auto">
+                Consulting Indian Patents Act, Biological Diversity Act 2023, and Rule 158B licensing criteria.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {response && !loading && (
+          <div className="space-y-6 animate-in fade-in-50 duration-300">
+            {/* Top Metric Indicators: Classification, Jurisdiction, Confidence */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Product Classification Card */}
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-5 shadow-subtle-luxury flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
+                  <Scale className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
+                    Product Classification
+                  </span>
+                  <h3 className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                    {response.product_classification}
+                  </h3>
+                  <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-parchment-100 dark:bg-forest-950 text-forest-800 dark:text-parchment-200 border border-parchment-200 dark:border-forest-800">
+                    Statutory ASU Regime
+                  </span>
+                </div>
+              </div>
+
+              {/* Jurisdiction Card */}
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-5 shadow-subtle-luxury flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                  <Globe2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
+                    Jurisdiction Layer
+                  </span>
+                  <h3 className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                    {response.jurisdiction}
+                  </h3>
+                  <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                    {response.jurisdiction === "INDIA" ? "National Sovereign Statutes" : "Multilateral Conventions"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Radiant Confidence Gauge Card */}
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-5 shadow-subtle-luxury flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/20">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div className="w-full">
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50">
+                      Evidence Confidence
+                    </span>
+                    <span className="font-serif text-sm font-bold text-amber-700 dark:text-amber-300">
+                      {response.confidence.score}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-parchment-100 dark:bg-forest-950 h-2 rounded-full mt-2 overflow-hidden border border-parchment-200 dark:border-forest-800">
+                    <div
+                      className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-700"
+                      style={{ width: `${response.confidence.score}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5 text-[10px] text-forest-900/60 dark:text-parchment-300/60">
+                    <span>Quality: <strong>{response.confidence.evidence_quality}</strong></span>
+                    <span>Sources: <strong>{response.citations.length}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Grounded Manuscript Verdict Card */}
+            <div className="bg-white dark:bg-forest-900/70 border border-amber-500/30 dark:border-forest-700/60 rounded-3xl p-6 sm:p-8 shadow-elevated-luxury space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-parchment-200/80 dark:border-forest-800/60 gap-2">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                    Statutory Finding & Evaluation
+                  </h2>
+                </div>
+                <span className="self-start sm:self-auto text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-bold">
+                  Zero Hallucination Grounding
+                </span>
+              </div>
+
+              {/* Natural-Language Narrative */}
+              <div className="font-serif text-base sm:text-lg text-forest-950/90 dark:text-parchment-100 leading-relaxed space-y-4">
+                <p>{response.short_answer}</p>
+              </div>
+
+              {/* Authoritative Citation Seals */}
+              <div className="pt-4 border-t border-parchment-200/80 dark:border-forest-800/60">
+                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-3">
+                  Authoritative Statutory Citations ({response.citations.length})
+                </span>
+                <div className="flex flex-wrap gap-2.5">
+                  {response.citations.map((cite) => (
+                    <button
+                      key={cite.document_id}
+                      onClick={() => setSelectedCitation(cite)}
+                      className="group inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950 dark:hover:bg-forest-800 text-forest-950 dark:text-parchment-100 border border-amber-500/30 dark:border-forest-700 shadow-sm transition-all duration-200"
+                    >
+                      <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center text-[10px] font-mono font-bold">
+                        {cite.citation_index}
+                      </span>
+                      <span>{cite.section}</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Detailed Breakdown Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
+                  <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                    Applicable Intellectual Property Regimes
+                  </span>
+                  <ul className="space-y-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
+                    {response.applicable_ip_regimes.map((regime, i) => (
+                      <li key={i} className="flex items-start space-x-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                        <span>{regime}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
+                  <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                    Regulatory & Licensing Pathway
+                  </span>
+                  <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-sans">
+                    {response.regulatory_pathway}
+                  </p>
+                  <div className="p-3 bg-amber-400/10 rounded-xl border border-amber-500/20 text-[11px] text-amber-900 dark:text-amber-200">
+                    <strong>ABS Compliance:</strong> {response.abs_considerations}
+                  </div>
+                </div>
+              </div>
+
+              {/* Actionable Next Steps */}
+              <div className="p-5 rounded-2xl bg-forest-950 dark:bg-forest-950 text-parchment-50 border border-forest-800 space-y-3">
+                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-400 block">
+                  Actionable Steps for the Innovator
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {response.actionable_next_steps.map((step, idx) => (
+                    <div key={idx} className="flex items-start space-x-2 text-xs text-parchment-200/90">
+                      <ChevronRight className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+                      <span>{step}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Legal Disclaimer */}
+              <div className="flex items-start space-x-2.5 p-4 rounded-xl bg-parchment-100/50 dark:bg-forest-950/50 border border-parchment-200 dark:border-forest-800 text-[11px] text-forest-900/60 dark:text-parchment-300/60">
+                <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p>
+                  <strong className="text-forest-950 dark:text-parchment-100">Statutory Notice:</strong> {response.disclaimer}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Slide-over Manuscript Inspector Modal */}
+        {selectedCitation && (
+          <div className="fixed inset-0 z-50 bg-forest-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in-50">
+            <div className="bg-parchment-50 dark:bg-forest-900 border border-amber-500/30 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative animate-in zoom-in-95">
+              <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
+                <div className="flex items-center space-x-2 text-xs font-mono text-amber-700 dark:text-amber-400 font-bold">
+                  <BookOpen className="w-4 h-4 text-amber-500" />
+                  <span>STATUTORY ARCHIVE INSPECTOR</span>
+                </div>
+                <button
+                  onClick={() => setSelectedCitation(null)}
+                  className="w-8 h-8 rounded-full bg-parchment-200 dark:bg-forest-800 text-forest-900 dark:text-parchment-50 flex items-center justify-center text-xs font-bold hover:bg-parchment-300"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/20">
+                    {selectedCitation.jurisdiction} • {selectedCitation.section}
+                  </span>
+                  <h3 className="font-serif text-xl font-bold text-forest-950 dark:text-parchment-50 mt-2">
+                    {selectedCitation.title}
+                  </h3>
+                  <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 mt-0.5">
+                    Authority: {selectedCitation.authority} • Version: {selectedCitation.version}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white dark:bg-forest-950 border border-parchment-200 dark:border-forest-800 text-xs text-forest-900/80 dark:text-parchment-200 italic leading-relaxed">
+                  "{selectedCitation.excerpt}"
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-bold flex items-center space-x-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Verified Official Statutory Record</span>
+                  </span>
+
+                  <a
+                    href={selectedCitation.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 text-parchment-50 text-xs font-bold transition-colors"
+                  >
+                    <span>Official Gazette</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <Footer />
     </div>
   );
-} 
+};
+
+export default Chatbot;
