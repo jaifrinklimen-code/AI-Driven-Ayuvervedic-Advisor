@@ -560,7 +560,7 @@ class LLMGuard:
                 "authority": doc_dict.get("authority", "Statutory Regulatory Authority"),
                 "jurisdiction": jurisdiction.capitalize(),
                 "version": "Official Standard",
-                "source_url": f"backend/data/{pdf_fname}",
+                "source_url": f"http://localhost:8000/data/{pdf_fname}#page={page_num}",
                 "excerpt": chunk_txt[:260] + ("..." if len(chunk_txt) > 260 else "")
             })
         verified_citations = self.verify_citations(raw_citations, retrieved, query=query)

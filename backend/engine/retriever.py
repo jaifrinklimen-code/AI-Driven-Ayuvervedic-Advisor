@@ -314,7 +314,7 @@ class FAISSSemanticRetriever:
                     "authority": authority,
                     "jurisdiction": jurisdiction or "India",
                     "version": "Official Standard",
-                    "source_url": f"backend/data/{pdf_filename}",
+                    "source_url": f"http://localhost:8000/data/{pdf_filename}#page={page_num}",
                     "text": focused_excerpt
                 }
             })

@@ -13,10 +13,12 @@ load_dotenv()
 import io
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from gtts import gTTS
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 from engine.retriever import retriever_instance
 from engine.classifier import classifier_instance
@@ -64,6 +66,38 @@ class ABSRequest(BaseModel):
     biological_resource_name: Optional[str] = Field(default="Medicinal Plant Resource")
 
 # Endpoints
+@app.get("/data/{filename}")
+def serve_pdf(filename: str):
+    """
+    Safely serve reference PDFs for citations.
+    Enforces path traversal prevention: only .pdf files within backend/data are accessible.
+    """
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    safe_filename = os.path.basename(filename)
+    if not safe_filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files may be served")
+
+    file_path = os.path.join(DATA_DIR, safe_filename)
+    real_data_dir = os.path.realpath(DATA_DIR)
+    real_file_path = os.path.realpath(file_path)
+
+    if not real_file_path.startswith(real_data_dir):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if not os.path.exists(real_file_path) or not os.path.isfile(real_file_path):
+        raise HTTPException(status_code=404, detail="Requested PDF document not found")
+
+    return FileResponse(
+        real_file_path,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"inline; filename=\"{safe_filename}\"",
+            "Access-Control-Allow-Origin": "*"
+        }
+    )
+
 @app.get("/health")
 def health_check():
     return {
