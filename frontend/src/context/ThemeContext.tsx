@@ -13,9 +13,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem("ipsakti_theme");
-    if (saved === "light" || saved === "dark") return saved;
-    // Default to dark mode for luxury futuristic aesthetic or system preference
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    if (saved === "dark") return "dark";
+    return "light"; // Classic warm ivory parchment background
   });
 
   useEffect(() => {

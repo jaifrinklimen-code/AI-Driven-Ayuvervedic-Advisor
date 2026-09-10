@@ -19,8 +19,11 @@ import {
   Bookmark,
   Copy,
   Layers,
-  Sparkles
+  Sparkles,
+  Volume2,
+  VolumeX
 } from "lucide-react";
+import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
 
 interface Citation {
   citation_index: number;
@@ -62,13 +65,14 @@ interface QueryResponse {
 export const Chatbot: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language, setLanguage, t } = useLanguage();
   const [query, setQuery] = useState("");
   const [jurisdiction, setJurisdiction] = useState<"India" | "International">("India");
-  const [language, setLanguage] = useState<"en" | "hi" | "ta">("en");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<QueryResponse | null>(null);
   const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeakingAnswer, setIsSpeakingAnswer] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -262,6 +266,39 @@ export const Chatbot: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSpeakAnswer = () => {
+    if (!("speechSynthesis" in window) || !response) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+    if (isSpeakingAnswer) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingAnswer(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(response.short_answer);
+    const langLocales: Record<SupportedLanguage, string> = {
+      en: "en-IN",
+      hi: "hi-IN",
+      ta: "ta-IN"
+    };
+    utterance.lang = langLocales[language] || "en-IN";
+    utterance.rate = 0.95;
+    utterance.onstart = () => setIsSpeakingAnswer(true);
+    utterance.onend = () => setIsSpeakingAnswer(false);
+    utterance.onerror = () => setIsSpeakingAnswer(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-parchment-50 dark:bg-forest-950 text-forest-950 dark:text-parchment-50 flex flex-col font-sans transition-colors bg-atmospheric">
       <Navbar />
@@ -272,10 +309,10 @@ export const Chatbot: React.FC = () => {
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 text-[11px] font-semibold border border-amber-500/20 mb-1">
               <Compass className="w-3.5 h-3.5 text-amber-500" />
-              <span className="font-cinzel">IP-SAKTI Regulatory Intelligence Studio</span>
+              <span className="font-cinzel">{t("studio_badge")}</span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
-              Statutory Research & Clearance Engine
+              {t("studio_title")}
             </h1>
           </div>
 
@@ -289,14 +326,14 @@ export const Chatbot: React.FC = () => {
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-amber-500" />
-              <span>{showGraph ? "Hide Knowledge Graph" : "Explore Legal Nodes"}</span>
+              <span>{showGraph ? t("hide_graph") : t("explore_graph")}</span>
             </button>
             <button
               onClick={() => navigate("/studio")}
               className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-semibold hover:opacity-90 transition-opacity"
             >
               <Sparkles className="w-3 h-3 text-amber-300" />
-              <span>Dossiers</span>
+              <span>{t("dossiers_btn")}</span>
             </button>
           </div>
         </div>
@@ -314,7 +351,7 @@ export const Chatbot: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs">
             <div className="flex items-center space-x-2 w-full sm:w-auto">
               <span className="font-cinzel text-[11px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
-                Jurisdiction:
+                {t("jurisdiction_label")}
               </span>
               <div className="inline-flex p-1 bg-parchment-100 dark:bg-forest-950 rounded-xl border border-parchment-200 dark:border-forest-800">
                 <button
@@ -326,7 +363,7 @@ export const Chatbot: React.FC = () => {
                   }`}
                 >
                   <span>🇮🇳</span>
-                  <span>India Domestic</span>
+                  <span>{t("india_domestic")}</span>
                 </button>
                 <button
                   onClick={() => setJurisdiction("International")}
@@ -337,13 +374,13 @@ export const Chatbot: React.FC = () => {
                   }`}
                 >
                   <Globe2 className="w-3.5 h-3.5 text-blue-500" />
-                  <span>International Treaties</span>
+                  <span>{t("intl_treaties")}</span>
                 </button>
               </div>
             </div>
 
             <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
-              <span className="text-xs text-forest-900/60 dark:text-parchment-300/60 font-medium">Delivery:</span>
+              <span className="text-xs text-forest-900/60 dark:text-parchment-300/60 font-medium">{t("delivery_label")}</span>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as any)}
@@ -368,7 +405,7 @@ export const Chatbot: React.FC = () => {
                   handleSearch();
                 }
               }}
-              placeholder="Enter your formulation or regulatory query (e.g. Can I patent a novel Ayurvedic combination of Ashwagandha and Brahmi for cognitive health in India?)..."
+              placeholder={t("query_placeholder")}
               className="w-full bg-parchment-50/50 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 rounded-2xl p-3.5 pr-32 text-xs sm:text-sm text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/40 dark:placeholder:text-parchment-300/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none transition-all leading-relaxed"
             />
 
@@ -393,11 +430,11 @@ export const Chatbot: React.FC = () => {
                 {loading ? (
                   <div className="flex items-center space-x-1.5">
                     <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    <span>Analyzing...</span>
+                    <span>{t("analyzing_btn")}</span>
                   </div>
                 ) : (
                   <>
-                    <span>Submit</span>
+                    <span>{t("submit_btn")}</span>
                     <Send className="w-3.5 h-3.5" />
                   </>
                 )}
@@ -407,7 +444,7 @@ export const Chatbot: React.FC = () => {
 
           {/* Contextual Suggestion Pills */}
           <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="text-forest-900/60 dark:text-parchment-300/60 font-semibold mr-1">Inquiry Examples:</span>
+            <span className="text-forest-900/60 dark:text-parchment-300/60 font-semibold mr-1">{t("inquiry_examples")}</span>
             {sampleQueries.map((sample, idx) => (
               <button
                 key={idx}
@@ -514,18 +551,30 @@ export const Chatbot: React.FC = () => {
                 <div className="flex items-center space-x-2.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
-                    Statutory Finding & Evaluation
+                    {t("statutory_verdict")}
                   </h2>
                 </div>
 
-                {/* Quick Action Ribbon: Copy, Bookmark, Export */}
-                <div className="flex items-center space-x-2">
+                {/* Quick Action Ribbon: Audio, Copy, Bookmark, Export */}
+                <div className="flex items-center flex-wrap gap-2">
+                  <button
+                    onClick={handleSpeakAnswer}
+                    className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg border text-xs font-semibold transition-all ${
+                      isSpeakingAnswer
+                        ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse"
+                        : "bg-parchment-100 dark:bg-forest-900 border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-100 hover:border-amber-500/30"
+                    }`}
+                    title="Listen to statutory finding aloud"
+                  >
+                    {isSpeakingAnswer ? <VolumeX className="w-3.5 h-3.5 text-rose-500" /> : <Volume2 className="w-3.5 h-3.5 text-amber-500" />}
+                    <span>{isSpeakingAnswer ? t("pause_audio") : t("listen_response")}</span>
+                  </button>
                   <button
                     onClick={handleCopyText}
                     className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg border border-parchment-200 dark:border-forest-700 text-xs font-medium hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    <span>{copied ? "Copied" : "Copy"}</span>
+                    <span>{copied ? "Copied" : t("copy_finding")}</span>
                   </button>
                   <button
                     onClick={handleBookmarkToggle}
@@ -536,14 +585,14 @@ export const Chatbot: React.FC = () => {
                     }`}
                   >
                     <Bookmark className="w-3.5 h-3.5" />
-                    <span>{bookmarked ? "Saved" : "Save"}</span>
+                    <span>{bookmarked ? t("bookmarked") : t("bookmark")}</span>
                   </button>
                   <button
                     onClick={handleExportDossier}
                     className="inline-flex items-center space-x-1 px-3 py-1 rounded-lg bg-forest-900 text-white dark:bg-emerald-600 text-xs font-medium hover:opacity-90 shadow-sm transition-opacity"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Export</span>
+                    <span>{t("export_dossier")}</span>
                   </button>
                 </div>
               </div>
@@ -556,7 +605,7 @@ export const Chatbot: React.FC = () => {
               {/* Authoritative Citation Seals */}
               <div className="pt-4 border-t border-parchment-200/80 dark:border-forest-800/60">
                 <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block mb-3">
-                  Authoritative Statutory Citations ({response.citations.length})
+                  {t("authoritative_citations")} ({response.citations.length})
                 </span>
                 <div className="flex flex-wrap gap-2.5">
                   {response.citations.map((cite) => (
@@ -579,7 +628,7 @@ export const Chatbot: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
                   <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                    Applicable Intellectual Property Regimes
+                    {t("applicable_regimes")}
                   </span>
                   <ul className="space-y-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
                     {response.applicable_ip_regimes.map((regime, i) => (
@@ -593,14 +642,14 @@ export const Chatbot: React.FC = () => {
 
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
                   <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                    Regulatory & Drug Licensing Pathway
+                    {t("regulatory_pathway")}
                   </span>
                   <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
                     {response.regulatory_pathway}
                   </p>
                   <div className="pt-2 border-t border-parchment-200/60 dark:border-forest-800/60">
                     <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 block mb-1">
-                      Biological Diversity (ABS) Obligation:
+                      {t("biodiversity_abs")}
                     </span>
                     <p className="text-[11px] text-forest-900/70 dark:text-parchment-300/70 leading-relaxed">
                       {response.abs_considerations}
@@ -613,7 +662,7 @@ export const Chatbot: React.FC = () => {
               <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
                 <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center space-x-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Actionable Regulatory Steps</span>
+                  <span>{t("actionable_steps")}</span>
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
                   {response.actionable_next_steps.map((step, idx) => (

@@ -159,7 +159,7 @@ const translations: Translations = {
     ta: "பேச மைக்ரோஃபோனைத் தொடவும்",
   },
   simulate_audio: {
-    en: "Speak Guidance Aloud",
+    en: "Simulate Audio Speech",
     hi: "मार्गदर्शन सुनें",
     ta: "வழிகாட்டலை உரக்கக் கேட்கவும்",
   },
@@ -177,6 +177,106 @@ const translations: Translations = {
     en: "Carries session history to phone",
     hi: "सत्र का विवरण फोन पर स्थानांतरित करता है",
     ta: "மொபைல் சாதனத்தில் தொடர்ந்து பார்க்கவும்",
+  },
+  inquiry_examples: {
+    en: "Inquiry Examples:",
+    hi: "उदाहरण प्रश्न:",
+    ta: "உதாரண வினாக்கள்:",
+  },
+  statutory_verdict: {
+    en: "Statutory Verdict & Finding",
+    hi: "वैधानिक निर्णय एवं निष्कर्ष",
+    ta: "சட்டப்பூர்வ தீர்ப்பு மற்றும் முடிவு",
+  },
+  applicable_regimes: {
+    en: "Applicable IP Regimes",
+    hi: "लागू बौद्धिक संपदा व्यवस्था",
+    ta: "பொருந்தக்கூடிய காப்புரிமை முறைகள்",
+  },
+  regulatory_pathway: {
+    en: "Regulatory Clearance Pathway",
+    hi: "नियामक अनुमोदन मार्ग",
+    ta: "ஒழுங்குமுறை அனுமதி பாதை",
+  },
+  biodiversity_abs: {
+    en: "Biological Diversity & ABS Guidance",
+    hi: "जैव विविधता एवं ABS मार्गदर्शन",
+    ta: "உயிரியல் பன்முகத்தன்மை வழிகாட்டல்",
+  },
+  authoritative_citations: {
+    en: "Authoritative Statutory Citations",
+    hi: "प्रामाणिक वैधानिक संदर्भ",
+    ta: "அங்கீகரிக்கப்பட்ட சட்ட மேற்கோள்கள்",
+  },
+  actionable_steps: {
+    en: "Actionable Next Steps",
+    hi: "आवश्यक आगामी कदम",
+    ta: "அடுத்த கட்ட நடவடிக்கைகள்",
+  },
+  statutory_disclaimer: {
+    en: "Statutory Legal Disclaimer",
+    hi: "वैधानिक अस्वीकरण",
+    ta: "சட்டப்பூர்வ மறுப்பு",
+  },
+  copy_finding: {
+    en: "Copy Finding",
+    hi: "प्रतिलिपि बनाएँ",
+    ta: "நகலெடு",
+  },
+  export_dossier: {
+    en: "Export Dossier",
+    hi: "दस्तावेज़ निर्यात",
+    ta: "கோப்பு ஏற்றுமதி",
+  },
+  bookmark: {
+    en: "Bookmark",
+    hi: "सहेजें",
+    ta: "புக்மார்க்",
+  },
+  bookmarked: {
+    en: "Saved",
+    hi: "सहेजा गया",
+    ta: "சேமிக்கப்பட்டது",
+  },
+  listen_response: {
+    en: "Listen to Response",
+    hi: "उत्तर सुनें",
+    ta: "பதிலை உரக்கக் கேட்க",
+  },
+  pause_audio: {
+    en: "Pause Audio",
+    hi: "ऑडियो रोकें",
+    ta: "ஆடியோவை நிறுத்து",
+  },
+  kiosk_instant_verdict: {
+    en: "Instant Regulatory Classification",
+    hi: "त्वरित नियामक वर्गीकरण",
+    ta: "உடனடி ஒழுங்குமுறை வகைப்பாடு",
+  },
+  kiosk_spoken_response: {
+    en: "Auditory Regulatory Verdict",
+    hi: "ध्वनि नियामक निष्कर्ष",
+    ta: "குரல் வழி ஒழுங்குமுறை முடிவு",
+  },
+  kiosk_analyzing: {
+    en: "Analyzing Ayurvedic Regulatory Statutes...",
+    hi: "आयुर्वेदिक नियमों का विश्लेषण हो रहा है...",
+    ta: "ஆயுர்வேத ஒழுங்குமுறை சட்டங்களை ஆராய்கிறது...",
+  },
+  kiosk_tap_hint: {
+    en: "Tap mic to speak your regulatory inquiry",
+    hi: "अपनी जांच बोलने के लिए माइक दबाएं",
+    ta: "உங்கள் ஒழுங்குமுறை கேள்வியைக் கேட்க மைக்கைத் தொடவும்",
+  },
+  read_statute: {
+    en: "Read Statute",
+    hi: "अधिनियम पढ़ें",
+    ta: "சட்டத்தைப் படிக்க",
+  },
+  sha_verified: {
+    en: "SHA-256 Verified Gazette",
+    hi: "SHA-256 सत्यापित राजपत्र",
+    ta: "SHA-256 சரிபார்க்கப்பட்ட அரசிதழ்",
   },
 };
 
