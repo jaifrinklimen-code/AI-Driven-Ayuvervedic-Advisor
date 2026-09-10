@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import {
@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   Mic,
   Volume2,
-  QrCode,
+  VolumeX,
   Monitor
 } from "lucide-react";
+import { QRCodeCanvas } from "../ui/QRCodeCanvas";
+import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
 
 interface ABSComplianceResult {
   resource_analyzed: string;
@@ -31,6 +33,7 @@ interface ABSComplianceResult {
 }
 
 export const ABSKioskPage: React.FC = () => {
+  const { language, setLanguage } = useLanguage();
   const [entityType, setEntityType] = useState("indian_entity");
   const [resourceOrigin, setResourceOrigin] = useState("cultivated");
   const [purpose, setPurpose] = useState("commercial_utilization");
@@ -41,7 +44,6 @@ export const ABSKioskPage: React.FC = () => {
   const [result, setResult] = useState<ABSComplianceResult | null>(null);
 
   // Kiosk Showcase State
-  const [kioskLanguage, setKioskLanguage] = useState<"en" | "hi" | "ta">("en");
   const [isRecording, setIsRecording] = useState(false);
   const [kioskSpeaking, setKioskSpeaking] = useState(false);
   const [kioskQuery, setKioskQuery] = useState("Can I patent an Ayurvedic brain syrup made with Ashwagandha and Brahmi?");
@@ -103,19 +105,116 @@ export const ABSKioskPage: React.FC = () => {
     }
   };
 
-  const handleVoiceSimulation = () => {
-    setIsRecording(true);
-    setTimeout(() => {
-      setIsRecording(false);
-      setKioskQuery("Do I need NBA Form III approval before patent grant for a Curcumin extract?");
-    }, 1800);
+  // SpeechSynthesis audio speech playback
+  const speechTexts: Record<SupportedLanguage, string> = {
+    en: "Patent and Proprietary Ayurvedic Medicine. Regulated under Drugs and Cosmetics Act Section 3(h). Under Biological Diversity Act Section 6, prior National Biodiversity Authority Form 3 approval is compulsory before grant of patent.",
+    hi: "ड्रग्स एंड कॉस्मेटिक्स एक्ट धारा 3(एच) के तहत पेटेंट या प्रोप्राइटरी आयुर्वेदिक दवा। पेटेंट मिलने से पहले राष्ट्रीय जैव विविधता प्राधिकरण फॉर्म 3 की अनुमति अनिवार्य है।",
+    ta: "மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் பிரிவு 3(h) இன் கீழ் தனியுரிம ஆயுர்வேத மருந்து. காப்புரிமை பெறுவதற்கு முன் தேசிய பல்லுயிர் ஆணையத்தின் அனுமதி கட்டாயமாகும்."
   };
 
   const handleSpeak = () => {
-    setKioskSpeaking(true);
-    setTimeout(() => {
+    if (!("speechSynthesis" in window)) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    if (kioskSpeaking) {
+      window.speechSynthesis.cancel();
       setKioskSpeaking(false);
-    }, 3200);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const textToSpeak = speechTexts[language] || speechTexts.en;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+    // Language locale mapping
+    const langLocales: Record<SupportedLanguage, string> = {
+      en: "en-IN",
+      hi: "hi-IN",
+      ta: "ta-IN"
+    };
+    utterance.lang = langLocales[language] || "en-IN";
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+
+    // Pick best matching voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice = voices.find(v => v.lang.startsWith(utterance.lang) || v.lang.startsWith(language));
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
+
+    utterance.onstart = () => setKioskSpeaking(true);
+    utterance.onend = () => setKioskSpeaking(false);
+    utterance.onerror = (e) => {
+      console.warn("Speech synthesis error or cancelled:", e);
+      setKioskSpeaking(false);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Clean up any speaking when unmounting
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // Voice recognition via Web Speech API with fallback
+  const handleVoiceSimulation = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        const langLocales: Record<SupportedLanguage, string> = {
+          en: "en-IN",
+          hi: "hi-IN",
+          ta: "ta-IN"
+        };
+        recognition.lang = langLocales[language] || "en-IN";
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => setIsRecording(true);
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          if (transcript) setKioskQuery(transcript);
+          setIsRecording(false);
+        };
+        recognition.onerror = (err: any) => {
+          console.warn("Speech recognition error:", err);
+          setIsRecording(false);
+          // Fallback sample query based on language
+          const sampleQueries: Record<SupportedLanguage, string> = {
+            en: "Do I need NBA Form III approval before patent grant for a Curcumin extract?",
+            hi: "क्या मुझे करक्यूमिन अर्क के पेटेंट के लिए एनबीए फॉर्म 3 अनुमोदन चाहिए?",
+            ta: "மஞ்சள் சாறு காப்புரிமைக்கு எனக்கு என்பிஏ படிவம் 3 ஒப்புதல் தேவையா?"
+          };
+          setKioskQuery(sampleQueries[language]);
+        };
+        recognition.onend = () => setIsRecording(false);
+        recognition.start();
+        return;
+      } catch (err) {
+        console.warn("Speech recognition initialization failed:", err);
+      }
+    }
+
+    // Fallback simulation if browser blocks or lacks mic
+    setIsRecording(true);
+    setTimeout(() => {
+      setIsRecording(false);
+      const sampleQueries: Record<SupportedLanguage, string> = {
+        en: "Do I need NBA Form III approval before patent grant for a Curcumin extract?",
+        hi: "क्या मुझे करक्यूमिन अर्क के पेटेंट के लिए एनबीए फॉर्म 3 अनुमोदन चाहिए?",
+        ta: "மஞ்சள் சாறு காப்புரிமைக்கு எனக்கு என்பிஏ படிவம் 3 ஒப்புதல் தேவையா?"
+      };
+      setKioskQuery(sampleQueries[language]);
+    }, 1500);
   };
 
   return (
@@ -346,10 +445,15 @@ export const ABSKioskPage: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handleSpeak}
-                  className="px-3 py-1.5 rounded-xl bg-forest-900 hover:bg-forest-800 text-amber-300 flex items-center space-x-1.5 font-bold transition-colors"
+                  className={`px-3.5 py-1.5 rounded-xl flex items-center space-x-2 font-bold text-xs transition-all ${
+                    kioskSpeaking
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
+                      : "bg-forest-900 hover:bg-forest-800 text-amber-300 border border-amber-500/30"
+                  }`}
+                  title={kioskSpeaking ? "Stop speech" : "Listen to audio explanation"}
                 >
-                  <Volume2 className="w-4 h-4" />
-                  <span>{kioskSpeaking ? "Synthesizing Audio..." : "Simulate Audio Speech"}</span>
+                  {kioskSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  <span>{kioskSpeaking ? "Stop Audio Speech" : "Simulate Audio Speech"}</span>
                 </button>
               </div>
             </div>
@@ -365,10 +469,10 @@ export const ABSKioskPage: React.FC = () => {
                   {(["en", "hi", "ta"] as const).map((l) => (
                     <button
                       key={l}
-                      onClick={() => setKioskLanguage(l)}
+                      onClick={() => setLanguage(l)}
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                        kioskLanguage === l
-                          ? "bg-amber-400 text-forest-950 font-extrabold"
+                        language === l
+                          ? "bg-amber-400 text-forest-950 font-extrabold shadow-md"
                           : "bg-forest-950 text-parchment-300 hover:bg-forest-800"
                       }`}
                     >
@@ -387,11 +491,12 @@ export const ABSKioskPage: React.FC = () => {
                       ? "bg-rose-600 scale-110 shadow-lg shadow-rose-600/50 animate-pulse"
                       : "bg-gradient-to-br from-amber-400 to-amber-600 text-forest-950 hover:scale-105 shadow-glow-gold"
                   }`}
+                  title="Tap to speak"
                 >
                   <Mic className="w-8 h-8" />
                 </button>
                 <span className="text-xs font-bold text-parchment-200">
-                  {isRecording ? "Listening to Voice Input..." : "Tap to Speak Regulatory Inquiry"}
+                  {isRecording ? "Listening to Voice Input (Web Speech API)..." : "Tap to Speak Regulatory Inquiry"}
                 </span>
 
                 {/* Animated Waveform Visualizer */}
@@ -438,8 +543,8 @@ export const ABSKioskPage: React.FC = () => {
                       Carries session history to phone
                     </span>
                   </div>
-                  <div className="p-2 bg-white rounded-xl shadow-sm">
-                    <QrCode className="w-12 h-12 text-forest-950" />
+                  <div className="p-2 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                    <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'https://ipsakti.ai'}/ask?ref=kiosk&lang=${language}`} size={64} />
                   </div>
                 </div>
               </div>

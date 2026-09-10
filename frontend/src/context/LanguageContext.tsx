@@ -1,0 +1,225 @@
+import React, { createContext, useContext, useState, useEffect } from "react";
+
+export type SupportedLanguage = "en" | "hi" | "ta";
+
+interface Translations {
+  [key: string]: {
+    en: string;
+    hi: string;
+    ta: string;
+  };
+}
+
+const translations: Translations = {
+  // Ministerial Banner
+  portal_subtitle: {
+    en: "Ministry of Ayush • All India Institute of Ayurveda (AIIA)",
+    hi: "आयुष मंत्रालय • अखिल भारतीय आयुर्वेद संस्थान (AIIA)",
+    ta: "ஆயுஷ் அமைச்சகம் • அகில இந்திய ஆயுர்வேத நிறுவனம் (AIIA)",
+  },
+  portal_role: {
+    en: "Sovereign Intellectual Property & Regulatory Clearance Portal",
+    hi: "संप्रभु बौद्धिक संपदा एवं नियामक क्लीयरेंस पोर्टल",
+    ta: "அறிவுசார் சொத்துரிமை மற்றும் ஒழுங்குமுறை அனுமதி தளம்",
+  },
+  rag_active: {
+    en: "Authoritative RAG Engine • Active",
+    hi: "प्रामाणिक RAG इंजन • सक्रिय",
+    ta: "நம்பகமான RAG இயந்திரம் • இயங்குகிறது",
+  },
+  sign_in: {
+    en: "Sign In",
+    hi: "साइन इन",
+    ta: "உள்நுழைக",
+  },
+  sign_out: {
+    en: "Sign Out",
+    hi: "साइन आउट",
+    ta: "வெளியேறு",
+  },
+
+  // Navbar
+  nav_ask: {
+    en: "Ask IP-SAKTI",
+    hi: "पूछें IP-SAKTI",
+    ta: "கேளுங்கள் IP-SAKTI",
+  },
+  nav_classify: {
+    en: "Formulation Classifier",
+    hi: "औषधि वर्गीकरण",
+    ta: "மருந்து வகைப்பாடு",
+  },
+  nav_jurisdictions: {
+    en: "Jurisdictions",
+    hi: "क्षेत्राधिकार",
+    ta: "அதிகார வரம்புகள்",
+  },
+  nav_abs: {
+    en: "ABS & TKDL",
+    hi: "जैव विविधता व TKDL",
+    ta: "உயிரியல் பன்முகத்தன்மை",
+  },
+  nav_archive: {
+    en: "Statutory Archive",
+    hi: "कानूनी अभिलेखागार",
+    ta: "சட்டக் காப்பகம்",
+  },
+  nav_kiosk: {
+    en: "Smart Kiosk",
+    hi: "स्मार्ट कियोस्क",
+    ta: "ஸ்மார்ட் கியோஸ்க்",
+  },
+  nav_studio: {
+    en: "Launch Studio",
+    hi: "अनुसंधान स्टूडियो",
+    ta: "ஆராய்ச்சி மையம்",
+  },
+
+  // Chatbot / Query Studio
+  studio_badge: {
+    en: "IP-SAKTI Regulatory Intelligence Studio",
+    hi: "IP-SAKTI नियामक अनुसंधान केंद्र",
+    ta: "IP-SAKTI ஒழுங்குமுறை நுண்ணறிவு மையம்",
+  },
+  studio_title: {
+    en: "Statutory Research & Clearance Engine",
+    hi: "वैधानिक अनुसंधान एवं नियामक क्लीयरेंस इंजन",
+    ta: "சட்டப்பூர்வ ஆராய்ச்சி மற்றும் ஒழுங்குமுறை இயந்திரம்",
+  },
+  jurisdiction_label: {
+    en: "Jurisdiction:",
+    hi: "क्षेत्राधिकार:",
+    ta: "அதிகார வரம்பு:",
+  },
+  india_domestic: {
+    en: "India Domestic",
+    hi: "भारत घरेलू कानून",
+    ta: "இந்திய உள்நாட்டு சட்டம்",
+  },
+  intl_treaties: {
+    en: "International Treaties",
+    hi: "अंतर्राष्ट्रीय संधियां",
+    ta: "சர்வதேச ஒப்பந்தங்கள்",
+  },
+  delivery_label: {
+    en: "Delivery Language:",
+    hi: "प्रतिक्रिया भाषा:",
+    ta: "மொழித் தேர்வு:",
+  },
+  query_placeholder: {
+    en: "Enter your formulation or regulatory query (e.g. Can I patent a novel Ayurvedic combination of Ashwagandha and Brahmi for cognitive health in India?)...",
+    hi: "अपनी आयुर्वेदिक औषधि या पेटेंट संबंधी प्रश्न दर्ज करें (उदा. क्या मैं भारत में अश्वगंधा और ब्राह्मी के संयोजन पर पेटेंट प्राप्त कर सकता हूँ?)...",
+    ta: "உங்கள் ஆயுர்வேத அல்லது ஒழுங்குமுறை கேள்வியை உள்ளிடவும் (எ.கா. இந்தியாவில் அஸ்வகந்தா மற்றும் பிராமி மருந்துக்கு காப்புரிமை பெற முடியுமா?)...",
+  },
+  submit_btn: {
+    en: "Submit",
+    hi: "जमा करें",
+    ta: "சமர்ப்பிக்கவும்",
+  },
+  analyzing_btn: {
+    en: "Analyzing...",
+    hi: "विश्लेषण जारी...",
+    ta: "ஆராய்கிறது...",
+  },
+  explore_graph: {
+    en: "Explore Legal Nodes",
+    hi: "कानूनी संबंध देखें",
+    ta: "சட்ட வலைப்பின்னல்",
+  },
+  hide_graph: {
+    en: "Hide Knowledge Graph",
+    hi: "ज्ञान ग्राफ छिपाएं",
+    ta: "வரைபடத்தை மறைக்கவும்",
+  },
+  dossiers_btn: {
+    en: "Dossiers",
+    hi: "अभिलेख",
+    ta: "கோப்புகள்",
+  },
+
+  // Kiosk
+  kiosk_badge: {
+    en: "IP-SAKTI KIOSK OS V2.4 • STATION AIIA-01",
+    hi: "IP-SAKTI कियोस्क OS V2.4 • स्टेशन AIIA-01",
+    ta: "IP-SAKTI கியோஸ்க் OS V2.4 • நிலையம் AIIA-01",
+  },
+  kiosk_title: {
+    en: "Touch to Ask IP-SAKTI",
+    hi: "IP-SAKTI से पूछने के लिए स्पर्श करें",
+    ta: "IP-SAKTI இடம் கேட்க தொடவும்",
+  },
+  kiosk_subtitle: {
+    en: "Multi-lingual Voice Assistance in English, Hindi, and Tamil",
+    hi: "अंग्रेजी, हिंदी और तमिल में बहुभाषी आवाज सहायता",
+    ta: "ஆங்கிலம், இந்தி மற்றும் தமிழில் குரல் உதவி",
+  },
+  speak_btn: {
+    en: "Tap to Speak Regulatory Inquiry",
+    hi: "बोलने के लिए माइक दबाएं",
+    ta: "பேச மைக்ரோஃபோனைத் தொடவும்",
+  },
+  simulate_audio: {
+    en: "Speak Guidance Aloud",
+    hi: "मार्गदर्शन सुनें",
+    ta: "வழிகாட்டலை உரக்கக் கேட்கவும்",
+  },
+  stop_audio: {
+    en: "Stop Audio",
+    hi: "ऑडियो रोकें",
+    ta: "ஆடியோவை நிறுத்து",
+  },
+  mobile_handoff_title: {
+    en: "Scan QR Code to save dossier",
+    hi: "दस्तावेज़ सहेजने के लिए QR स्कैन करें",
+    ta: "மொபைலில் சேமிக்க QR ஸ்கேன் செய்யவும்",
+  },
+  mobile_handoff_sub: {
+    en: "Carries session history to phone",
+    hi: "सत्र का विवरण फोन पर स्थानांतरित करता है",
+    ta: "மொபைல் சாதனத்தில் தொடர்ந்து பார்க்கவும்",
+  },
+};
+
+interface LanguageContextType {
+  language: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
+  t: (key: string) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [language, setLanguageState] = useState<SupportedLanguage>(() => {
+    const saved = localStorage.getItem("ipsakti_lang");
+    if (saved === "en" || saved === "hi" || saved === "ta") return saved;
+    return "en";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("ipsakti_lang", language);
+  }, [language]);
+
+  const setLanguage = (lang: SupportedLanguage) => {
+    setLanguageState(lang);
+  };
+
+  const t = (key: string): string => {
+    const entry = translations[key];
+    if (!entry) return key;
+    return entry[language] || entry.en || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
+  }
+  return context;
+};

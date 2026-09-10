@@ -11,15 +11,20 @@ import {
   X,
   Sparkles,
   User,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from "lucide-react";
 import { AuthModal } from "../auth/AuthModal";
 import { supabase } from "../../lib/supabase";
+import { useTheme } from "../../context/ThemeContext";
+import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [language, setLanguage] = useState<"en" | "hi" | "ta">("en");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -59,44 +64,59 @@ export const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { name: "Ask IP-SAKTI", path: "/ask", icon: <Compass className="w-3.5 h-3.5" /> },
-    { name: "Formulation Classifier", path: "/classify", icon: <Scale className="w-3.5 h-3.5" /> },
-    { name: "Jurisdictions", path: "/jurisdictions", icon: <Globe2 className="w-3.5 h-3.5" /> },
-    { name: "ABS & TKDL", path: "/abs-navigator", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
-    { name: "Statutory Archive", path: "/sources", icon: <BookOpen className="w-3.5 h-3.5" /> },
-    { name: "Smart Kiosk", path: "/abs-navigator#kiosk", icon: <Monitor className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> },
+    { name: t("nav_ask"), path: "/ask", icon: <Compass className="w-3.5 h-3.5" /> },
+    { name: t("nav_classify"), path: "/classify", icon: <Scale className="w-3.5 h-3.5" /> },
+    { name: t("nav_jurisdictions"), path: "/jurisdictions", icon: <Globe2 className="w-3.5 h-3.5" /> },
+    { name: t("nav_abs"), path: "/abs-navigator", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+    { name: t("nav_archive"), path: "/sources", icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { name: t("nav_kiosk"), path: "/abs-navigator#kiosk", icon: <Monitor className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full transition-all duration-300 backdrop-blur-xl bg-parchment-50/90 dark:bg-forest-950/85 border-b border-parchment-200/70 dark:border-forest-900/60 shadow-subtle-luxury">
+    <header className="sticky top-0 z-50 w-full transition-all duration-300 backdrop-blur-xl bg-parchment-50/90 dark:bg-forest-950/90 border-b border-parchment-200/70 dark:border-forest-900/60 shadow-subtle-luxury">
       {/* Top Ministerial & Institutional Ribbon - Clean Official Design */}
       <div className="bg-forest-950 dark:bg-black/90 text-parchment-100 text-[11px] px-4 sm:px-8 py-1.5 flex justify-between items-center tracking-wide border-b border-forest-900/50">
         <div className="flex items-center space-x-2.5">
           <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
           <span className="font-serif italic font-semibold text-amber-300/90 text-[11px]">
-            Ministry of Ayush • All India Institute of Ayurveda (AIIA)
+            {t("portal_subtitle")}
           </span>
           <span className="hidden md:inline text-parchment-400/60 text-[10px]">
-            | Sovereign Intellectual Property & Regulatory Clearance Portal
+            | {t("portal_role")}
           </span>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <div className="hidden md:flex items-center space-x-1.5 text-[10px] text-parchment-300/80">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Authoritative RAG Engine • Active</span>
+            <span>{t("rag_active")}</span>
           </div>
 
+          {/* Dark Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-1 rounded-full bg-forest-900/80 dark:bg-forest-900/50 text-amber-300 hover:text-amber-100 border border-amber-500/20 hover:border-amber-400/50 transition-all flex items-center justify-center"
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle Theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-3.5 h-3.5 text-amber-300 animate-in fade-in" />
+            ) : (
+              <Moon className="w-3.5 h-3.5 text-amber-200 animate-in fade-in" />
+            )}
+          </button>
+
+          {/* Language Selector */}
           <div className="flex items-center space-x-1 bg-forest-900/80 dark:bg-forest-900/40 rounded-full px-2.5 py-0.5 border border-amber-500/20">
             <span className="text-[10px] text-amber-300 font-medium">Lang:</span>
             <select
               value={language}
-              onChange={(e) => setLanguage(e.target.value as any)}
+              onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
               className="bg-transparent text-parchment-100 text-[10px] font-semibold focus:outline-none cursor-pointer"
             >
-              <option value="en" className="text-slate-900">EN (Statutory)</option>
-              <option value="hi" className="text-slate-900">हिंदी</option>
-              <option value="ta" className="text-slate-900">தமிழ்</option>
+              <option value="en" className="text-slate-900">EN (English)</option>
+              <option value="hi" className="text-slate-900">हिंदी (Hindi)</option>
+              <option value="ta" className="text-slate-900">தமிழ் (Tamil)</option>
             </select>
           </div>
 
@@ -108,7 +128,7 @@ export const Navbar: React.FC = () => {
               </span>
               <button
                 onClick={handleSignOut}
-                title="Sign out"
+                title={t("sign_out")}
                 className="p-1 text-parchment-300/60 hover:text-rose-400 transition-colors"
               >
                 <LogOut className="w-3 h-3" />
@@ -120,7 +140,7 @@ export const Navbar: React.FC = () => {
               className="inline-flex items-center space-x-1 text-[10px] text-amber-300 hover:text-amber-200 font-semibold px-2 py-0.5 rounded border border-amber-500/30 hover:border-amber-400 transition-colors"
             >
               <User className="w-3 h-3" />
-              <span>Sign In</span>
+              <span>{t("sign_in")}</span>
             </button>
           )}
         </div>
@@ -155,7 +175,7 @@ export const Navbar: React.FC = () => {
               const isActive = location.pathname === link.path.split("#")[0];
               return (
                 <Link
-                  key={link.name}
+                  key={link.path}
                   to={link.path}
                   className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                     isActive
@@ -177,7 +197,7 @@ export const Navbar: React.FC = () => {
               className="hidden sm:inline-flex items-center space-x-1.5 px-4 py-2 rounded-full text-xs font-semibold text-parchment-50 bg-gradient-to-r from-forest-800 to-forest-950 hover:from-forest-700 hover:to-forest-900 dark:from-emerald-600 dark:to-teal-700 border border-amber-400/30 shadow-subtle-luxury hover:shadow-glow-gold transition-all duration-300 group"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300 group-hover:rotate-12 transition-transform" />
-              <span>Launch Studio</span>
+              <span>{t("nav_studio")}</span>
             </Link>
 
             <button
@@ -196,7 +216,7 @@ export const Navbar: React.FC = () => {
         <div className="lg:hidden border-t border-parchment-200 dark:border-forest-900 bg-parchment-50 dark:bg-forest-950 px-5 pt-3 pb-6 space-y-2 shadow-elevated-luxury animate-in slide-in-from-top-2">
           {navLinks.map((link) => (
             <Link
-              key={link.name}
+              key={link.path}
               to={link.path}
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-forest-900 dark:text-parchment-100 hover:bg-parchment-100 dark:hover:bg-forest-900 transition-colors"
@@ -214,7 +234,7 @@ export const Navbar: React.FC = () => {
               className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-forest-900 text-parchment-50 text-xs font-bold shadow-md"
             >
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Launch Innovation Studio</span>
+              <span>{t("nav_studio")}</span>
             </Link>
           </div>
         </div>
