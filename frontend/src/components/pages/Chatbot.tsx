@@ -396,7 +396,12 @@ export const Chatbot: React.FC = () => {
         {/* Collapsible Interactive Regulatory Knowledge Graph */}
         {showGraph && (
           <div className="animate-in fade-in duration-300">
-            <RegulatoryKnowledgeGraph />
+            <RegulatoryKnowledgeGraph
+              onQuerySelect={(q) => {
+                setQuery(q);
+                handleSearch(q);
+              }}
+            />
           </div>
         )}
 
