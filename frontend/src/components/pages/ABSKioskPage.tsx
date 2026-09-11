@@ -218,7 +218,7 @@ export const ABSKioskPage: React.FC = () => {
       const trimmed = userQuery.trim().toLowerCase();
       // Only handle genuine standalone conversational greetings (e.g., "hi", "hello", "namaste", "vanakkam")
       // Do NOT match words like "this", "which", "Brahmi", "Shilajit" that contain the substring "hi"
-      const isPureGreeting = /^(hi|hello|hey|namaste|namaskaram|vanakkam|வணக்கம்|नमस्ते)[!?,.]*$/i.test(trimmed) || 
+      const isPureGreeting = /^(hi|hello|hey|namaste|namaskaram|vanakkam|வணக்கம்|नमस्ते)[!?,.]*$/i.test(trimmed) ||
                              /^(hi|hello|hey|namaste|vanakkam)\s+(there|ipsakti|ip-sakti|assistant)[!?,.]*$/i.test(trimmed) ||
                              trimmed === "how are you" || trimmed === "who are you";
 

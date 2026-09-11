@@ -213,6 +213,11 @@ const translations: Translations = {
     hi: "प्रामाणिक वैधानिक संदर्भ",
     ta: "அங்கீகரிக்கப்பட்ட சட்ட மேற்கோள்கள்",
   },
+  supplementary_sources: {
+    en: "Supplementary Sources",
+    hi: "पूरक संदर्भ",
+    ta: "கூடுதல் மூலங்கள்",
+  },
   actionable_steps: {
     en: "Actionable Next Steps",
     hi: "आवश्यक आगामी कदम",
