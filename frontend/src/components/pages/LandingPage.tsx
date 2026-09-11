@@ -116,9 +116,9 @@ export const LandingPage: React.FC = () => {
       <Navbar />
 
       {/* Cinematic Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-28 lg:pt-28 lg:pb-36 border-b border-parchment-200/80 dark:border-forest-900/60">
+      <section className="relative overflow-hidden pt-8 pb-12 lg:pt-12 lg:pb-14 border-b border-parchment-200/80 dark:border-forest-900/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-4xl mx-auto space-y-8">
+          <div className="text-center max-w-4xl mx-auto space-y-5">
             {/* Editorial Badge */}
             <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-parchment-100/90 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 shadow-subtle-luxury animate-in fade-in-50">
               <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
@@ -135,12 +135,12 @@ export const LandingPage: React.FC = () => {
             </h1>
 
             {/* Sub-headline */}
-            <p className="text-base sm:text-lg text-forest-900/70 dark:text-parchment-200/80 max-w-2xl mx-auto leading-relaxed font-sans font-normal mt-2">
+            <p className="text-sm sm:text-base text-forest-900/70 dark:text-parchment-200/80 max-w-2xl mx-auto leading-relaxed font-sans font-normal">
               An enterprise-grade regulatory navigator that classifies Ayurvedic products, retrieves authoritative statutory law, calculates confidence, and prevents biopiracy across Indian and International regimes.
             </p>
 
             {/* Direct Command Center Composer Bar */}
-            <div className="pt-8 max-w-2xl mx-auto">
+            <div className="pt-3 max-w-2xl mx-auto">
               <form
                 onSubmit={handleHeroSubmit}
                 className="relative flex items-center bg-white dark:bg-forest-900/80 rounded-2xl border border-amber-500/30 dark:border-forest-700/60 p-2 shadow-elevated-luxury backdrop-blur-md focus-within:ring-2 focus-within:ring-amber-500/40 transition-all duration-300"
@@ -165,7 +165,7 @@ export const LandingPage: React.FC = () => {
               </form>
 
               {/* Sample Prompt Chips */}
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-[11px] text-forest-900/60 dark:text-parchment-300/60">
+              <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-forest-900/60 dark:text-parchment-300/60">
                 <span className="font-semibold text-amber-700 dark:text-amber-400">Try asking:</span>
                 <button
                   onClick={() => navigate("/ask?q=Can+I+patent+an+Ayurvedic+formulation+of+Ashwagandha+and+Curcumin+in+India%3F")}
@@ -188,34 +188,41 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Visual Metaphor: Orbiting Ayurvedic Knowledge Core */}
-            <div className="pt-12 relative flex justify-center items-center">
-              <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
-                {/* Outer Orbit */}
-                <div className="absolute inset-0 rounded-full border border-amber-500/20 dark:border-amber-400/10 animate-orbit-slow" />
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-parchment-100 dark:bg-forest-900 text-[10px] font-mono text-amber-700 dark:text-amber-300 border border-amber-500/30">
+            {/* Visual Metaphor: 3D Holographic Orbiting Knowledge Core */}
+            <div className="pt-4 pb-2 relative flex justify-center items-center">
+              <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+                {/* 3D Floor Shadow */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 h-8 rounded-full orb-shadow-3d blur-sm pointer-events-none" />
+
+                {/* 3D Gyroscopic Orbit Rings */}
+                <div className="absolute inset-0 rounded-full border-2 border-emerald-400/25 gyro-orbit-x pointer-events-none" />
+                <div className="absolute inset-2 rounded-full border-2 border-amber-400/20 gyro-orbit-y pointer-events-none" />
+
+                {/* Outer Orbit with Rotating Nodes */}
+                <div className="absolute inset-0 rounded-full border border-amber-500/30 dark:border-amber-400/20 animate-orbit-slow" />
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-amber-700 dark:text-amber-300 border border-amber-500/40 shadow-sm">
                   Patents Act Sec 3(p)
                 </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-parchment-100 dark:bg-forest-900 text-[10px] font-mono text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 shadow-sm">
                   Biological Diversity Act Sec 6
                 </div>
 
                 {/* Middle Orbit */}
-                <div className="absolute inset-8 rounded-full border border-forest-800/10 dark:border-forest-500/20 animate-spin" style={{ animationDuration: '45s', animationDirection: 'reverse' }} />
-                <div className="absolute top-1/2 -right-4 -translate-y-1/2 px-2 py-0.5 rounded-full bg-parchment-100 dark:bg-forest-900 text-[10px] font-mono text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                <div className="absolute inset-7 rounded-full border border-forest-800/20 dark:border-emerald-500/20 animate-spin" style={{ animationDuration: '45s', animationDirection: 'reverse' }} />
+                <div className="absolute top-1/2 -right-4 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm">
                   WIPO GRATK 2024
                 </div>
-                <div className="absolute top-1/2 -left-4 -translate-y-1/2 px-2 py-0.5 rounded-full bg-parchment-100 dark:bg-forest-900 text-[10px] font-mono text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                <div className="absolute top-1/2 -left-4 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm">
                   Rule 158B (ASU)
                 </div>
 
-                {/* Central Luminous Core */}
-                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-forest-800 via-forest-950 to-black dark:from-forest-700 dark:to-forest-950 flex flex-col items-center justify-center text-center p-3 border-2 border-amber-400/40 shadow-glow-gold animate-breathe">
-                  <Scale className="w-7 h-7 text-amber-300 mb-1" />
-                  <span className="font-display text-[11px] font-bold text-parchment-50 tracking-wider">
+                {/* Central Luminous 3D Orb Core */}
+                <div className="relative z-10 w-32 h-32 sm:w-36 sm:h-36 rounded-full orb-3d flex flex-col items-center justify-center text-center p-3 border-2 border-amber-400/60 ring-2 ring-emerald-400/30 ring-offset-2 ring-offset-forest-950 animate-breathe cursor-pointer group transition-transform hover:scale-105 duration-300">
+                  <Scale className="w-8 h-8 text-amber-300 drop-shadow-[0_4px_10px_rgba(245,158,11,0.85)] filter transition-transform group-hover:scale-110 duration-300 mb-0.5" />
+                  <span className="font-display text-xs font-black tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                     IP-SAKTI
                   </span>
-                  <span className="text-[9px] uppercase tracking-widest text-amber-300/80 font-mono">
+                  <span className="text-[8px] uppercase tracking-[0.2em] font-mono font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30 mt-1 shadow-inner">
                     Intelligence Core
                   </span>
                 </div>
@@ -226,13 +233,13 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Live Benchmark Performance Metrics Ribbon */}
-      <section className="bg-white/80 dark:bg-forest-900/40 border-b border-parchment-200/80 dark:border-forest-900/60 py-14 backdrop-blur-md">
+      <section className="bg-white/80 dark:bg-forest-900/40 border-b border-parchment-200/80 dark:border-forest-900/60 py-8 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
+          <div className="text-center mb-6">
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
               Rigorous Evaluation Standard
             </span>
-            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-2">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-1">
               Empirical Benchmarks Across 100 Statutory Queries
             </h2>
           </div>
