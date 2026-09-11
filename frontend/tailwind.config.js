@@ -16,9 +16,10 @@ module.exports = {
   ],
   theme: {
     fontFamily: {
-      sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
-      serif: ['"Cormorant Garamond"', ...defaultTheme.fontFamily.serif],
-      cinzel: ['"Cinzel"', 'serif'],
+      sans: ['"Inter"', ...defaultTheme.fontFamily.sans],
+      display: ['"Space Grotesk"', '"Outfit"', ...defaultTheme.fontFamily.sans],
+      cinzel: ['"Outfit"', '"Space Grotesk"', 'sans-serif'],
+      serif: ['"Outfit"', '"Space Grotesk"', ...defaultTheme.fontFamily.sans],
       mono: ['"JetBrains Mono"', ...defaultTheme.fontFamily.mono],
     },
     container: {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
+import { getApiUrl } from "../../lib/api";
 import {
   Scale,
   Sparkles,
@@ -43,12 +44,101 @@ export const FormulationClassifier: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ClassificationResult | null>(null);
 
+  const presets = [
+    {
+      title: "Classical Chyawanprash",
+      badge: "Sec 3(a) Classical ASU",
+      data: {
+        product_name: "Classical Chyawanprash Awaleha",
+        ingredients: "Amalaki, Dashamoola, Pippali, Honey, Ghee, Jivanti",
+        from_classical_text: true,
+        classical_text_name: "Charaka Samhita Chikitsasthana Ch. 1",
+        is_modified: false,
+        intended_use: "therapeutic",
+        is_purified_fraction: false,
+        is_food_format: false,
+        biological_resources_involved: true,
+        target_jurisdiction: "India",
+      }
+    },
+    {
+      title: "Polyherbal Cognitive Syrup",
+      badge: "Sec 3(h) Proprietary ASU",
+      data: {
+        product_name: "Medha-Synergy Polyherbal Tonic",
+        ingredients: "Ashwagandha, Brahmi, Shankhpushpi, Sorbitol base",
+        from_classical_text: false,
+        classical_text_name: "",
+        is_modified: true,
+        intended_use: "therapeutic",
+        is_purified_fraction: false,
+        is_food_format: false,
+        biological_resources_involved: true,
+        target_jurisdiction: "India",
+      }
+    },
+    {
+      title: "Standardized Curcumin Fraction",
+      badge: "Rule 122E Phytopharma",
+      data: {
+        product_name: "Curcumax 95% Standardized Fraction",
+        ingredients: "Curcuma longa rhizome extract (>=4 HPLC bioactive markers)",
+        from_classical_text: false,
+        classical_text_name: "",
+        is_modified: false,
+        intended_use: "therapeutic",
+        is_purified_fraction: true,
+        is_food_format: false,
+        biological_resources_involved: true,
+        target_jurisdiction: "India",
+      }
+    },
+    {
+      title: "Kumkumadi Radiance Oil",
+      badge: "Sec 3(aaa) Cosmetic",
+      data: {
+        product_name: "Kumkumadi Radiance Facial Glow Elixir",
+        ingredients: "Kumkuma (Saffron), Chandana, Manjistha, Sesame oil",
+        from_classical_text: true,
+        classical_text_name: "Bhaishajya Ratnavali",
+        is_modified: false,
+        intended_use: "cosmetic",
+        is_purified_fraction: false,
+        is_food_format: false,
+        biological_resources_involved: true,
+        target_jurisdiction: "India",
+      }
+    },
+    {
+      title: "Prana Herbal Infusion",
+      badge: "FSSAI 2022 Ayurveda-Aahar",
+      data: {
+        product_name: "Prana Vitality Herbal Tea Infusion",
+        ingredients: "Tulsi (Ocimum sanctum), Sunthi, Dalchini, Maricha",
+        from_classical_text: false,
+        classical_text_name: "",
+        is_modified: false,
+        intended_use: "health_supplement",
+        is_purified_fraction: false,
+        is_food_format: true,
+        biological_resources_involved: true,
+        target_jurisdiction: "India",
+      }
+    }
+  ];
+
+  const applyPreset = (presetData: typeof formData) => {
+    setFormData(presetData);
+    setResult(null);
+    setStep(1);
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setResult(null);
 
     try {
-      const res = await fetch("http://localhost:8000/api/classify", {
+      const res = await fetch(getApiUrl("/api/classify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -141,9 +231,9 @@ export const FormulationClassifier: React.FC = () => {
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
             <Scale className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-cinzel">Statutory Diagnostic Laboratory</span>
+            <span className="font-display">Statutory Diagnostic Laboratory</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+          <h1 className="font-display text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
             Formulation Classification Engine
           </h1>
           <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-lg mx-auto">
@@ -151,10 +241,38 @@ export const FormulationClassifier: React.FC = () => {
           </p>
         </div>
 
+        {/* 1-Click Demonstration Presets Bar */}
+        <div className="bg-white/80 dark:bg-forest-900/60 p-4 sm:p-5 rounded-2xl border border-amber-500/20 dark:border-forest-700/60 shadow-subtle-luxury space-y-3 backdrop-blur-md">
+          <div className="flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-display font-bold text-forest-900 dark:text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Instant Test Scenarios (1-Click Demonstration)</span>
+            </span>
+            <span className="text-xs text-forest-900/70 dark:text-parchment-300/80 hidden sm:inline font-medium">
+              Click any scenario to auto-fill statutory parameters
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {presets.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => applyPreset(p.data)}
+                className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 hover:bg-parchment-200 dark:bg-forest-800 dark:hover:bg-forest-700 text-forest-950 dark:text-parchment-100 border border-parchment-200 dark:border-forest-700 hover:border-amber-400 transition-all flex items-center space-x-2 shadow-xs group"
+              >
+                <span className="group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">{p.title}</span>
+                <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold border border-amber-500/20">
+                  {p.badge}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Wizard Container */}
         <div className="bg-white dark:bg-forest-900/70 rounded-3xl border border-amber-500/30 dark:border-forest-700/60 p-6 sm:p-10 shadow-elevated-luxury backdrop-blur-xl">
           {/* Progress Tracker */}
-          <div className="grid grid-cols-4 gap-2 text-center text-xs font-semibold pb-8 border-b border-parchment-200/80 dark:border-forest-800/60">
+          <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm font-semibold pb-8 border-b border-parchment-200/80 dark:border-forest-800/60">
             {[
               { num: 1, label: "Ingredients" },
               { num: 2, label: "Classical Lineage" },
@@ -163,7 +281,7 @@ export const FormulationClassifier: React.FC = () => {
             ].map((st) => (
               <div
                 key={st.num}
-                className={`p-2.5 rounded-xl border transition-all ${
+                className={`p-3 rounded-xl border transition-all ${
                   step === st.num
                     ? "bg-forest-900 text-parchment-50 border-forest-800 dark:bg-amber-400 dark:text-forest-950 shadow-sm"
                     : step > st.num
@@ -171,8 +289,8 @@ export const FormulationClassifier: React.FC = () => {
                     : "bg-parchment-50/50 text-forest-900/40 dark:bg-forest-950/40 dark:text-parchment-300/40 border-parchment-200/50 dark:border-forest-900"
                 }`}
               >
-                <span className="font-mono text-[10px] block opacity-70">STAGE 0{st.num}</span>
-                <span className="text-xs font-bold">{st.label}</span>
+                <span className="font-mono text-xs block font-bold opacity-75">STAGE 0{st.num}</span>
+                <span className="text-xs sm:text-sm font-bold">{st.label}</span>
               </div>
             ))}
           </div>
@@ -181,10 +299,10 @@ export const FormulationClassifier: React.FC = () => {
           {step === 1 && (
             <div className="pt-8 space-y-6 animate-in fade-in-50">
               <div>
-                <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
+                <span className="font-display text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
                   STAGE 01 OF 04
                 </span>
-                <h3 className="font-serif text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
                   Product Profile & Botanical Composition
                 </h3>
               </div>
@@ -233,10 +351,10 @@ export const FormulationClassifier: React.FC = () => {
           {step === 2 && (
             <div className="pt-8 space-y-6 animate-in fade-in-50">
               <div>
-                <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
+                <span className="font-display text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
                   STAGE 02 OF 04
                 </span>
-                <h3 className="font-serif text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
                   Textual Lineage & First Schedule Authority
                 </h3>
               </div>
@@ -250,7 +368,7 @@ export const FormulationClassifier: React.FC = () => {
                       : "border-parchment-200 dark:border-forest-800 hover:border-amber-500/40"
                   }`}
                 >
-                  <span className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 block">
+                  <span className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 block">
                     Classical Ayurvedic Formulation
                   </span>
                   <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-1 leading-relaxed">
@@ -266,7 +384,7 @@ export const FormulationClassifier: React.FC = () => {
                       : "border-parchment-200 dark:border-forest-800 hover:border-amber-500/40"
                   }`}
                 >
-                  <span className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 block">
+                  <span className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 block">
                     Novel / Proprietary Formulation
                   </span>
                   <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-1 leading-relaxed">
@@ -330,10 +448,10 @@ export const FormulationClassifier: React.FC = () => {
           {step === 3 && (
             <div className="pt-8 space-y-6 animate-in fade-in-50">
               <div>
-                <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
+                <span className="font-display text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
                   STAGE 03 OF 04
                 </span>
-                <h3 className="font-serif text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
                   Processing Standard & Intended Claims
                 </h3>
               </div>
@@ -347,7 +465,7 @@ export const FormulationClassifier: React.FC = () => {
                       : "border-parchment-200 dark:border-forest-800 hover:border-emerald-500/30"
                   }`}
                 >
-                  <span className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 block">
+                  <span className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 block">
                     Therapeutic Medicinal Treatment
                   </span>
                   <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-1">
@@ -363,7 +481,7 @@ export const FormulationClassifier: React.FC = () => {
                       : "border-parchment-200 dark:border-forest-800 hover:border-emerald-500/30"
                   }`}
                 >
-                  <span className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 block">
+                  <span className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 block">
                     Ayurvedic Cosmetic (Sec 3(aaa))
                   </span>
                   <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-1">
@@ -379,7 +497,7 @@ export const FormulationClassifier: React.FC = () => {
                       : "border-parchment-200 dark:border-forest-800 hover:border-amber-500/30"
                   }`}
                 >
-                  <span className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 block">
+                  <span className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 block">
                     Ayurveda-Aahar (Food / Supplement)
                   </span>
                   <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-1">
@@ -395,7 +513,7 @@ export const FormulationClassifier: React.FC = () => {
                       : "border-parchment-200 dark:border-forest-800 hover:border-purple-500/30"
                   }`}
                 >
-                  <span className="font-serif text-base font-bold text-forest-950 dark:text-parchment-50 block">
+                  <span className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 block">
                     Phytopharmaceutical Fraction
                   </span>
                   <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 mt-1">
@@ -435,7 +553,7 @@ export const FormulationClassifier: React.FC = () => {
               {loading ? (
                 <div className="py-16 text-center space-y-4">
                   <div className="w-12 h-12 mx-auto rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
-                  <p className="font-serif text-base text-forest-950 dark:text-parchment-50">
+                  <p className="font-display text-base text-forest-950 dark:text-parchment-50">
                     Evaluating Statutory Rules & First Schedule Precedents...
                   </p>
                 </div>
@@ -445,18 +563,18 @@ export const FormulationClassifier: React.FC = () => {
                   <div className="bg-gradient-to-br from-parchment-100 via-white to-parchment-50 dark:from-forest-950 dark:via-forest-900 dark:to-forest-950 rounded-3xl border-2 border-amber-500/40 p-8 shadow-elevated-luxury relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-amber-500/20 gap-4">
                       <div>
-                        <span className="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
+                        <span className="font-display text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-1">
                           Official AI Diagnostic Certification
                         </span>
-                        <h2 className="font-serif text-3xl font-bold text-forest-950 dark:text-parchment-50">
+                        <h2 className="font-display text-3xl font-bold text-forest-950 dark:text-parchment-50">
                           {result.category}
                         </h2>
                       </div>
 
                       <div className="flex items-center space-x-2.5">
                         <div className="text-right">
-                          <span className="font-mono text-[10px] text-forest-900/50 dark:text-parchment-300/50 block">CONFIDENCE</span>
-                          <span className="font-serif text-lg font-bold text-amber-700 dark:text-amber-300">{result.confidence_score}%</span>
+                          <span className="font-mono text-xs font-bold text-forest-900/70 dark:text-parchment-300/70 block">CONFIDENCE</span>
+                          <span className="font-display text-xl font-bold text-amber-700 dark:text-amber-300">{result.confidence_score}%</span>
                         </div>
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center border border-amber-500/30">
                           <Award className="w-5 h-5" />
@@ -464,41 +582,41 @@ export const FormulationClassifier: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 text-sm">
                       <div>
-                        <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                        <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block mb-1">
                           Statutory Definition & Act
                         </span>
-                        <p className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-100">
+                        <p className="font-display text-base font-bold text-forest-950 dark:text-parchment-100">
                           {result.statutory_definition}
                         </p>
-                        <span className="text-forest-900/60 dark:text-parchment-300/60 block mt-1">
+                        <span className="text-forest-900/70 dark:text-parchment-300/80 block mt-1.5 text-xs sm:text-sm">
                           Licensing Authority: <strong>{result.authority}</strong>
                         </span>
                       </div>
 
                       <div>
-                        <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                        <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block mb-1">
                           Indian Patentability Evaluation
                         </span>
-                        <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
+                        <span className={`inline-block px-3.5 py-1.5 rounded-full text-xs font-bold ${
                           result.ip_potential.patentable_in_india
                             ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30"
                             : "bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30"
                         }`}>
                           {result.ip_potential.patentable_in_india ? "Patentable with High Synergistic Proof" : "Barred under Section 3(p) / Prior Art"}
                         </span>
-                        <p className="text-[11px] text-forest-900/70 dark:text-parchment-300/70 mt-1.5 leading-relaxed font-sans">
+                        <p className="text-xs sm:text-sm text-forest-900/80 dark:text-parchment-200/90 mt-2 leading-relaxed font-sans">
                           {result.ip_potential.caveats}
                         </p>
                       </div>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-amber-500/20">
-                      <span className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                      <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block mb-1">
                         Commercial Drug Licensing Roadmap
                       </span>
-                      <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-sans">
+                      <p className="text-sm text-forest-900/90 dark:text-parchment-100 leading-relaxed font-sans">
                         {result.licensing_pathway}
                       </p>
                     </div>
@@ -507,7 +625,7 @@ export const FormulationClassifier: React.FC = () => {
                   {/* Supporting Regulatory Factors */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-parchment-50 dark:bg-forest-950 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 text-xs space-y-3">
-                      <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                      <span className="font-display text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
                         Statutory Deductive Factors
                       </span>
                       <ul className="space-y-2">
@@ -521,7 +639,7 @@ export const FormulationClassifier: React.FC = () => {
                     </div>
 
                     <div className="bg-parchment-50 dark:bg-forest-950 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 text-xs space-y-3">
-                      <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                      <span className="font-display text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
                         Mandatory Compliance Actions
                       </span>
                       <ul className="space-y-2">

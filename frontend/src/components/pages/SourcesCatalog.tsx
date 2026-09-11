@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import { GazetteReaderModal, GazetteDocument } from "../ui/GazetteReaderModal";
+import { getApiUrl } from "../../lib/api";
 import {
   BookOpen,
   ExternalLink,
@@ -18,7 +19,7 @@ export const SourcesCatalog: React.FC = () => {
   const [selectedDoc, setSelectedDoc] = useState<GazetteDocument | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/corpus")
+    fetch(getApiUrl("/api/corpus"))
       .then((res) => res.json())
       .then((data) => {
         if (data && data.documents) {
@@ -53,9 +54,9 @@ export const SourcesCatalog: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
             <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-cinzel">Official Gazette Repository</span>
+            <span className="font-display">Official Gazette Repository</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+          <h1 className="font-display text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
             Digital Statutory Archive
           </h1>
           <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-xl mx-auto">
@@ -103,26 +104,27 @@ export const SourcesCatalog: React.FC = () => {
             {filteredDocs.map((doc) => (
               <div
                 key={doc.document_id}
-                className="bg-white dark:bg-forest-900/60 rounded-3xl border border-parchment-200/90 dark:border-forest-800/80 p-6 shadow-subtle-luxury hover:shadow-elevated-luxury hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between"
+                onClick={() => setSelectedDoc(doc)}
+                className="bg-white dark:bg-forest-900/60 rounded-3xl border border-parchment-200/90 dark:border-forest-800/80 p-6 shadow-subtle-luxury hover:shadow-elevated-luxury hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2 pb-3 border-b border-parchment-100 dark:border-forest-800/60">
-                    <span className="font-mono text-[10px] px-2.5 py-0.5 rounded-full bg-parchment-100 dark:bg-forest-950 text-forest-900 dark:text-parchment-200 font-bold border border-parchment-200 dark:border-forest-800">
+                    <span className="font-mono text-xs px-2.5 py-1 rounded-full bg-parchment-100 dark:bg-forest-950 text-forest-900 dark:text-parchment-200 font-bold border border-parchment-200 dark:border-forest-800">
                       {doc.document_id}
                     </span>
-                    <span className="font-mono text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 flex items-center space-x-1">
-                      <ShieldCheck className="w-3 h-3" />
+                    <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 flex items-center space-x-1">
+                      <ShieldCheck className="w-3.5 h-3.5" />
                       <span>{doc.status}</span>
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 leading-snug">
+                  <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 leading-snug group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
                     {doc.title}
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-forest-900/60 dark:text-parchment-300/60 font-sans pt-1">
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm text-forest-900/80 dark:text-parchment-300/80 font-sans pt-1">
                     <div>
-                      <strong>Section:</strong> <span className="font-mono text-amber-700 dark:text-amber-400">{doc.section}</span>
+                      <strong>Section:</strong> <span className="font-mono text-amber-700 dark:text-amber-400 font-bold">{doc.section}</span>
                     </div>
                     <div>
                       <strong>Jurisdiction:</strong> {doc.jurisdiction}
@@ -135,34 +137,38 @@ export const SourcesCatalog: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-parchment-50/70 dark:bg-forest-950/70 rounded-2xl border border-parchment-200/60 dark:border-forest-800/60 text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-serif italic line-clamp-3">
+                  <div className="p-4 bg-parchment-50/70 dark:bg-forest-950/70 rounded-2xl border border-parchment-200/60 dark:border-forest-800/60 text-sm text-forest-900/90 dark:text-parchment-100 leading-relaxed font-display italic line-clamp-3">
                     "{doc.text}"
                   </div>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-parchment-100 dark:border-forest-800/60 flex items-center justify-between text-xs gap-2">
-                  <span className="font-mono text-[10px] text-amber-700 dark:text-amber-400/80 truncate max-w-[140px]">
+                <div className="mt-5 pt-4 border-t border-parchment-100 dark:border-forest-800/60 flex items-center justify-between text-xs sm:text-sm gap-2">
+                  <span className="font-mono text-xs text-amber-700 dark:text-amber-400 font-bold truncate max-w-[150px]">
                     HASH: {doc.content_hash}
                   </span>
 
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => setSelectedDoc(doc)}
-                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-forest-950 text-xs font-bold transition-colors shadow-sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDoc(doc);
+                      }}
+                      className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-forest-950 text-xs sm:text-sm font-bold transition-colors shadow-sm"
                     >
-                      <Eye className="w-3.5 h-3.5" />
+                      <Eye className="w-4 h-4" />
                       <span>Read Statute</span>
                     </button>
 
                     <a
                       href={doc.source_url}
                       target="_blank"
-                      rel="noreferrer"
-                      referrerPolicy="no-referrer"
-                      title="Open external government portal (may require direct network access)"
-                      className="p-1.5 rounded-xl border border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Open official legislative repository record"
+                      className="p-2 rounded-xl border border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <ExternalLink className="w-4 h-4" />
                     </a>
                   </div>
                 </div>

@@ -101,15 +101,15 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
     <div className="bg-white dark:bg-forest-900/60 rounded-3xl border border-amber-500/20 dark:border-forest-700/60 p-6 sm:p-8 shadow-elevated-luxury">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-parchment-200/80 dark:border-forest-800/60 gap-3">
         <div className="space-y-1">
-          <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-semibold border border-amber-500/20">
+          <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/20">
             <Layers className="w-3.5 h-3.5 text-amber-500" />
-            <span className="font-cinzel">Interactive Topology</span>
+            <span className="font-display">Interactive Topology</span>
           </div>
-          <h3 className="font-serif text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
+          <h3 className="font-display text-xl sm:text-2xl font-bold text-forest-950 dark:text-parchment-50">
             Ayurvedic Regulatory Knowledge Graph
           </h3>
         </div>
-        <span className="text-[11px] text-forest-900/60 dark:text-parchment-400/60 font-medium">
+        <span className="text-xs text-forest-900/70 dark:text-parchment-400/80 font-medium">
           Click nodes to trace legal dependencies & statutory barriers
         </span>
       </div>
@@ -141,9 +141,9 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
                   y1={start.y}
                   x2={end.x}
                   y2={end.y}
-                  stroke={isSelectedConnection ? "#F59E0B" : "url(#lineGrad)"}
-                  strokeWidth={isSelectedConnection ? "2.5" : "1.5"}
-                  strokeDasharray={isSelectedConnection ? "none" : "4 4"}
+                  stroke={isSelectedConnection ? "#10B981" : "url(#lineGrad)"}
+                  strokeWidth={isSelectedConnection ? "3" : "1.5"}
+                  strokeDasharray={isSelectedConnection ? "none" : "4 3"}
                   className="transition-all duration-300"
                 />
               );
@@ -182,7 +182,7 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
                   transform={`translate(${node.x}, ${node.y})`}
                 >
                   <circle
-                    r={isSelected ? "22" : "17"}
+                    r={isSelected ? "24" : "18"}
                     fill={isSelected ? node.color : "#FAF8F3"}
                     stroke={node.color}
                     strokeWidth={isSelected ? "3" : "2"}
@@ -194,10 +194,10 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
                     fill={isSelected ? "#FAF8F3" : node.color}
                   />
                   <text
-                    y="32"
+                    y="34"
                     textAnchor="middle"
                     fill="currentColor"
-                    className="text-[10px] font-sans font-semibold fill-forest-950 dark:fill-parchment-100 select-none pointer-events-none"
+                    className="text-xs font-sans font-bold fill-forest-950 dark:fill-parchment-100 select-none pointer-events-none"
                   >
                     {node.label.split("—")[0].trim()}
                   </text>
@@ -214,28 +214,28 @@ export const RegulatoryKnowledgeGraph: React.FC = () => {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: activeNode.color }}
             />
-            <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
+            <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
               Statutory Node Inspector
             </span>
           </div>
 
-          <h4 className="font-serif text-lg font-bold text-forest-950 dark:text-parchment-50 leading-tight">
+          <h4 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 leading-tight">
             {activeNode.label}
           </h4>
 
-          <div className="p-3 rounded-xl bg-parchment-100/70 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 text-xs font-mono text-amber-800 dark:text-amber-300">
+          <div className="p-3.5 rounded-xl bg-parchment-100/70 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 text-sm font-mono text-amber-800 dark:text-amber-300 font-semibold">
             {activeNode.statutory_basis}
           </div>
 
-          <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
+          <p className="text-sm text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
             {activeNode.description}
           </p>
 
           <div className="pt-3 border-t border-parchment-200 dark:border-forest-800 space-y-2">
-            <span className="text-[11px] font-bold text-forest-900/70 dark:text-parchment-300/70 uppercase tracking-wider block">
+            <span className="text-xs font-bold text-forest-900/70 dark:text-parchment-300/70 uppercase tracking-wider block">
               Core Legal Consequence:
             </span>
-            <div className="flex items-start space-x-2 text-xs text-forest-900/90 dark:text-parchment-100">
+            <div className="flex items-start space-x-2 text-sm text-forest-900/90 dark:text-parchment-100">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
               <span>{activeNode.key_implication}</span>
             </div>

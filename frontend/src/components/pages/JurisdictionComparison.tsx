@@ -94,12 +94,12 @@ export const JurisdictionComparison: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-parchment-200/60 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 shadow-subtle-luxury">
             <Globe2 className="w-3.5 h-3.5 text-blue-500" />
-            <span className="font-cinzel">Dual-Regime Topology</span>
+            <span className="font-display">Dual-Regime Topology</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+          <h1 className="font-display text-3xl sm:text-5xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
             Jurisdiction Separation Navigator
           </h1>
-          <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-xl mx-auto">
             Visually isolating Indian Domestic Sovereignty from Multilateral International Treaties to prevent legal conflation.
           </p>
         </div>
@@ -116,7 +116,7 @@ export const JurisdictionComparison: React.FC = () => {
               <button
                 key={t.id}
                 onClick={() => setActiveTopic(t.id as any)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                   activeTopic === t.id
                     ? "bg-forest-900 text-parchment-50 dark:bg-amber-400 dark:text-forest-950 shadow-sm"
                     : "text-forest-900/70 dark:text-parchment-200/70 hover:text-forest-950 hover:bg-parchment-100 dark:hover:bg-forest-800"
@@ -135,13 +135,13 @@ export const JurisdictionComparison: React.FC = () => {
             <div className="flex items-center space-x-3.5 pb-5 border-b border-parchment-200 dark:border-forest-800">
               <span className="text-3xl">🇮🇳</span>
               <div>
-                <span className="font-cinzel text-[10px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 block">
+                <span className="font-display text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 block">
                   National Sovereign Regime
                 </span>
-                <h2 className="font-serif text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                <h2 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
                   India Domestic Law
                 </h2>
-                <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 font-sans">
+                <p className="text-sm text-forest-900/60 dark:text-parchment-300/60 font-sans">
                   Ministry of Ayush • CGPDTM • National Biodiversity Authority
                 </p>
               </div>
@@ -151,20 +151,20 @@ export const JurisdictionComparison: React.FC = () => {
               {filteredIndia.map((p, idx) => (
                 <div
                   key={idx}
-                  className="p-5 rounded-2xl bg-parchment-50/70 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 space-y-2 hover:border-emerald-500/40 transition-colors"
+                  className="p-5 rounded-2xl bg-parchment-50/70 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 space-y-2.5 hover:border-emerald-500/40 transition-colors"
                 >
                   <div className="flex items-start justify-between">
-                    <h3 className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-100">
+                    <h3 className="font-display text-base font-bold text-forest-950 dark:text-parchment-100">
                       {p.title}
                     </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/20">
+                    <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/20">
                       Domestic
                     </span>
                   </div>
-                  <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
+                  <p className="text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
                     {p.description}
                   </p>
-                  <div className="pt-2 flex items-center justify-between text-[11px] text-forest-900/60 dark:text-parchment-300/60 border-t border-parchment-200/60 dark:border-forest-800/60">
+                  <div className="pt-2 flex items-center justify-between text-xs text-forest-900/70 dark:text-parchment-300/70 border-t border-parchment-200/60 dark:border-forest-800/60">
                     <span>Authority: <strong>{p.authority}</strong></span>
                     <span className="text-emerald-700 dark:text-emerald-400 font-medium">{p.keyRule}</span>
                   </div>
@@ -178,13 +178,13 @@ export const JurisdictionComparison: React.FC = () => {
             <div className="flex items-center space-x-3.5 pb-5 border-b border-parchment-200 dark:border-forest-800">
               <Globe2 className="w-8 h-8 text-blue-600" />
               <div>
-                <span className="font-cinzel text-[10px] font-bold uppercase tracking-widest text-blue-700 dark:text-blue-400 block">
+                <span className="font-display text-xs font-bold uppercase tracking-widest text-blue-700 dark:text-blue-400 block">
                   Multilateral Treaty Regime
                 </span>
-                <h2 className="font-serif text-2xl font-bold text-forest-950 dark:text-parchment-50">
+                <h2 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
                   International Frameworks
                 </h2>
-                <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 font-sans">
+                <p className="text-sm text-forest-900/60 dark:text-parchment-300/60 font-sans">
                   WIPO • WTO TRIPS • CBD Nagoya Protocol
                 </p>
               </div>
@@ -194,20 +194,20 @@ export const JurisdictionComparison: React.FC = () => {
               {filteredIntl.map((p, idx) => (
                 <div
                   key={idx}
-                  className="p-5 rounded-2xl bg-parchment-50/70 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 space-y-2 hover:border-blue-500/40 transition-colors"
+                  className="p-5 rounded-2xl bg-parchment-50/70 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 space-y-2.5 hover:border-blue-500/40 transition-colors"
                 >
                   <div className="flex items-start justify-between">
-                    <h3 className="font-serif text-sm font-bold text-forest-950 dark:text-parchment-100">
+                    <h3 className="font-display text-base font-bold text-forest-950 dark:text-parchment-100">
                       {p.title}
                     </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-800 dark:text-blue-300 font-bold border border-blue-500/20">
+                    <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-800 dark:text-blue-300 font-bold border border-blue-500/20">
                       Treaty
                     </span>
                   </div>
-                  <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
+                  <p className="text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
                     {p.description}
                   </p>
-                  <div className="pt-2 flex items-center justify-between text-[11px] text-forest-900/60 dark:text-parchment-300/60 border-t border-parchment-200/60 dark:border-forest-800/60">
+                  <div className="pt-2 flex items-center justify-between text-xs text-forest-900/70 dark:text-parchment-300/70 border-t border-parchment-200/60 dark:border-forest-800/60">
                     <span>Authority: <strong>{p.authority}</strong></span>
                     <span className="text-blue-700 dark:text-blue-400 font-medium">{p.keyRule}</span>
                   </div>

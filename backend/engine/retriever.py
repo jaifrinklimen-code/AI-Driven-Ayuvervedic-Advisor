@@ -1,16 +1,18 @@
 """
-FAISS Semantic Search Retriever for IP-SAKTI Sahayak
+FAISS Semantic & Hybrid Search Retriever for IP-SAKTI Sahayak
 Loads pre-built FAISS vectorstore indexed from backend/data/*.pdf
-Performs top-k semantic retrieval using sentence-transformers/all-MiniLM-L6-v2 embeddings.
-Preserves PDF filename, page number, chunk text, and similarity score.
+Performs top-k hybrid retrieval combining dense semantic embeddings with
+intent-aware lexical boosting, source prioritization, and precision filtering.
 """
 
 import os
 import re
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+
+from .query_router import classify_query_intent, normalize_query
 
 CORPUS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "corpus", "legal_corpus.json")
 FAISS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vectorstore", "db_faiss")
@@ -66,6 +68,7 @@ MULTILINGUAL_EXPANSION = {
     "आयुर्वेद": "ayurveda asu drugs and cosmetics rule 158b",
 }
 
+
 def extract_focused_excerpt(text: str, query: str, max_len: int = 320) -> str:
     """Ensure the excerpt highlights the actual targeted statutory or botanical text."""
     q_lower = query.lower()
@@ -81,12 +84,16 @@ def extract_focused_excerpt(text: str, query: str, max_len: int = 320) -> str:
         target_terms.extend(["(d) the mere discovery", "known efficacy"])
     if "10(4)" in q_lower or "origin" in q_lower or "biological material" in q_lower:
         target_terms.extend(["geographical origin", "biological material"])
-    if "ashwagandha" in q_lower:
+    if "section 39" in q_lower or "foreign" in q_lower or "international" in q_lower:
+        target_terms.extend(["39. residents not to apply", "outside india without prior permission", "six weeks"])
+    if "ashwagandha" in q_lower or "withania" in q_lower:
         target_terms.extend(["withania somnifera", "asvagandha", "dried mature roots"])
-    if "brahmi" in q_lower:
-        target_terms.extend(["brahmi", "bacopa monnieri", "bacopa"])
+    if "brahmi" in q_lower or "bacopa" in q_lower:
+        target_terms.extend(["bacopa monnieri", "brahmi", "brahmi ghrutha"])
+    if "ayurveda" in q_lower and any(w in q_lower for w in ["what is", "formulation", "use"]):
+        target_terms.extend(["ayurveda is", "science of life", "doshas", "charaka", "rasayana", "definition"])
 
-    # Statutory fallback terms so substantive clauses always center on the operative text
+    # Statutory and literature fallback terms
     target_terms.extend([
         "(p) an invention which",
         "traditional knowledge",
@@ -95,8 +102,9 @@ def extract_focused_excerpt(text: str, query: str, max_len: int = 320) -> str:
         "(d) the mere discovery",
         "withania somnifera",
         "dried mature roots",
-        "brahmi ghrutha",
-        "bacopa monnieri"
+        "bacopa monnieri",
+        "science of life",
+        "charaka samhita"
     ])
 
     best_idx = -1
@@ -193,12 +201,12 @@ class FAISSSemanticRetriever:
     def retrieve(
         self,
         query: str,
-        jurisdiction: Optional[str] = None,
+        jurisdiction: Optional[str] = "India",
         top_k: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Perform top-k retrieval combining dense FAISS semantic similarity with
-        lexical/metadata matching for statutory provisions and botanical monographs.
+        Perform top-k hybrid retrieval combining dense FAISS semantic similarity with
+        intent-aware lexical boosting, source prioritization, and precision filtering.
         """
         if self.db is None:
             self.load_faiss_index()
@@ -207,18 +215,22 @@ class FAISSSemanticRetriever:
             print("Warning: FAISS database unavailable for retrieval.")
             return []
 
-        expanded_query = self.expand_multilingual_query(query)
-        q_lower = query.lower()
+        # Step 1: Detect intent and normalize query
+        router_info = classify_query_intent(query, jurisdiction or "India")
+        intent = router_info["intent"]
+        source_type = router_info["source_type"]
+        q_norm = normalize_query(query)
+        expanded_query = self.expand_multilingual_query(q_norm)
+        q_lower = q_norm.lower()
 
-        # Step 1: Base semantic similarity search
+        # Step 2: Base semantic similarity search via FAISS
         try:
-            candidates = self.db.similarity_search_with_score(expanded_query, k=50)
+            candidates = self.db.similarity_search_with_score(expanded_query, k=60)
         except Exception as e:
             print(f"FAISS similarity search error: {e}")
             candidates = []
 
-        # Step 2: Targeted statutory and botanical matching from docstore
-        # Ensures exact sections (3(e), 3(p), 3(d), 10(4)) and botanical monographs match reliably
+        # Step 3: Targeted intent-aware and docstore-backed matching
         targeted = []
         if self.db.docstore and hasattr(self.db.docstore, "_dict"):
             for doc_id, doc in self.db.docstore._dict.items():
@@ -226,56 +238,104 @@ class FAISSSemanticRetriever:
                 src = doc.metadata.get("source", "").lower()
                 page = doc.metadata.get("page", 0) + 1
 
-                # Section 3(e) - mere admixture
-                if ("admixture" in q_lower or "3(e)" in q_lower) and "mere admixture" in text_lower and "patents_act" in src:
-                    targeted.append((doc, 0.08))
+                # INTENT: PATENTABILITY_MERE_ADMIXTURE (Section 3(e))
+                if intent == "PATENTABILITY_MERE_ADMIXTURE":
+                    if "patents_act" in src and page == 10 and "mere admixture" in text_lower:
+                        targeted.append((doc, 0.05))
 
-                # Section 3(p) - traditional knowledge
-                if ("traditional" in q_lower or "3(p)" in q_lower) and "traditional knowledge" in text_lower and "patents_act" in src:
-                    targeted.append((doc, 0.10))
+                # INTENT: PATENTABILITY_TRADITIONAL_KNOWLEDGE (Section 3(p))
+                elif intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE":
+                    if "patents_act" in src and page == 10 and "traditional knowledge" in text_lower:
+                        targeted.append((doc, 0.05))
 
-                # Section 3(d) - new form of known substance
-                if "3(d)" in q_lower and "(d) the mere discovery" in text_lower and "patents_act" in src:
-                    targeted.append((doc, 0.10))
+                # INTENT: PATENTABILITY_POLYHERBAL_COMBINATION
+                elif intent == "PATENTABILITY_POLYHERBAL_COMBINATION":
+                    if "patents_act" in src and page == 10:
+                        targeted.append((doc, 0.06))
+                    if "ashwagandha" in q_lower and "api-vol-1" in src and page == 31:
+                        targeted.append((doc, 0.08))
+                    if "brahmi" in q_lower and "api-vol-2" in src and ("bacopa" in text_lower or page == 92):
+                        targeted.append((doc, 0.08))
 
-                # Section 10(4) - source/origin of biological material
-                if ("10(4)" in q_lower or "geographical origin" in q_lower) and "geographical origin" in text_lower and "patents_act" in src:
-                    targeted.append((doc, 0.12))
+                # INTENT: HERB_MONOGRAPH
+                elif intent == "HERB_MONOGRAPH":
+                    if "ashwagandha" in q_lower and "api-vol-1" in src and page == 31:
+                        targeted.append((doc, 0.04))
+                    elif "brahmi" in q_lower and "api-vol-2" in src and page == 92:
+                        targeted.append((doc, 0.04))
+                    elif "turmeric" in q_lower or "curcumin" in q_lower:
+                        if "api-vol-1" in src and ("curcuma" in text_lower or "haridra" in text_lower):
+                            targeted.append((doc, 0.04))
+                    elif "neem" in q_lower and "api-vol-2" in src and ("azadirachta" in text_lower or "nimba" in text_lower):
+                        targeted.append((doc, 0.04))
+                    elif "tulsi" in q_lower and "api-vol-2" in src and ("ocimum" in text_lower or "tulsi" in text_lower):
+                        targeted.append((doc, 0.04))
+                    elif "giloy" in q_lower and "api-vol-1" in src and ("tinospora" in text_lower or "guduchi" in text_lower):
+                        targeted.append((doc, 0.04))
+                    elif "triphala" in q_lower and ("api-vol-1" in src or "charaka" in src) and "triphala" in text_lower:
+                        targeted.append((doc, 0.04))
 
-                # Combination of herbs in patent query -> link both Section 3(e) and 3(p)
-                if "combination" in q_lower and "patent" in q_lower:
-                    if "mere admixture" in text_lower and "patents_act" in src:
-                        targeted.append((doc, 0.12))
-                    if "traditional knowledge" in text_lower and "patents_act" in src:
-                        targeted.append((doc, 0.14))
+                # INTENT: INTERNATIONAL_IP (Section 39 Patents Act)
+                elif intent == "INTERNATIONAL_IP":
+                    if "patents_act" in src and page == 26 and "residents not to apply" in text_lower:
+                        targeted.append((doc, 0.05))
+                    elif "patents_act" in src and page == 28:
+                        targeted.append((doc, 0.08))
 
-                # Ashwagandha botanical monograph
-                if "ashwagandha" in q_lower and "api-vol-1" in src and ("withania somnifera" in text_lower or "asvagandha" in text_lower):
-                    if "consists of dried mature roots" in text_lower or page == 31:
-                        targeted.append((doc, 0.16))
+                # INTENT: GENERAL_AYURVEDA
+                elif intent == "GENERAL_AYURVEDA":
+                    if "science_of_self_healing" in src or "yoga_of_herbs" in src or "charaka" in src:
+                        if any(k in text_lower for k in ["ayurveda is", "science of life", "three doshas", "vata, pitta", "rasayana"]):
+                            targeted.append((doc, 0.08))
 
-                # Brahmi botanical monograph
-                if "brahmi" in q_lower and "api-vol-2" in src and ("bacopa" in text_lower or "brahmi" in text_lower):
-                    if "brahmi ghrutha" in text_lower or page == 92:
-                        targeted.append((doc, 0.18))
+                # INTENT: CLASSICAL_VS_PROPRIETARY / COMMERCIAL_SALE_LICENSING
+                elif intent in ("CLASSICAL_VS_PROPRIETARY", "COMMERCIAL_SALE_LICENSING"):
+                    if "charaka" in src and ("compendium" in text_lower or "treatise" in text_lower or page in (1, 2, 7)):
+                        targeted.append((doc, 0.08))
+                    elif "api-vol-1" in src and page == 1:
+                        targeted.append((doc, 0.10))
 
-        # Step 3: Demote unrelated procedural legal pages so they do not rank above substantive provisions
+                # INTENT: BIODIVERSITY_ABS
+                elif intent == "BIODIVERSITY_ABS":
+                    if "patents_act" in src and page in (13, 21, 22, 35) and any(k in text_lower for k in ["biological", "geographical origin", "biodiversity"]):
+                        targeted.append((doc, 0.05))
+
+                # INTENT: TRADITIONAL_KNOWLEDGE_TKDL
+                elif intent == "TRADITIONAL_KNOWLEDGE_TKDL":
+                    if "patents_act" in src and page == 10 and "traditional knowledge" in text_lower:
+                        targeted.append((doc, 0.05))
+                    elif "charaka" in src and page in (1, 7, 10):
+                        targeted.append((doc, 0.09))
+
+        # Step 4: Demote irrelevant or misaligned pages based on Intent & Source Type
         filtered_candidates = []
-        is_patentability_query = any(k in q_lower for k in ["patent", "admixture", "3(e)", "3(p)", "3(d)", "traditional", "combination", "ashwagandha", "brahmi"])
         for doc, dist in candidates:
             src = doc.metadata.get("source", "").lower()
             page = doc.metadata.get("page", 0) + 1
             text_lower = doc.page_content.lower()
 
-            if is_patentability_query and "patents_act" in src:
-                # Demote administrative / procedural pages (working statements, licensing, generic agent rules)
-                # unless they actually contain the targeted sections
-                if page in (62, 41, 42, 44, 45, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63):
+            # Rule A: If asking for HERB_MONOGRAPH or GENERAL_AYURVEDA, demote Patents Act heavily
+            if intent in ("HERB_MONOGRAPH", "GENERAL_AYURVEDA") and "patents_act" in src:
+                dist += 3.0
+
+            # Rule B: If asking for PATENTABILITY or INTERNATIONAL_IP, demote non-substantive procedural patent pages
+            if intent.startswith("PATENTABILITY") and "patents_act" in src:
+                if page in (41, 42, 44, 45, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63):
                     if "mere admixture" not in text_lower and "traditional knowledge" not in text_lower:
-                        dist += 2.0
+                        dist += 2.5
+
+            # Rule C: If asking for VAGUE_CLARIFICATION, demote specific patent penalty pages
+            if intent == "VAGUE_CLARIFICATION":
+                if "patents_act" in src and page != 10:
+                    dist += 1.5
+
+            # Rule D: If asking for TRADEMARK or COMMERCIAL, boost classical catalog references
+            if intent in ("BRAND_PROTECTION_TRADEMARK", "COMMERCIAL_SALE_LICENSING") and "patents_act" in src:
+                dist += 1.0
+
             filtered_candidates.append((doc, dist))
 
-        # Step 4: Combine, rank, and deduplicate
+        # Step 5: Combine, rank, and deduplicate
         combined = targeted + filtered_candidates
         combined.sort(key=lambda x: x[1])
 
@@ -288,7 +348,7 @@ class FAISSSemanticRetriever:
             page_num = int(meta.get("page", 0)) + 1
             chunk_text = doc.page_content.strip()
 
-            dedup_key = (pdf_filename, page_num, chunk_text[:60])
+            dedup_key = (pdf_filename, page_num)
             if dedup_key in seen:
                 continue
             seen.add(dedup_key)
@@ -323,6 +383,7 @@ class FAISSSemanticRetriever:
                 break
 
         return results
+
 
 # Global singleton instance
 retriever_instance = FAISSSemanticRetriever()
