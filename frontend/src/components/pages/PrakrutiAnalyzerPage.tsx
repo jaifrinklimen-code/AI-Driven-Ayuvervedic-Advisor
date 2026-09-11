@@ -340,14 +340,14 @@ export const PrakrutiAnalyzerPage: React.FC = () => {
                   >
                     <div className="space-y-1.5 pr-4">
                       <div className="flex items-center space-x-2">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${doshaBadge}`}>
+                        <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded border ${doshaBadge}`}>
                           {opt.dosha}
                         </span>
                         <span className="font-semibold text-sm sm:text-base text-forest-950 dark:text-parchment-50">
                           {opt.text}
                         </span>
                       </div>
-                      <p className="text-xs text-forest-900/70 dark:text-parchment-300/70 leading-normal pl-0.5">
+                      <p className="text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed pl-0.5">
                         {opt.description}
                       </p>
                     </div>

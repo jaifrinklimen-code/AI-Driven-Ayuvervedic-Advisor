@@ -483,14 +483,14 @@ export const ABSKioskPage: React.FC = () => {
                 <div className="bg-white dark:bg-forest-900/70 rounded-3xl p-6 sm:p-8 border border-amber-500/30 dark:border-forest-700/60 shadow-elevated-luxury space-y-6 animate-in fade-in-50">
                   <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
                     <div>
-                      <span className="font-display text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-0.5">
+                      <span className="font-display text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-0.5">
                         {t("abs_audit_title")}
                       </span>
                       <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
                         {result.resource_analyzed}
                       </h3>
                     </div>
-                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 text-sm font-bold border border-emerald-500/30">
                       {result.overall_status}
                     </span>
                   </div>
@@ -503,7 +503,7 @@ export const ABSKioskPage: React.FC = () => {
                     {result.compliance_flags.map((flag, idx) => (
                       <div
                         key={idx}
-                        className={`p-4 rounded-2xl border text-xs space-y-1 ${
+                        className={`p-4 rounded-2xl border text-sm space-y-1.5 ${
                           flag.severity === "CRITICAL"
                             ? "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-200"
                             : "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200"
@@ -526,7 +526,7 @@ export const ABSKioskPage: React.FC = () => {
                     {result.required_statutory_filings.map((filing, i) => (
                       <div
                         key={i}
-                        className="flex items-center space-x-2.5 p-3 rounded-xl bg-parchment-50 dark:bg-forest-950 text-xs text-forest-950 dark:text-parchment-50 font-semibold border border-parchment-200 dark:border-forest-800"
+                        className="flex items-center space-x-2.5 p-3 rounded-xl bg-parchment-50 dark:bg-forest-950 text-sm text-forest-950 dark:text-parchment-50 font-semibold border border-parchment-200 dark:border-forest-800"
                       >
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                         <span>{filing}</span>
@@ -535,19 +535,19 @@ export const ABSKioskPage: React.FC = () => {
                   </div>
 
                   {/* TKDL Guidance */}
-                  <div className="p-4 rounded-2xl bg-parchment-100 dark:bg-forest-950 border border-amber-500/20 text-xs space-y-1.5">
+                  <div className="p-4 rounded-2xl bg-parchment-100 dark:bg-forest-950 border border-amber-500/20 text-sm space-y-1.5">
                     <span className="font-display font-bold text-amber-700 dark:text-amber-400 block">
                       {t("tkdl_pointer_title")}
                     </span>
                     <p className="text-forest-900/80 dark:text-parchment-300/80 leading-relaxed font-sans">
                       {result.tkdl_guidance.status_note}
                     </p>
-                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold block pt-1">
+                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold block pt-1">
                       Action: {result.tkdl_guidance.verification_step}
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-forest-900/60 dark:text-parchment-300/60 bg-parchment-50 dark:bg-forest-950 p-3 rounded-xl border border-parchment-200 dark:border-forest-800">
+                  <div className="text-xs text-forest-900/70 dark:text-parchment-300/70 bg-parchment-50 dark:bg-forest-950 p-3.5 rounded-xl border border-parchment-200 dark:border-forest-800">
                     <strong>{t("statutory_disclaimer")}:</strong> {result.disclaimer}
                   </div>
                 </div>
@@ -578,7 +578,7 @@ export const ABSKioskPage: React.FC = () => {
             <h2 className="font-display text-3xl sm:text-4xl font-light text-forest-950 dark:text-parchment-50">
               {t("kiosk_hardware_title")}
             </h2>
-            <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-md mx-auto">
+            <p className="text-sm sm:text-base text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-md mx-auto">
               {t("kiosk_hardware_sub")}
             </p>
           </div>
@@ -586,10 +586,10 @@ export const ABSKioskPage: React.FC = () => {
           {/* Luxury Hardware Kiosk Chassis with Neon Glow */}
           <div className="max-w-4xl mx-auto bg-gradient-to-b from-forest-950 via-forest-900 to-black text-parchment-50 rounded-3xl p-6 sm:p-10 border-2 border-amber-400/40 shadow-2xl space-y-6 neon-glow-gold">
             {/* Kiosk Bezel Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-forest-800 text-xs">
+            <div className="flex items-center justify-between pb-6 border-b border-forest-800 text-sm">
               <div className="flex items-center space-x-3">
                 <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#10b981]" />
-                <span className="font-mono text-amber-300 font-bold tracking-widest text-[10px] uppercase">
+                <span className="font-mono text-amber-300 font-bold tracking-widest text-xs uppercase">
                   {t("kiosk_badge")}
                 </span>
               </div>
@@ -597,7 +597,7 @@ export const ABSKioskPage: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handleSpeak}
-                  className={`px-3.5 py-1.5 rounded-xl flex items-center space-x-2 font-bold text-xs transition-all ${
+                  className={`px-4 py-2 rounded-xl flex items-center space-x-2 font-bold text-sm transition-all ${
                     kioskSpeaking
                       ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.4)]"
                       : "bg-forest-900 hover:bg-forest-800 text-amber-300 border border-amber-500/30"
@@ -616,16 +616,16 @@ export const ABSKioskPage: React.FC = () => {
                 <div>
                   <h3 className="font-display text-xl font-bold text-white flex items-center gap-2">
                     <span>{t("kiosk_title")}</span>
-                    <span className="px-2 py-0.5 text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 rounded-md">LIVE AI</span>
+                    <span className="px-2.5 py-0.5 text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 rounded-md">LIVE AI</span>
                   </h3>
-                  <p className="text-xs text-parchment-300/70 font-sans">{t("kiosk_subtitle")}</p>
+                  <p className="text-sm text-parchment-300/80 font-sans mt-0.5">{t("kiosk_subtitle")}</p>
                 </div>
                 <div className="flex space-x-1.5 bg-forest-950/80 p-1 rounded-xl border border-forest-800">
                   {(["en", "hi", "ta"] as const).map((l) => (
                     <button
                       key={l}
                       onClick={() => setLanguage(l)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      className={`px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all ${
                         language === l
                           ? "bg-amber-400 text-forest-950 font-extrabold shadow-[0_0_12px_rgba(251,191,36,0.6)]"
                           : "text-parchment-300 hover:bg-forest-800"
@@ -650,7 +650,7 @@ export const ABSKioskPage: React.FC = () => {
                 >
                   <Mic className="w-8 h-8" />
                 </button>
-                <span className="text-xs font-bold text-parchment-200">
+                <span className="text-sm font-bold text-parchment-200">
                   {isRecording
                     ? (language === "ta" ? "உங்கள் குரல் கேட்கப்படுகிறது (பேசவும்)..." : language === "hi" ? "आपकी आवाज सुनी जा रही है (बोलें)..." : "Listening to Voice Input (Web Speech API)...")
                     : t("speak_btn")}
@@ -669,7 +669,7 @@ export const ABSKioskPage: React.FC = () => {
                   ))}
                 </div>
 
-                <p className="text-xs text-parchment-300/80 italic max-w-md text-center px-4 bg-forest-900/40 py-1.5 rounded-xl border border-forest-800/60">
+                <p className="text-sm text-parchment-300/80 italic max-w-md text-center px-4 bg-forest-900/40 py-2 rounded-xl border border-forest-800/60">
                   "{kioskQuery}"
                 </p>
               </div>
@@ -678,7 +678,7 @@ export const ABSKioskPage: React.FC = () => {
               {isProcessingKiosk && (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center space-y-2 animate-pulse">
                   <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-xs font-semibold text-amber-300">
+                  <p className="text-sm font-semibold text-amber-300">
                     {t("kiosk_analyzing")}
                   </p>
                 </div>
@@ -690,7 +690,7 @@ export const ABSKioskPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="font-display text-xs font-bold text-amber-300 uppercase tracking-wider">
+                      <span className="font-display text-sm font-bold text-amber-300 uppercase tracking-wider">
                         {t("kiosk_spoken_response")}
                       </span>
                     </div>
@@ -706,7 +706,7 @@ export const ABSKioskPage: React.FC = () => {
                       <span>{kioskSpeaking ? t("stop_audio") : t("simulate_audio")}</span>
                     </button>
                   </div>
-                  <p className="font-display text-sm sm:text-base text-parchment-100 leading-relaxed font-light">
+                  <p className="font-display text-base sm:text-lg text-parchment-100 leading-relaxed font-light">
                     "{kioskAnswer}"
                   </p>
                 </div>
@@ -715,26 +715,26 @@ export const ABSKioskPage: React.FC = () => {
               {/* Screen Split: Immediate Verdict + Mobile QR */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 rounded-xl bg-forest-950 border border-forest-800 space-y-1">
-                  <span className="font-mono text-[10px] uppercase font-bold text-emerald-400 block">
+                  <span className="font-mono text-xs uppercase font-bold text-emerald-400 block">
                     {t("kiosk_instant_verdict")}
                   </span>
-                  <p className="font-display text-base font-bold text-white">
+                  <p className="font-display text-lg font-bold text-white">
                     {kioskClassification}
                   </p>
-                  <span className="text-parchment-300/60 block font-sans">
+                  <span className="text-sm text-parchment-300/80 block font-sans">
                     {kioskStatute}
                   </span>
                 </div>
 
                 <div className="p-4 rounded-xl bg-forest-950 border border-forest-800 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="font-mono text-[10px] uppercase font-bold text-amber-400 block">
+                    <span className="font-mono text-xs uppercase font-bold text-amber-400 block">
                       {t("mobile_handoff_title")}
                     </span>
-                    <p className="text-parchment-200 text-xs font-semibold">
+                    <p className="text-parchment-200 text-sm font-semibold">
                       {t("mobile_handoff_title")}
                     </p>
-                    <span className="text-[10px] text-parchment-300/60 block font-sans">
+                    <span className="text-xs text-parchment-300/70 block font-sans">
                       {t("mobile_handoff_sub")}
                     </span>
                   </div>

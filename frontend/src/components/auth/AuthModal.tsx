@@ -115,20 +115,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
           <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
             {isSignUp ? "Create IP-SAKTI Account" : "Access Regulatory Portal"}
           </h3>
-          <p className="text-xs text-forest-900/70 dark:text-parchment-300/70">
+          <p className="text-sm text-forest-900/70 dark:text-parchment-300/70">
             Secure authentication powered by Supabase with Row Level Security.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs flex items-center space-x-2 animate-in fade-in">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-sm flex items-center space-x-2 animate-in fade-in">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs flex items-center space-x-2 animate-in fade-in">
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-sm flex items-center space-x-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <span>{successMsg}</span>
           </div>
@@ -140,12 +140,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
             type="button"
             onClick={handleDemoEvaluatorLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-white text-xs font-bold shadow-md hover:shadow-glow-gold transition-all duration-200 disabled:opacity-50 active:scale-[0.99]"
+            className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-white text-sm font-bold shadow-md hover:shadow-glow-gold transition-all duration-200 disabled:opacity-50 active:scale-[0.99]"
           >
             <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '6s' }} />
             <span>1-Click Jury / Evaluator Sign-In</span>
           </button>
-          <p className="text-[10px] text-center text-forest-900/60 dark:text-parchment-400/60 mt-1.5 font-medium">
+          <p className="text-xs text-center text-forest-900/70 dark:text-parchment-400/80 mt-2 font-medium">
             Instant verification for competition judges & reviewers
           </p>
         </div>
@@ -154,7 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
         <form onSubmit={handleAuth} className="space-y-4">
           {isSignUp && (
             <div>
-              <label className="block text-[11px] font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
                 Full Name
               </label>
               <div className="relative">
@@ -165,14 +165,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Dr. Rajesh Vaidya"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl bg-parchment-50 dark:bg-forest-900/90 border border-parchment-200 dark:border-forest-700 text-forest-950 dark:text-parchment-50 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                  className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl bg-parchment-50 dark:bg-forest-900/90 border border-parchment-200 dark:border-forest-700 text-forest-950 dark:text-parchment-50 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
               Official Email
             </label>
             <div className="relative">
@@ -183,13 +183,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="innovator@ayush-research.in"
-                className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl bg-parchment-50 dark:bg-forest-900/90 border border-parchment-200 dark:border-forest-700 text-forest-950 dark:text-parchment-50 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl bg-parchment-50 dark:bg-forest-900/90 border border-parchment-200 dark:border-forest-700 text-forest-950 dark:text-parchment-50 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -200,7 +200,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl bg-parchment-50 dark:bg-forest-900/90 border border-parchment-200 dark:border-forest-700 text-forest-950 dark:text-parchment-50 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl bg-parchment-50 dark:bg-forest-900/90 border border-parchment-200 dark:border-forest-700 text-forest-950 dark:text-parchment-50 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
               />
             </div>
           </div>
@@ -208,7 +208,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition-all mt-2 disabled:opacity-50 active:scale-[0.99]"
+            className="w-full py-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-bold shadow-md transition-all mt-2 disabled:opacity-50 active:scale-[0.99]"
           >
             {loading ? "Verifying..." : isSignUp ? "Create Verified Account" : "Sign In to Portal"}
           </button>
@@ -218,7 +218,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-[11px] text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 underline font-semibold transition-colors"
+            className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 underline font-semibold transition-colors"
           >
             {isSignUp ? "Already registered? Sign In" : "Need an account? Register Here"}
           </button>

@@ -66,14 +66,22 @@
   }
 }
  
+:root {
+  --font-scale: 1;
+}
+
 @layer base {
+  html {
+    font-size: calc(17px * var(--font-scale, 1));
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    letter-spacing: -0.02em;
-    line-height: 1.6;
+    letter-spacing: -0.015em;
+    line-height: 1.65;
+    font-size: 1rem;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';

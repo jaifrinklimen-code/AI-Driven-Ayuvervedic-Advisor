@@ -120,9 +120,9 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto space-y-5">
             {/* Editorial Badge */}
-            <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-parchment-100/90 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 shadow-subtle-luxury animate-in fade-in-50">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
-              <span className="font-display tracking-[0.2em] uppercase text-[10px]">National Regulatory Intelligence Portal • Ministry of Ayush & AIIA</span>
+            <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-parchment-100/90 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs sm:text-sm font-semibold border border-amber-500/30 shadow-subtle-luxury animate-in fade-in-50">
+              <Sparkles className="w-4 h-4 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
+              <span className="font-display tracking-wider uppercase text-xs font-bold">National Regulatory Intelligence Portal • Ministry of Ayush & AIIA</span>
             </div>
 
             {/* Modern Display Title */}
@@ -135,7 +135,7 @@ export const LandingPage: React.FC = () => {
             </h1>
 
             {/* Sub-headline */}
-            <p className="text-sm sm:text-base text-forest-900/70 dark:text-parchment-200/80 max-w-2xl mx-auto leading-relaxed font-sans font-normal">
+            <p className="text-base sm:text-lg text-forest-900/80 dark:text-parchment-200/90 max-w-2xl mx-auto leading-relaxed font-sans font-normal">
               An enterprise-grade regulatory navigator that classifies Ayurvedic products, retrieves authoritative statutory law, calculates confidence, and prevents biopiracy across Indian and International regimes.
             </p>
 
@@ -153,35 +153,35 @@ export const LandingPage: React.FC = () => {
                   value={heroQuery}
                   onChange={(e) => setHeroQuery(e.target.value)}
                   placeholder="Ask any Ayurvedic IP or regulatory question (e.g. Can I patent an Ashwagandha & Brahmi formulation in India?)..."
-                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/40 dark:placeholder:text-parchment-300/40 focus:outline-none"
+                  className="w-full bg-transparent px-3.5 py-2.5 text-sm sm:text-base text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/50 dark:placeholder:text-parchment-300/50 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-parchment-50 dark:text-forest-950 font-bold text-xs shadow-md transition-all flex-shrink-0"
+                  className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-parchment-50 dark:text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all flex-shrink-0"
                 >
                   <span>Analyze</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
 
               {/* Sample Prompt Chips */}
-              <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-forest-900/60 dark:text-parchment-300/60">
-                <span className="font-semibold text-amber-700 dark:text-amber-400">Try asking:</span>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-forest-900/70 dark:text-parchment-300/80">
+                <span className="font-bold text-amber-700 dark:text-amber-400">Try asking:</span>
                 <button
                   onClick={() => navigate("/ask?q=Can+I+patent+an+Ayurvedic+formulation+of+Ashwagandha+and+Curcumin+in+India%3F")}
-                  className="bg-parchment-200/50 dark:bg-forest-900/50 hover:bg-parchment-200 px-2.5 py-1 rounded-full border border-parchment-300/50 dark:border-forest-800 transition-colors"
+                  className="bg-parchment-200/60 dark:bg-forest-900/60 hover:bg-parchment-200 px-3 py-1 rounded-full border border-parchment-300/60 dark:border-forest-800 font-medium transition-colors"
                 >
                   Ashwagandha Patent in India
                 </button>
                 <button
                   onClick={() => navigate("/ask?q=What+are+the+patent+disclosure+requirements+under+the+new+WIPO+GRATK+Treaty+adopted+in+May+2024%3F")}
-                  className="bg-parchment-200/50 dark:bg-forest-900/50 hover:bg-parchment-200 px-2.5 py-1 rounded-full border border-parchment-300/50 dark:border-forest-800 transition-colors"
+                  className="bg-parchment-200/60 dark:bg-forest-900/60 hover:bg-parchment-200 px-3 py-1 rounded-full border border-parchment-300/60 dark:border-forest-800 font-medium transition-colors"
                 >
                   WIPO GRATK Treaty (2024)
                 </button>
                 <button
                   onClick={() => navigate("/classify")}
-                  className="bg-parchment-200/50 dark:bg-forest-900/50 hover:bg-parchment-200 px-2.5 py-1 rounded-full border border-parchment-300/50 dark:border-forest-800 transition-colors"
+                  className="bg-parchment-200/60 dark:bg-forest-900/60 hover:bg-parchment-200 px-3 py-1 rounded-full border border-parchment-300/60 dark:border-forest-800 font-medium transition-colors"
                 >
                   Classify Classical Triphala
                 </button>
@@ -200,29 +200,29 @@ export const LandingPage: React.FC = () => {
 
                 {/* Outer Orbit with Rotating Nodes */}
                 <div className="absolute inset-0 rounded-full border border-amber-500/30 dark:border-amber-400/20 animate-orbit-slow" />
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-amber-700 dark:text-amber-300 border border-amber-500/40 shadow-sm">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-amber-700 dark:text-amber-300 border border-amber-500/40 shadow-sm">
                   Patents Act Sec 3(p)
                 </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 shadow-sm">
+                <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 shadow-sm">
                   Biological Diversity Act Sec 6
                 </div>
 
                 {/* Middle Orbit */}
                 <div className="absolute inset-7 rounded-full border border-forest-800/20 dark:border-emerald-500/20 animate-spin" style={{ animationDuration: '45s', animationDirection: 'reverse' }} />
-                <div className="absolute top-1/2 -right-4 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm">
+                <div className="absolute top-1/2 -right-5 -translate-y-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm">
                   WIPO GRATK 2024
                 </div>
-                <div className="absolute top-1/2 -left-4 -translate-y-1/2 px-2.5 py-0.5 rounded-full bg-white dark:bg-forest-900 text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm">
+                <div className="absolute top-1/2 -left-5 -translate-y-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm">
                   Rule 158B (ASU)
                 </div>
 
                 {/* Central Luminous 3D Orb Core */}
                 <div className="relative z-10 w-32 h-32 sm:w-36 sm:h-36 rounded-full orb-3d flex flex-col items-center justify-center text-center p-3 border-2 border-amber-400/60 ring-2 ring-emerald-400/30 ring-offset-2 ring-offset-forest-950 animate-breathe cursor-pointer group transition-transform hover:scale-105 duration-300">
                   <Scale className="w-8 h-8 text-amber-300 drop-shadow-[0_4px_10px_rgba(245,158,11,0.85)] filter transition-transform group-hover:scale-110 duration-300 mb-0.5" />
-                  <span className="font-display text-xs font-black tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  <span className="font-display text-sm font-black tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                     IP-SAKTI
                   </span>
-                  <span className="text-[8px] uppercase tracking-[0.2em] font-mono font-bold text-amber-300 bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30 mt-1 shadow-inner">
+                  <span className="text-xs uppercase tracking-wider font-mono font-bold text-amber-300 bg-black/60 px-2.5 py-0.5 rounded-full border border-amber-400/40 mt-1 shadow-inner">
                     Intelligence Core
                   </span>
                 </div>
@@ -249,10 +249,10 @@ export const LandingPage: React.FC = () => {
               <div className="font-display text-3xl sm:text-4xl font-bold text-emerald-700 dark:text-emerald-400">
                 86.9%
               </div>
-              <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
+              <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
                 Classification Precision
               </div>
-              <div className="text-[11px] text-forest-900/50 dark:text-parchment-300/50 mt-0.5">
+              <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
                 Statutory Category Deductions
               </div>
             </div>
@@ -261,10 +261,10 @@ export const LandingPage: React.FC = () => {
               <div className="font-display text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-300">
                 100.0%
               </div>
-              <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
+              <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
                 Statutory Grounding
               </div>
-              <div className="text-[11px] text-forest-900/50 dark:text-parchment-300/50 mt-0.5">
+              <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
                 Zero Fabricated Citations
               </div>
             </div>
@@ -273,10 +273,10 @@ export const LandingPage: React.FC = () => {
               <div className="font-display text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
                 100.0%
               </div>
-              <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
+              <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
                 Adversarial Defense
               </div>
-              <div className="text-[11px] text-forest-900/50 dark:text-parchment-300/50 mt-0.5">
+              <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
                 Jailbreak & Bypass Blocked
               </div>
             </div>
@@ -285,10 +285,10 @@ export const LandingPage: React.FC = () => {
               <div className="font-display text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400">
                 &lt; 1 ms
               </div>
-              <div className="text-xs font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
+              <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
                 Query Latency
               </div>
-              <div className="text-[11px] text-forest-900/50 dark:text-parchment-300/50 mt-0.5">
+              <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
                 Sub-Millisecond Hybrid BM25
               </div>
             </div>
@@ -305,7 +305,7 @@ export const LandingPage: React.FC = () => {
           <h2 className="font-display text-3xl sm:text-4xl font-semibold text-forest-950 dark:text-parchment-50 leading-tight">
             6 Specialized Modules for the Modern Ayurvedic Innovator
           </h2>
-          <p className="mt-4 text-sm text-forest-900/70 dark:text-parchment-300/70 leading-relaxed font-sans">
+          <p className="mt-4 text-base text-forest-900/80 dark:text-parchment-200/90 leading-relaxed font-sans">
             Every module addresses a distinct pillar of Ayurvedic sovereignty: statutory formulation classification, jurisdiction isolation, verifiable citations, and biodiversity compliance.
           </p>
         </div>
@@ -322,25 +322,25 @@ export const LandingPage: React.FC = () => {
                   <div className="w-10 h-10 rounded-xl bg-parchment-100 dark:bg-forest-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                     {pillar.icon}
                   </div>
-                  <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${pillar.badgeClass}`}>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${pillar.badgeClass}`}>
                     {pillar.tag}
                   </span>
                 </div>
 
-                <span className="font-mono text-[11px] text-amber-700 dark:text-amber-400/90 font-medium block tracking-wide">
+                <span className="font-mono text-xs text-amber-700 dark:text-amber-400 font-semibold block tracking-wide">
                   {pillar.subtitle}
                 </span>
 
-                <h3 className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 mt-1.5 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
+                <h3 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 mt-1.5 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
                   {pillar.title}
                 </h3>
 
-                <p className="text-sm text-forest-900/70 dark:text-parchment-300/70 mt-3 leading-relaxed font-sans">
+                <p className="text-sm sm:text-base text-forest-900/80 dark:text-parchment-200/80 mt-3 leading-relaxed font-sans">
                   {pillar.description}
                 </p>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-parchment-100 dark:border-forest-800/60 flex items-center justify-between text-xs font-semibold text-forest-900 dark:text-amber-300 group-hover:text-amber-600">
+              <div className="mt-6 pt-4 border-t border-parchment-100 dark:border-forest-800/60 flex items-center justify-between text-sm font-bold text-forest-900 dark:text-amber-300 group-hover:text-amber-600">
                 <span>Access Module</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -368,18 +368,18 @@ export const LandingPage: React.FC = () => {
                 className="bg-white dark:bg-forest-950 rounded-2xl border border-parchment-200 dark:border-forest-800/80 p-7 shadow-subtle-luxury space-y-5"
               >
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold block">
+                  <span className="text-xs font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold block">
                     Case #{i + 1}
                   </span>
-                  <h3 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 mt-1">
+                  <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
                     {sc.title}
                   </h3>
-                  <p className="text-[11px] text-forest-900/60 dark:text-parchment-300/60 italic mt-0.5">
+                  <p className="text-xs text-forest-900/70 dark:text-parchment-300/80 italic mt-1 font-medium">
                     {sc.herbs}
                   </p>
                 </div>
 
-                <div className="p-3 bg-parchment-50 dark:bg-forest-900/40 rounded-xl border border-parchment-200/60 dark:border-forest-800 text-xs">
+                <div className="p-3.5 bg-parchment-50 dark:bg-forest-900/40 rounded-xl border border-parchment-200/60 dark:border-forest-800 text-sm">
                   <span className="font-bold text-forest-950 dark:text-parchment-100 block mb-0.5">
                     Statutory Classification:
                   </span>
@@ -388,7 +388,7 @@ export const LandingPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs">
+                <div className="space-y-2 text-sm">
                   <div className="flex items-start space-x-2 text-rose-700 dark:text-rose-400">
                     <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span><strong>Statutory Hurdle:</strong> {sc.hurdle}</span>
@@ -402,10 +402,10 @@ export const LandingPage: React.FC = () => {
                 <div className="pt-2">
                   <Link
                     to={`/ask?q=${encodeURIComponent(sc.title + " using " + sc.herbs)}`}
-                    className="w-full inline-flex items-center justify-center space-x-1.5 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400/20 dark:hover:bg-amber-400/30 text-parchment-50 dark:text-amber-300 text-xs font-bold transition-colors"
+                    className="w-full inline-flex items-center justify-center space-x-1.5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400/20 dark:hover:bg-amber-400/30 text-parchment-50 dark:text-amber-300 text-xs sm:text-sm font-bold transition-colors"
                   >
                     <span>Inspect Case in Studio</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -427,29 +427,29 @@ export const LandingPage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 text-sm">
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
-            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[10px]">PHASE 1</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1">Product Intake</h4>
-            <p className="text-forest-900/60 dark:text-parchment-300/60 text-[11px] mt-1">Normalizes botanical profile and commercial intent.</p>
+            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 1</span>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Product Intake</h4>
+            <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Normalizes botanical profile and commercial intent.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
-            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[10px]">PHASE 2</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1">Classification</h4>
-            <p className="text-forest-900/60 dark:text-parchment-300/60 text-[11px] mt-1">Deduces Classical vs Proprietary vs Phytopharma.</p>
+            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 2</span>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Classification</h4>
+            <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Deduces Classical vs Proprietary vs Phytopharma.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
-            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[10px]">PHASE 3</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1">Statutory Search</h4>
-            <p className="text-forest-900/60 dark:text-parchment-300/60 text-[11px] mt-1">Hybrid BM25 search across versioned Acts & Rules.</p>
+            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 3</span>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Statutory Search</h4>
+            <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Hybrid BM25 search across versioned Acts & Rules.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
-            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[10px]">PHASE 4</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1">ABS Clearance</h4>
-            <p className="text-forest-900/60 dark:text-parchment-300/60 text-[11px] mt-1">Flags mandatory NBA Form III approval before patent grant.</p>
+            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 4</span>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">ABS Clearance</h4>
+            <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Flags mandatory NBA Form III approval before patent grant.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
-            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[10px]">PHASE 5</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1">Verification</h4>
-            <p className="text-forest-900/60 dark:text-parchment-300/60 text-[11px] mt-1">Extracts verified citations & calculates confidence.</p>
+            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 5</span>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Verification</h4>
+            <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Extracts verified citations & calculates confidence.</p>
           </div>
         </div>
       </section>

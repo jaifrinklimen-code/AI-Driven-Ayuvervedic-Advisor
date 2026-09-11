@@ -244,11 +244,11 @@ export const FormulationClassifier: React.FC = () => {
         {/* 1-Click Demonstration Presets Bar */}
         <div className="bg-white/80 dark:bg-forest-900/60 p-4 sm:p-5 rounded-2xl border border-amber-500/20 dark:border-forest-700/60 shadow-subtle-luxury space-y-3 backdrop-blur-md">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-display font-bold text-forest-900 dark:text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-xs sm:text-sm font-display font-bold text-forest-900 dark:text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
+              <Sparkles className="w-4 h-4 text-amber-500" />
               <span>Instant Test Scenarios (1-Click Demonstration)</span>
             </span>
-            <span className="text-[11px] text-forest-900/60 dark:text-parchment-300/60 hidden sm:inline">
+            <span className="text-xs text-forest-900/70 dark:text-parchment-300/80 hidden sm:inline font-medium">
               Click any scenario to auto-fill statutory parameters
             </span>
           </div>
@@ -258,10 +258,10 @@ export const FormulationClassifier: React.FC = () => {
                 key={idx}
                 type="button"
                 onClick={() => applyPreset(p.data)}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-parchment-100 hover:bg-parchment-200 dark:bg-forest-800 dark:hover:bg-forest-700 text-forest-950 dark:text-parchment-100 border border-parchment-200 dark:border-forest-700 hover:border-amber-400 transition-all flex items-center space-x-2 shadow-xs group"
+                className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 hover:bg-parchment-200 dark:bg-forest-800 dark:hover:bg-forest-700 text-forest-950 dark:text-parchment-100 border border-parchment-200 dark:border-forest-700 hover:border-amber-400 transition-all flex items-center space-x-2 shadow-xs group"
               >
                 <span className="group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">{p.title}</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono border border-amber-500/20">
+                <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold border border-amber-500/20">
                   {p.badge}
                 </span>
               </button>
@@ -272,7 +272,7 @@ export const FormulationClassifier: React.FC = () => {
         {/* Wizard Container */}
         <div className="bg-white dark:bg-forest-900/70 rounded-3xl border border-amber-500/30 dark:border-forest-700/60 p-6 sm:p-10 shadow-elevated-luxury backdrop-blur-xl">
           {/* Progress Tracker */}
-          <div className="grid grid-cols-4 gap-2 text-center text-xs font-semibold pb-8 border-b border-parchment-200/80 dark:border-forest-800/60">
+          <div className="grid grid-cols-4 gap-2 text-center text-xs sm:text-sm font-semibold pb-8 border-b border-parchment-200/80 dark:border-forest-800/60">
             {[
               { num: 1, label: "Ingredients" },
               { num: 2, label: "Classical Lineage" },
@@ -281,7 +281,7 @@ export const FormulationClassifier: React.FC = () => {
             ].map((st) => (
               <div
                 key={st.num}
-                className={`p-2.5 rounded-xl border transition-all ${
+                className={`p-3 rounded-xl border transition-all ${
                   step === st.num
                     ? "bg-forest-900 text-parchment-50 border-forest-800 dark:bg-amber-400 dark:text-forest-950 shadow-sm"
                     : step > st.num
@@ -289,8 +289,8 @@ export const FormulationClassifier: React.FC = () => {
                     : "bg-parchment-50/50 text-forest-900/40 dark:bg-forest-950/40 dark:text-parchment-300/40 border-parchment-200/50 dark:border-forest-900"
                 }`}
               >
-                <span className="font-mono text-[10px] block opacity-70">STAGE 0{st.num}</span>
-                <span className="text-xs font-bold">{st.label}</span>
+                <span className="font-mono text-xs block font-bold opacity-75">STAGE 0{st.num}</span>
+                <span className="text-xs sm:text-sm font-bold">{st.label}</span>
               </div>
             ))}
           </div>
@@ -573,8 +573,8 @@ export const FormulationClassifier: React.FC = () => {
 
                       <div className="flex items-center space-x-2.5">
                         <div className="text-right">
-                          <span className="font-mono text-[10px] text-forest-900/50 dark:text-parchment-300/50 block">CONFIDENCE</span>
-                          <span className="font-display text-lg font-bold text-amber-700 dark:text-amber-300">{result.confidence_score}%</span>
+                          <span className="font-mono text-xs font-bold text-forest-900/70 dark:text-parchment-300/70 block">CONFIDENCE</span>
+                          <span className="font-display text-xl font-bold text-amber-700 dark:text-amber-300">{result.confidence_score}%</span>
                         </div>
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center border border-amber-500/30">
                           <Award className="w-5 h-5" />
@@ -582,41 +582,41 @@ export const FormulationClassifier: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 text-sm">
                       <div>
-                        <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                        <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block mb-1">
                           Statutory Definition & Act
                         </span>
-                        <p className="font-display text-sm font-bold text-forest-950 dark:text-parchment-100">
+                        <p className="font-display text-base font-bold text-forest-950 dark:text-parchment-100">
                           {result.statutory_definition}
                         </p>
-                        <span className="text-forest-900/60 dark:text-parchment-300/60 block mt-1">
+                        <span className="text-forest-900/70 dark:text-parchment-300/80 block mt-1.5 text-xs sm:text-sm">
                           Licensing Authority: <strong>{result.authority}</strong>
                         </span>
                       </div>
 
                       <div>
-                        <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                        <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block mb-1">
                           Indian Patentability Evaluation
                         </span>
-                        <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold ${
+                        <span className={`inline-block px-3.5 py-1.5 rounded-full text-xs font-bold ${
                           result.ip_potential.patentable_in_india
                             ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30"
                             : "bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30"
                         }`}>
                           {result.ip_potential.patentable_in_india ? "Patentable with High Synergistic Proof" : "Barred under Section 3(p) / Prior Art"}
                         </span>
-                        <p className="text-[11px] text-forest-900/70 dark:text-parchment-300/70 mt-1.5 leading-relaxed font-sans">
+                        <p className="text-xs sm:text-sm text-forest-900/80 dark:text-parchment-200/90 mt-2 leading-relaxed font-sans">
                           {result.ip_potential.caveats}
                         </p>
                       </div>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-amber-500/20">
-                      <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block mb-1">
+                      <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block mb-1">
                         Commercial Drug Licensing Roadmap
                       </span>
-                      <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed font-sans">
+                      <p className="text-sm text-forest-900/90 dark:text-parchment-100 leading-relaxed font-sans">
                         {result.licensing_pathway}
                       </p>
                     </div>

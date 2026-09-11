@@ -362,8 +362,8 @@ export const Chatbot: React.FC = () => {
         {/* Compact Editorial Studio Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-parchment-200/80 dark:border-forest-800/60">
           <div>
-            <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 text-[11px] font-semibold border border-amber-500/20 mb-1">
-              <Compass className="w-3.5 h-3.5 text-amber-500" />
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 mb-1">
+              <Compass className="w-4 h-4 text-amber-500" />
               <span className="font-display">{t("studio_badge")}</span>
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
@@ -374,20 +374,20 @@ export const Chatbot: React.FC = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowGraph(!showGraph)}
-              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all ${
                 showGraph
                   ? "bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300"
                   : "bg-white dark:bg-forest-900 border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-100 hover:border-amber-500/30"
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-amber-500" />
+              <Layers className="w-4 h-4 text-amber-500" />
               <span>{showGraph ? t("hide_graph") : t("explore_graph")}</span>
             </button>
             <button
               onClick={() => navigate("/studio")}
-              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-semibold hover:opacity-90 transition-opacity"
+              className="inline-flex items-center space-x-1 px-3.5 py-1.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs sm:text-sm font-semibold hover:opacity-90 transition-opacity"
             >
-              <Sparkles className="w-3 h-3 text-amber-300" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>{t("dossiers_btn")}</span>
             </button>
           </div>
@@ -403,9 +403,9 @@ export const Chatbot: React.FC = () => {
         {/* Elevated Command Center Composer */}
         <div className="bg-white dark:bg-forest-900/70 rounded-3xl border border-amber-500/30 dark:border-forest-700/60 p-5 sm:p-6 shadow-elevated-luxury backdrop-blur-xl">
           {/* Top Control Ribbon: Jurisdiction & Language */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-parchment-200/80 dark:border-forest-800/60 text-xs sm:text-sm">
             <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="font-display text-[11px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60">
+              <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80">
                 {t("jurisdiction_label")}
               </span>
               <div className="inline-flex p-1 bg-parchment-100 dark:bg-forest-950 rounded-xl border border-parchment-200 dark:border-forest-800">
@@ -498,7 +498,7 @@ export const Chatbot: React.FC = () => {
           </div>
 
           {/* Contextual Suggestion Pills */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-forest-900/60 dark:text-parchment-300/60 font-semibold mr-1">{t("inquiry_examples")}</span>
             {sampleQueries.map((sample, idx) => (
               <button
@@ -537,62 +537,62 @@ export const Chatbot: React.FC = () => {
             {/* Top Metric Indicators: Classification, Jurisdiction, Confidence */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Product Classification Card */}
-              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 shadow-subtle-luxury flex items-start space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
-                  <Scale className="w-4 h-4" />
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 sm:p-5 shadow-subtle-luxury flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
+                  <Scale className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
+                  <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block">
                     Product Classification
                   </span>
-                  <h3 className="font-display text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 mt-1">
                     {response.product_classification}
                   </h3>
-                  <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-parchment-100 dark:bg-forest-950 text-forest-800 dark:text-parchment-200 border border-parchment-200 dark:border-forest-800">
+                  <span className="inline-block mt-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-parchment-100 dark:bg-forest-950 text-forest-800 dark:text-parchment-200 border border-parchment-200 dark:border-forest-800">
                     Statutory ASU Regime
                   </span>
                 </div>
               </div>
 
               {/* Jurisdiction Card */}
-              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 shadow-subtle-luxury flex items-start space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
-                  <Globe2 className="w-4 h-4" />
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 sm:p-5 shadow-subtle-luxury flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                  <Globe2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50 block">
+                  <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block">
                     Jurisdiction Layer
                   </span>
-                  <h3 className="font-display text-sm font-bold text-forest-950 dark:text-parchment-50 mt-0.5">
+                  <h3 className="font-display text-base font-bold text-forest-950 dark:text-parchment-50 mt-1">
                     {response.jurisdiction}
                   </h3>
-                  <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                  <span className="inline-block mt-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                     {response.jurisdiction === "INDIA" ? "National Sovereign Statutes" : "Multilateral Conventions"}
                   </span>
                 </div>
               </div>
 
               {/* Radiant Confidence Gauge Card */}
-              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 shadow-subtle-luxury flex items-start space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/20">
-                  <ShieldCheck className="w-4 h-4" />
+              <div className="bg-white dark:bg-forest-900/70 border border-parchment-200 dark:border-forest-800 rounded-2xl p-4 sm:p-5 shadow-subtle-luxury flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 border border-amber-500/20">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div className="w-full">
                   <div className="flex items-baseline justify-between">
-                    <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/50 dark:text-parchment-300/50">
+                    <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80">
                       Evidence Confidence
                     </span>
-                    <span className="font-display text-sm font-bold text-amber-700 dark:text-amber-300">
+                    <span className="font-display text-base font-bold text-amber-700 dark:text-amber-300">
                       {response.confidence.score}%
                     </span>
                   </div>
-                  <div className="w-full bg-parchment-100 dark:bg-forest-950 h-1.5 rounded-full mt-1.5 overflow-hidden border border-parchment-200 dark:border-forest-800">
+                  <div className="w-full bg-parchment-100 dark:bg-forest-950 h-2 rounded-full mt-2 overflow-hidden border border-parchment-200 dark:border-forest-800">
                     <div
                       className="bg-gradient-to-r from-amber-500 to-emerald-500 h-full rounded-full transition-all duration-700"
                       style={{ width: `${response.confidence.score}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between mt-1 text-[10px] text-forest-900/60 dark:text-parchment-300/60">
+                  <div className="flex items-center justify-between mt-1.5 text-xs text-forest-900/70 dark:text-parchment-300/80 font-medium">
                     <span>Quality: <strong>{response.confidence.evidence_quality}</strong></span>
                     <span>Sources: <strong>{response.citations.length}</strong></span>
                   </div>
@@ -667,13 +667,13 @@ export const Chatbot: React.FC = () => {
                     <button
                       key={cite.document_id}
                       onClick={() => setSelectedCitation(cite)}
-                      className="group inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950 dark:hover:bg-forest-800 text-forest-950 dark:text-parchment-100 border border-amber-500/30 dark:border-forest-700 shadow-sm transition-all duration-200"
+                      className="group inline-flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950 dark:hover:bg-forest-800 text-forest-950 dark:text-parchment-100 border border-amber-500/30 dark:border-forest-700 shadow-sm transition-all duration-200"
                     >
-                      <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center text-[10px] font-mono font-bold">
+                      <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 flex items-center justify-center text-xs font-mono font-bold">
                         {cite.citation_index}
                       </span>
                       <span>{cite.section}</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      <ArrowUpRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </button>
                   ))}
                 </div>
@@ -682,13 +682,13 @@ export const Chatbot: React.FC = () => {
               {/* Detailed Breakdown Columns */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
-                  <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                  <span className="font-display text-sm font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block">
                     {t("applicable_regimes")}
                   </span>
-                  <ul className="space-y-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
+                  <ul className="space-y-2.5 text-sm text-forest-900/90 dark:text-parchment-200">
                     {response.applicable_ip_regimes.map((regime, i) => (
-                      <li key={i} className="flex items-start space-x-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                      <li key={i} className="flex items-start space-x-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                         <span>{regime}</span>
                       </li>
                     ))}
@@ -696,17 +696,17 @@ export const Chatbot: React.FC = () => {
                 </div>
 
                 <div className="bg-parchment-50/70 dark:bg-forest-950/60 rounded-2xl p-5 border border-parchment-200 dark:border-forest-800 space-y-3">
-                  <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                  <span className="font-display text-sm font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block">
                     {t("regulatory_pathway")}
                   </span>
-                  <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
+                  <p className="text-sm text-forest-900/90 dark:text-parchment-200 leading-relaxed">
                     {response.regulatory_pathway}
                   </p>
-                  <div className="pt-2 border-t border-parchment-200/60 dark:border-forest-800/60">
-                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 block mb-1">
+                  <div className="pt-2.5 border-t border-parchment-200/60 dark:border-forest-800/60">
+                    <span className="text-xs sm:text-sm font-bold text-amber-700 dark:text-amber-400 block mb-1">
                       {t("biodiversity_abs")}
                     </span>
-                    <p className="text-[11px] text-forest-900/70 dark:text-parchment-300/70 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-forest-900/80 dark:text-parchment-300/90 leading-relaxed">
                       {response.abs_considerations}
                     </p>
                   </div>
@@ -715,14 +715,14 @@ export const Chatbot: React.FC = () => {
 
               {/* Actionable Next Steps */}
               <div className="bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
-                <span className="font-display text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center space-x-2">
+                <span className="font-display text-sm font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 flex items-center space-x-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>{t("actionable_steps")}</span>
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-forest-900/80 dark:text-parchment-200/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-forest-900/90 dark:text-parchment-200">
                   {response.actionable_next_steps.map((step, idx) => (
-                    <div key={idx} className="flex items-start space-x-2 p-2 rounded-xl bg-white/60 dark:bg-forest-900/60 border border-emerald-500/10">
-                      <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 mt-0.5">
+                    <div key={idx} className="flex items-start space-x-2.5 p-2.5 rounded-xl bg-white/60 dark:bg-forest-900/60 border border-emerald-500/10">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center text-xs font-mono font-bold flex-shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <span>{step}</span>
@@ -732,7 +732,7 @@ export const Chatbot: React.FC = () => {
               </div>
 
               {/* Disclaimer */}
-              <p className="text-[11px] text-forest-900/50 dark:text-parchment-400/50 italic border-t border-parchment-200 dark:border-forest-800 pt-3">
+              <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-300/80 italic border-t border-parchment-200 dark:border-forest-800 pt-3 leading-relaxed">
                 {response.disclaimer}
               </p>
             </div>
@@ -745,13 +745,13 @@ export const Chatbot: React.FC = () => {
             <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
               <div className="flex items-center space-x-2">
                 <BookOpen className="w-5 h-5 text-amber-500" />
-                <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-950 dark:text-parchment-50">
+                <span className="font-display text-sm font-bold uppercase tracking-wider text-forest-950 dark:text-parchment-50">
                   Manuscript Citation Inspector
                 </span>
               </div>
               <button
                 onClick={() => setSelectedCitation(null)}
-                className="p-1 rounded-lg text-forest-900/60 dark:text-parchment-300/60 hover:bg-parchment-100 dark:hover:bg-forest-900"
+                className="p-1.5 rounded-lg text-forest-900/70 dark:text-parchment-300/70 hover:bg-parchment-100 dark:hover:bg-forest-900"
               >
                 ✕
               </button>
@@ -759,22 +759,22 @@ export const Chatbot: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
                   {selectedCitation.jurisdiction} Authority
                 </span>
-                <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1">
+                <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 mt-1.5">
                   {selectedCitation.title}
                 </h3>
-                <p className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                <p className="text-sm font-mono font-bold text-amber-700 dark:text-amber-400 mt-1">
                   {selectedCitation.section}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-parchment-50 dark:bg-forest-900 border border-amber-500/20 space-y-2">
-                <span className="font-display text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
+                <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-300/80 block">
                   Authoritative Statutory Excerpt
                 </span>
-                <p className="font-display italic text-sm text-forest-950/90 dark:text-parchment-100 leading-relaxed">
+                <p className="font-display italic text-base text-forest-950/90 dark:text-parchment-100 leading-relaxed">
                   "{selectedCitation.excerpt}"
                 </p>
               </div>
