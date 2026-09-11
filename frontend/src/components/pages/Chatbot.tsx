@@ -153,7 +153,7 @@ export const Chatbot: React.FC = () => {
             authority: "CGPDTM / Parliament of India",
             jurisdiction: "India",
             version: "Amended 2005",
-            source_url: "https://ipindia.gov.in/writereaddata/Portal/IPOAct/1_31_1_patent-act-1970-11march2015.pdf",
+            source_url: "https://www.indiacode.nic.in/handle/123456789/1392",
             excerpt: "Section 3(p) bars patenting an invention which in effect is traditional knowledge or an aggregation of known properties of traditionally known components..."
           },
           {
@@ -164,7 +164,7 @@ export const Chatbot: React.FC = () => {
             authority: "National Biodiversity Authority (NBA)",
             jurisdiction: "India",
             version: "2023 Amendment",
-            source_url: "http://nbaindia.org/uploaded/act/BDACT_2002.pdf",
+            source_url: "https://www.indiacode.nic.in/handle/123456789/2046",
             excerpt: "No person shall apply for any intellectual property right based on Indian biological resources without obtaining prior approval of the NBA..."
           }
         ],

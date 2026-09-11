@@ -104,7 +104,8 @@ export const SourcesCatalog: React.FC = () => {
             {filteredDocs.map((doc) => (
               <div
                 key={doc.document_id}
-                className="bg-white dark:bg-forest-900/60 rounded-3xl border border-parchment-200/90 dark:border-forest-800/80 p-6 shadow-subtle-luxury hover:shadow-elevated-luxury hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between"
+                onClick={() => setSelectedDoc(doc)}
+                className="bg-white dark:bg-forest-900/60 rounded-3xl border border-parchment-200/90 dark:border-forest-800/80 p-6 shadow-subtle-luxury hover:shadow-elevated-luxury hover:border-amber-500/40 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2 pb-3 border-b border-parchment-100 dark:border-forest-800/60">
@@ -117,7 +118,7 @@ export const SourcesCatalog: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 leading-snug">
+                  <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50 leading-snug group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
                     {doc.title}
                   </h3>
 
@@ -148,7 +149,11 @@ export const SourcesCatalog: React.FC = () => {
 
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => setSelectedDoc(doc)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDoc(doc);
+                      }}
                       className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-white dark:text-forest-950 text-xs sm:text-sm font-bold transition-colors shadow-sm"
                     >
                       <Eye className="w-4 h-4" />
@@ -158,12 +163,12 @@ export const SourcesCatalog: React.FC = () => {
                     <a
                       href={doc.source_url}
                       target="_blank"
-                      rel="noreferrer"
-                      referrerPolicy="no-referrer"
-                      title="Open external government portal (may require direct network access)"
-                      className="p-1.5 rounded-xl border border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Open official legislative repository record"
+                      className="p-2 rounded-xl border border-parchment-200 dark:border-forest-700 text-forest-900 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <ExternalLink className="w-4 h-4" />
                     </a>
                   </div>
                 </div>

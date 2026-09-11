@@ -215,9 +215,14 @@ export const ABSKioskPage: React.FC = () => {
     }
 
     try {
-      const lower = userQuery.toLowerCase();
-      // Handle conversational greetings directly
-      if (lower.includes("hi") || lower.includes("hello") || lower.includes("how are you") || lower.includes("answer me") || lower.includes("please")) {
+      const trimmed = userQuery.trim().toLowerCase();
+      // Only handle genuine standalone conversational greetings (e.g., "hi", "hello", "namaste", "vanakkam")
+      // Do NOT match words like "this", "which", "Brahmi", "Shilajit" that contain the substring "hi"
+      const isPureGreeting = /^(hi|hello|hey|namaste|namaskaram|vanakkam|வணக்கம்|नमस्ते)[!?,.]*$/i.test(trimmed) || 
+                             /^(hi|hello|hey|namaste|vanakkam)\s+(there|ipsakti|ip-sakti|assistant)[!?,.]*$/i.test(trimmed) ||
+                             trimmed === "how are you" || trimmed === "who are you";
+
+      if (isPureGreeting) {
         const greetingResponses: Record<SupportedLanguage, { answer: string; category: string; statute: string }> = {
           en: {
             answer: "Hello! I am IP-SAKTI, your statutory Ayurvedic advisor. You can ask me any question about patentability under Section 3(p), classical TKDL citations, or NBA biodiversity clearance under Section 6.",
