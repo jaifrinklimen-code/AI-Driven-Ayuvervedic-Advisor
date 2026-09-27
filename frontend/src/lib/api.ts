@@ -27,26 +27,48 @@ export const getApiUrl = (endpoint: string): string => {
 export const formatCitationUrl = (url: string | undefined | null): string => {
   if (!url) return "#";
 
-  if (url.startsWith("http://localhost:8000/data/") || url.startsWith("http://127.0.0.1:8000/data/")) {
-    const relativePath = url.replace(/^http:\/\/(localhost|127\.0\.0\.1):8000/, "");
-    return getApiUrl(relativePath);
-  }
-
-  if (url.startsWith("http://") || url.startsWith("https://")) {
+  // If already an absolute external web URL (not pointing to local backend /data), return as is
+  if (
+    (url.startsWith("http://") || url.startsWith("https://")) &&
+    !url.startsWith("http://localhost:8000/data/") &&
+    !url.startsWith("http://127.0.0.1:8000/data/")
+  ) {
     return url;
   }
 
-  if (url.startsWith("/data/")) {
-    return getApiUrl(url);
-  }
-  if (url.startsWith("data/")) {
-    return getApiUrl(`/${url}`);
+  // Strip local host prefix if present
+  let clean = url.replace(/^http:\/\/(localhost|127\.0\.0\.1):8000/, "");
+
+  // Separate hash fragment (e.g. #page=10) from the path
+  let hash = "";
+  const hashIdx = clean.indexOf("#");
+  if (hashIdx !== -1) {
+    hash = clean.slice(hashIdx);
+    clean = clean.slice(0, hashIdx);
   }
 
-  if (url.toLowerCase().includes(".pdf")) {
-    const cleanPath = url.startsWith("/") ? url : `/${url}`;
-    return getApiUrl(`/data${cleanPath}`);
+  // Normalize path to /data/{filename}
+  let filename = clean;
+  if (filename.startsWith("/data/")) {
+    filename = filename.slice(6);
+  } else if (filename.startsWith("data/")) {
+    filename = filename.slice(5);
+  } else if (filename.startsWith("/")) {
+    filename = filename.slice(1);
   }
 
-  return url;
+  // If it's a PDF filename, properly encode the filename while preserving extension
+  if (filename.toLowerCase().includes(".pdf")) {
+    // Decode first to prevent double-encoding (%20 -> %2520)
+    try {
+      filename = decodeURIComponent(filename);
+    } catch {
+      // keep as is if malformed
+    }
+    const encodedFilename = encodeURIComponent(filename);
+    return `${getApiUrl(`/data/${encodedFilename}`)}${hash}`;
+  }
+
+  return `${getApiUrl(clean)}${hash}`;
 };
+

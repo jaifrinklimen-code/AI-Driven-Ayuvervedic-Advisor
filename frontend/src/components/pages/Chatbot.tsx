@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Globe2,
   Mic,
-  ArrowUpRight,
   Download,
   Bookmark,
   Copy,
@@ -658,17 +657,32 @@ export const Chatbot: React.FC = () => {
                         </span>
                         <div className="flex flex-wrap gap-2.5">
                           {authCites.map((cite) => (
-                            <button
+                            <div
                               key={cite.document_id}
-                              onClick={() => setSelectedCitation(cite)}
-                              className="group inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-950 dark:text-emerald-200 border border-emerald-500/30 dark:border-emerald-700 shadow-sm transition-all duration-200"
+                              className="group inline-flex items-center rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-950 dark:text-emerald-200 border border-emerald-500/30 dark:border-emerald-700 shadow-sm transition-all duration-200 overflow-hidden"
                             >
-                              <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center text-[10px] font-mono font-bold">
-                                {cite.citation_index}
-                              </span>
-                              <span>{cite.title.replace(".pdf", "")} — {cite.section}</span>
-                              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                            </button>
+                              <a
+                                href={formatCitationUrl(cite.source_url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={`Open ${cite.title} (${cite.section})`}
+                                className="inline-flex items-center space-x-2 px-3 py-2 hover:underline"
+                              >
+                                <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center text-[10px] font-mono font-bold">
+                                  {cite.citation_index}
+                                </span>
+                                <span>{cite.title.replace(".pdf", "")} — {cite.section}</span>
+                                <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCitation(cite)}
+                                title="Inspect manuscript excerpt"
+                                className="px-2 py-2 border-l border-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors"
+                              >
+                                <BookOpen className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -681,17 +695,32 @@ export const Chatbot: React.FC = () => {
                         </span>
                         <div className="flex flex-wrap gap-2">
                           {suppCites.map((cite) => (
-                            <button
+                            <div
                               key={cite.document_id}
-                              onClick={() => setSelectedCitation(cite)}
-                              className="group inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950/60 dark:hover:bg-forest-900 text-forest-900/70 dark:text-parchment-300/70 border border-parchment-200/80 dark:border-forest-800 shadow-sm transition-all duration-200"
+                              className="group inline-flex items-center rounded-lg text-xs font-medium bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950/60 dark:hover:bg-forest-900 text-forest-900/70 dark:text-parchment-300/70 border border-parchment-200/80 dark:border-forest-800 shadow-sm transition-all duration-200 overflow-hidden"
                             >
-                              <span className="w-3.5 h-3.5 rounded-full bg-parchment-200 dark:bg-forest-800 text-forest-700 dark:text-parchment-400 flex items-center justify-center text-[9px] font-mono">
-                                {cite.citation_index}
-                              </span>
-                              <span>{cite.title.replace(".pdf", "")} — {cite.section}</span>
-                              <ArrowUpRight className="w-3 h-3 text-forest-400/60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                            </button>
+                              <a
+                                href={formatCitationUrl(cite.source_url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={`Open ${cite.title} (${cite.section})`}
+                                className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 hover:underline"
+                              >
+                                <span className="w-3.5 h-3.5 rounded-full bg-parchment-200 dark:bg-forest-800 text-forest-700 dark:text-parchment-400 flex items-center justify-center text-[9px] font-mono">
+                                  {cite.citation_index}
+                                </span>
+                                <span>{cite.title.replace(".pdf", "")} — {cite.section}</span>
+                                <ExternalLink className="w-3 h-3 text-forest-400/60" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCitation(cite)}
+                                title="Inspect citation excerpt"
+                                className="px-1.5 py-1.5 border-l border-parchment-200 dark:border-forest-800 text-forest-600 dark:text-parchment-400 hover:bg-parchment-200/50 transition-colors"
+                              >
+                                <BookOpen className="w-3 h-3" />
+                              </button>
+                            </div>
                           ))}
                         </div>
                       </div>
