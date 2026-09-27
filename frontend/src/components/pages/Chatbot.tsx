@@ -80,6 +80,19 @@ export const Chatbot: React.FC = () => {
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+
+  const handleOpenPdf = (sourceUrl: string, e?: React.MouseEvent) => {
+    const formatted = formatCitationUrl(sourceUrl);
+    if (!formatted || formatted === "#") {
+      if (e) e.preventDefault();
+      setPdfNotice(
+        "PDF document service is not configured for production. Documents are hosted on the backend Python service. Please configure VITE_BACKEND_URL in your Vercel Project Settings."
+      );
+      return;
+    }
+    window.open(formatted, "_blank", "noopener,noreferrer");
+  };
 
   // Read query from URL if passed from landing page
   useEffect(() => {
@@ -519,6 +532,30 @@ export const Chatbot: React.FC = () => {
           </div>
         )}
 
+        {/* Unconfigured Production Backend Notice */}
+        {pdfNotice && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex items-start justify-between gap-3 animate-in fade-in-50 duration-200">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1 text-xs sm:text-sm">
+                <p className="font-bold text-amber-950 dark:text-amber-100">
+                  Backend Document Service Notice
+                </p>
+                <p className="leading-relaxed">
+                  {pdfNotice}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPdfNotice(null)}
+              className="p-1 text-amber-700 dark:text-amber-400 hover:opacity-75 text-sm font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {response && !loading && (
           <div className="space-y-6 animate-in fade-in-50 duration-300">
             {/* Top Metric Indicators: Classification, Jurisdiction, Confidence */}
@@ -667,7 +704,12 @@ export const Chatbot: React.FC = () => {
                               className="group inline-flex items-center rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-950 dark:text-emerald-200 border border-emerald-500/30 dark:border-emerald-700 shadow-sm transition-all duration-200 overflow-hidden"
                             >
                               <a
-                                href={formatCitationUrl(cite.source_url)}
+                                href={formatCitationUrl(cite.source_url) || "#"}
+                                onClick={(e) => {
+                                  if (!formatCitationUrl(cite.source_url)) {
+                                    handleOpenPdf(cite.source_url, e);
+                                  }
+                                }}
                                 target="_blank"
                                 rel="noreferrer"
                                 title={`Open ${cite.title} (${cite.section})`}
@@ -705,7 +747,12 @@ export const Chatbot: React.FC = () => {
                               className="group inline-flex items-center rounded-lg text-xs font-medium bg-parchment-50 hover:bg-parchment-100 dark:bg-forest-950/60 dark:hover:bg-forest-900 text-forest-900/70 dark:text-parchment-300/70 border border-parchment-200/80 dark:border-forest-800 shadow-sm transition-all duration-200 overflow-hidden"
                             >
                               <a
-                                href={formatCitationUrl(cite.source_url)}
+                                href={formatCitationUrl(cite.source_url) || "#"}
+                                onClick={(e) => {
+                                  if (!formatCitationUrl(cite.source_url)) {
+                                    handleOpenPdf(cite.source_url, e);
+                                  }
+                                }}
                                 target="_blank"
                                 rel="noreferrer"
                                 title={`Open ${cite.title} (${cite.section})`}
@@ -851,7 +898,12 @@ export const Chatbot: React.FC = () => {
               </div>
 
               <a
-                href={formatCitationUrl(selectedCitation.source_url)}
+                href={formatCitationUrl(selectedCitation.source_url) || "#"}
+                onClick={(e) => {
+                  if (!formatCitationUrl(selectedCitation.source_url)) {
+                    handleOpenPdf(selectedCitation.source_url, e);
+                  }
+                }}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-semibold hover:opacity-90 shadow-md transition-opacity w-full justify-center"
