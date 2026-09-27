@@ -67,6 +67,7 @@ class ABSRequest(BaseModel):
 
 # Endpoints
 @app.get("/data/{filename}")
+@app.head("/data/{filename}")
 def serve_pdf(filename: str):
     """
     Safely serve reference PDFs for citations.
@@ -97,6 +98,24 @@ def serve_pdf(filename: str):
             "Access-Control-Allow-Origin": "*"
         }
     )
+
+@app.get("/")
+def root():
+    return {
+        "service": "IP-SAKTI Sahayak API",
+        "status": "online",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+        "corpus": "/api/corpus",
+        "endpoints": {
+            "query": "/api/query",
+            "classify": "/api/classify",
+            "abs_check": "/api/abs-check",
+            "corpus": "/api/corpus",
+            "pdf_data": "/data/{filename}"
+        }
+    }
 
 @app.get("/health")
 def health_check():

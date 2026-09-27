@@ -1,3 +1,4 @@
+import { formatCitationUrl } from "../../lib/api";
 import React, { useState } from "react";
 import { BookOpen, X, ExternalLink, ShieldCheck, Copy, Check, Download, Info } from "lucide-react";
 
@@ -32,7 +33,7 @@ export const GazetteReaderModal: React.FC<GazetteReaderModalProps> = ({ document
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
-      `=== STATUTORY RECORD: ${doc.title} ===\nSection: ${doc.section}\nAuthority: ${doc.authority}\nJurisdiction: ${doc.jurisdiction}\nEffective: ${doc.effective_from}\nSHA-256 Hash: ${doc.content_hash}\n\nSTATUTORY TEXT:\n${doc.text}\n\nSource: ${doc.source_url}`
+      `=== STATUTORY RECORD: ${doc.title} ===\nSection: ${doc.section}\nAuthority: ${doc.authority}\nJurisdiction: ${doc.jurisdiction}\nEffective: ${doc.effective_from}\nSHA-256 Hash: ${doc.content_hash}\n\nSTATUTORY TEXT:\n${doc.text}\n\nSource: ${formatCitationUrl(doc.source_url)}`
     );
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -167,7 +168,7 @@ export const GazetteReaderModal: React.FC<GazetteReaderModalProps> = ({ document
           </div>
 
           <a
-            href={doc.source_url}
+            href={formatCitationUrl(doc.source_url)}
             target="_blank"
             rel="noreferrer"
             referrerPolicy="no-referrer"

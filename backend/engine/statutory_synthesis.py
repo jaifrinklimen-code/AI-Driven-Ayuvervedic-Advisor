@@ -45,12 +45,97 @@ def generate_dynamic_statutory_response(
     regulatory_pathway = "Comply with applicable AYUSH State Licensing Authority regulations and National Biodiversity Authority mandates."
 
     # -------------------------------------------------------------
-    # 1. VAGUE CLARIFICATION INTENT
+    # 0. OUT-OF-SCOPE / NON-AYURVEDIC INQUIRIES
     # -------------------------------------------------------------
+    if intent == "OUT_OF_SCOPE":
+        category = "Out-of-Scope Inquiry — Non-Ayurvedic / Plant Breeding Topic"
+        ip_regimes = [
+            "Protection of Plant Varieties and Farmers' Rights Act, 2001 (PPV&FRA)",
+            "Patents Act, 1970 (Section 3(j) Biological Process Exclusions)",
+            "Biological Diversity Act, 2002"
+        ]
+        regulatory_pathway = "Plant varieties, seeds, and essentially biological processes are non-patentable under Section 3(j) of the Patents Act, 1970. Novel plant varieties may be registered under the Protection of Plant Varieties and Farmers' Rights Act, 2001."
+
+        if language == "hi":
+            ans = (
+                "यह प्रश्न आयुर्वेद, बौद्धिक संपदा या आयुष विनियामक मार्गदर्शन के बजाय पादप प्रजनन (Plant Breeding) से संबंधित है।\n\n"
+                "यदि आप यह जानना चाहते हैं कि क्या किसी पादप प्रजनन आविष्कार को बौद्धिक संपदा (जैसे पौधे की किस्म और कृषक अधिकार संरक्षण अधिनियम, 2001 या पेटेंट अधिनियम की धारा 3(j) के तहत प्रतिबंधों) द्वारा संरक्षित किया जा सकता है, तो मैं इसमें आपकी सहायता कर सकता हूँ।"
+            )
+        elif language == "ta":
+            ans = (
+                "இந்தக் கேள்வி ஆயுர்வேதம் அல்லது அறிவுசார் சொத்துரிமை வழிகாட்டலை விட தாவர இனப்பெருக்கம் (Plant Breeding) பற்றியதாகும்.\n\n"
+                "தாவர இனப்பெருக்க கண்டுபிடிப்பை ஐபி உரிமைகள் மூலம் (தாவர வகைகள் மற்றும் விவசாயிகள் உரிமைகள் பாதுகாப்பு சட்டம் 2001 அல்லது காப்புரிமை சட்டம் பிரிவு 3(j) கீழ் உள்ள விலக்குகள்) பாதுகாக்க முடியுமா என்று நீங்கள் கேட்டால், அதற்கு நான் உதவ முடியும்."
+            )
+        else:
+            ans = (
+                "That question is about plant breeding rather than Ayurveda, intellectual property, or regulatory guidance.\n\n"
+                "If you're asking whether a plant-breeding invention can be protected through IP (such as under the Protection of Plant Varieties and Farmers' Rights Act, 2001 or patent exclusions under Section 3(j) of the Patents Act, 1970), I can help with that."
+            )
+        return ans, category, ip_regimes, regulatory_pathway
+
     # -------------------------------------------------------------
-    # 1. VAGUE CLARIFICATION INTENT
+    # 1A. VAGUE USE OF AYURVEDA ("Can I use ayurvedha?")
     # -------------------------------------------------------------
-    if intent == "VAGUE_CLARIFICATION":
+    elif intent == "VAGUE_USE_AYURVEDA":
+        category = "Ayurvedic General Use & Multi-Pathway Clarification"
+        ip_regimes = [
+            "Drugs & Cosmetics Act, 1940 (Rule 158B Manufacturing License)",
+            "Patents Act, 1970 (Section 3(p) Traditional Knowledge Exclusion)",
+            "Trade Marks Act, 1999 (Brand Protection)",
+            "Food Safety and Standards (Ayurveda Aahar) Regulations, 2022"
+        ]
+        regulatory_pathway = "Clarification required: Specify formulation, commercial licensing, or IP protection pathway."
+
+        if language == "hi":
+            ans = (
+                "निश्चित रूप से। क्या आपका आशय किसी आयुर्वेदिक फॉर्मूलेशन का उपयोग करने, "
+                "आयुर्वेदिक उत्पाद का निर्माण या बिक्री करने, या बौद्धिक संपदा (पेटेंट/ट्रेडमार्क) के माध्यम से इसे सुरक्षित करने से है?"
+            )
+        elif language == "ta":
+            ans = (
+                "நிச்சயமாக. ஆயுர்வேத மருந்தை பயன்படுத்துவது, "
+                "வணிகரீதியாக தயாரிப்பது அல்லது விற்பனை செய்வது, அல்லது அறிவுசார் சொத்துரிமை மூலம் பாதுகாப்பது - இவற்றில் உங்கள் நோக்கம் என்னவென்று தெளிவுபடுத்த முடியுமா?"
+            )
+        else:
+            ans = (
+                "Sure. Do you mean using an Ayurvedic formulation, "
+                "manufacturing or selling an Ayurvedic product, or protecting an Ayurvedic formulation through intellectual property?"
+            )
+        return ans, category, ip_regimes, regulatory_pathway
+
+    # -------------------------------------------------------------
+    # 1B. VAGUE PATENT THIS ("Can I patent this?")
+    # -------------------------------------------------------------
+    elif intent == "VAGUE_PATENT_THIS":
+        category = "Patentability Assessment — Target Invention Specification Required"
+        ip_regimes = [
+            "Patents Act, 1970 (Sections 3(p), 3(e), 3(d))",
+            "Biological Diversity Act, 2002 (Section 6 NBA Form III)",
+            "Traditional Knowledge Digital Library (TKDL)"
+        ]
+        regulatory_pathway = "Please provide the specific botanical ingredients, novel extraction process, or synergy data for patentability evaluation."
+
+        if language == "hi":
+            ans = (
+                "मैं इसमें आपकी सहायता कर सकता हूँ। आप किस उत्पाद या फॉर्मूलेशन का पेटेंट कराना चाहते हैं? "
+                "कृपया सामग्री (जैसे विशिष्ट जड़ी-बूटियाँ), नवीन निष्कर्षण प्रक्रिया, या चिकित्सीय उपयोग निर्दिष्ट करें।"
+            )
+        elif language == "ta":
+            ans = (
+                "நான் இதில் உங்களுக்கு உதவ முடியும். நீங்கள் எதற்கு காப்புரிமை பெற விரும்புகிறீர்கள்? "
+                "குறிப்பிட்ட மூலிகைகள், புதுமையான தயாரிப்பு முறை அல்லது பயன்பாட்டை குறிப்பிடவும்."
+            )
+        else:
+            ans = (
+                "I can help with that. What would you like to patent? "
+                "Please specify your formulation ingredients (such as specific herbs), novel extraction process, or synergistic therapeutic application."
+            )
+        return ans, category, ip_regimes, regulatory_pathway
+
+    # -------------------------------------------------------------
+    # 1C. GENERAL VAGUE CLARIFICATION
+    # -------------------------------------------------------------
+    elif intent == "VAGUE_CLARIFICATION":
         category = "Patent / Proprietary & Classical / Generic Multi-Pathway Clarification"
         ip_regimes = [
             "Drugs & Cosmetics Act, 1940 (Rule 158B Manufacturing License)",
@@ -224,9 +309,13 @@ def generate_dynamic_statutory_response(
         return ans, category, ip_regimes, regulatory_pathway
 
     # -------------------------------------------------------------
-    # 6. PATENTABILITY — POLYHERBAL COMBINATIONS (Ashwagandha + Brahmi)
+    # 6. PATENTABILITY — POLYHERBAL COMBINATIONS
     # -------------------------------------------------------------
     elif intent == "PATENTABILITY_POLYHERBAL_COMBINATION":
+        herb_titles = [h.get("sanskrit", h.get("key", "").capitalize()) for h in herbs]
+        herb_str_hi = " और ".join(herb_titles) if herb_titles else "आयुर्वेदिक जड़ी-बूटियों"
+        herb_str_ta = " மற்றும் ".join([h.get("tamil", h.get("key", "").capitalize()) for h in herbs]) if herbs else "ஆயுர்வேத மூலிகைகள்"
+        herb_str_en = " and ".join([f"{h.get('key', '').capitalize()} ({h.get('botanical', '')})" for h in herbs]) if herbs else "Ayurvedic botanical components"
         category = f"Patent / Proprietary Polyherbal Assessment — {' + '.join([h['key'].capitalize() for h in herbs]) if herbs else 'Herbal Combination'}"
         ip_regimes = [
             "Patents Act, 1970 — Section 3(p) (Traditional Knowledge Prior Art)",
@@ -235,27 +324,40 @@ def generate_dynamic_statutory_response(
         ]
         regulatory_pathway = "Conduct prior-art searches on InPASS and TKDL; obtain NBA Form III approval before patent grant; demonstrate verifiable synergistic therapeutic data exceeding individual herb profiles."
 
+        # Collect citations for detected herbs
+        herb_citations_en = []
+        herb_citations_hi = []
+        herb_citations_ta = []
+        for h in herbs:
+            if h.get("source_pdf") and h.get("page"):
+                herb_citations_en.append(f"{h.get('key', '').capitalize()} ({h.get('botanical', '')}, {h.get('source_pdf')}, Page {h.get('page')})")
+                herb_citations_hi.append(f"{h.get('sanskrit', h.get('key', ''))} ({h.get('source_pdf')}, पृष्ठ {h.get('page')})")
+                herb_citations_ta.append(f"{h.get('tamil', h.get('key', ''))} ({h.get('source_pdf')}, பக்கம் {h.get('page')})")
+        
+        cit_en = ", ".join(herb_citations_en) if herb_citations_en else "Ayurvedic Pharmacopoeia monographs"
+        cit_hi = ", ".join(herb_citations_hi) if herb_citations_hi else "भारतीय आयुर्वेदिक फार्माकोपिया संदर्भ"
+        cit_ta = ", ".join(herb_citations_ta) if herb_citations_ta else "ஆயுர்வேத பார்மகோபியா சான்றுகள்"
+
         if language == "hi":
             ans = (
-                "अश्वगंधा और ब्राह्मी के नवीन संयोजन के पेटेंट मूल्यांकन के मुख्य वैधानिक बिंदु:\n\n"
-                "1. स्थापित पूर्व कला: अश्वगंधा (Withania somnifera, API-Vol-1.pdf, पृष्ठ 31) और ब्राह्मी (API-Vol-2.1.pdf, पृष्ठ 92) दोनों भारतीय आयुर्वेदिक फार्माकोपिया में प्रलेखित ज्ञात औषधीय द्रव्य हैं।\n\n"
-                "2. वैधानिक सीमाएं: धारा 3(p) पारंपरिक ज्ञान के दोहराव को वर्जित करती है तथा धारा 3(e) केवल घटकों के गुणों के संकलन वाले मात्र मिश्रण (Mere Admixture) पर पेटेंट रोकती है।\n\n"
-                "3. आवश्यकता: इस संयोजन को पेटेंट योग्य बनाने के लिए दोनों घटकों के साधारण योग से परे स्पष्ट सहक्रियाशील चिकित्सीय प्रभाव (Synergy) और गैर-पारंपरिक तकनीकी नवीनता सिद्ध करना अनिवार्य है।"
+                f"{herb_str_hi} के नवीन संयोजन के पेटेंट मूल्यांकन के मुख्य वैधानिक बिंदु:\n\n"
+                f"1. स्थापित पूर्व कला: {cit_hi} दोनों भारतीय आयुर्वेदिक फार्माकोपिया में प्रलेखित ज्ञात औषधीय द्रव्य हैं।\n\n"
+                f"2. वैधानिक सीमाएं: धारा 3(p) पारंपरिक ज्ञान के दोहराव को वर्जित करती है तथा धारा 3(e) केवल घटकों के गुणों के संकलन वाले मात्र मिश्रण (Mere Admixture) पर पेटेंट रोकती है।\n\n"
+                f"3. आवश्यकता: इस संयोजन को पेटेंट योग्य बनाने के लिए दोनों घटकों के साधारण योग से परे स्पष्ट सहक्रियाशील चिकित्सीय प्रभाव (Synergy) और गैर-पारंपरिक तकनीकी नवीनता सिद्ध करना अनिवार्य है।"
             )
         elif language == "ta":
             ans = (
-                "அஸ்வகந்தா மற்றும் பிராமி ஆகியவற்றின் கலவை காப்புரிமை பெறுவதற்கான சட்ட மதிப்பீடு:\n\n"
-                "1. முந்தைய ஆவண சான்று: அஸ்வகந்தா (API-Vol-1.pdf, பக்கம் 31) மற்றும் பிராமி (API-Vol-2.1.pdf, பக்கம் 92) ஆகியவை ஆயுர்வேத பார்மகோபியாவில் உள்ள அறியப்பட்ட மூலிகைகள்.\n\n"
-                "2. சட்ட தடைகள்: காப்புரிமைச் சட்டம் பிரிவு 3(p) பாரம்பரிய அறிவையும், பிரிவு 3(e) வெறும் கலவைகளையும் (Mere Admixture) காப்புரிமையிலிருந்து விலக்குகிறது.\n\n"
-                "3. நிபந்தனை: இவ்விரு மூலிகைகளின் கலவைக்கு காப்புரிமை பெற வேண்டுமானால், வெறும் சேர்க்கையைத் தாண்டிய எதிர்பாராத மருத்துவ ஒருங்கிணைந்த நன்மையை (Synergy) தொழில்நுட்ப ரீதியாக நிரூபிக்க வேண்டும்."
+                f"{herb_str_ta} ஆகியவற்றின் கலவை காப்புரிமை பெறுவதற்கான சட்ட மதிப்பீடு:\n\n"
+                f"1. முந்தைய ஆவண சான்று: {cit_ta} ஆகியவை ஆயுர்வேத பார்மகோபியாவில் உள்ள அறியப்பட்ட மூலிகைகள்.\n\n"
+                f"2. சட்ட தடைகள்: காப்புரிமைச் சட்டம் பிரிவு 3(p) பாரம்பரிய அறிவையும், பிரிவு 3(e) வெறும் கலவைகளையும் (Mere Admixture) காப்புரிமையிலிருந்து விலக்குகிறது.\n\n"
+                f"3. நிபந்தனை: இவ்விரு மூலிகைகளின் கலவைக்கு காப்புரிமை பெற வேண்டுமானால், வெறும் சேர்க்கையைத் தாண்டிய எதிர்பாராத மருத்துவ ஒருங்கிணைந்த நன்மையை (Synergy) தொழில்நுட்ப ரீதியாக நிரூபிக்க வேண்டும்."
             )
         else:
             ans = (
-                "Statutory patentability evaluation for combining Ashwagandha and Brahmi under Indian Patent Law:\n\n"
-                "1. Established Prior Art: Both Ashwagandha (Withania somnifera Dunal, documented in API-Vol-1.pdf, Page 31) "
-                "and Brahmi (Bacopa monnieri, documented in API-Vol-2.1.pdf, Page 92) are classical substances in the Ayurvedic Pharmacopoeia of India.\n\n"
-                "2. Statutory Bars: Section 3(p) excludes traditional knowledge, while Section 3(e) bars patenting a mere admixture resulting only in the aggregation of component properties.\n\n"
-                "3. Patentability Requirement: To overcome Sections 3(e) and 3(p), the applicant must demonstrate empirical synergistic efficacy exceeding mere aggregation, accompanied by mandatory National Biodiversity Authority approval (NBA Form III under Section 6 of Biological Diversity Act)."
+                f"Statutory patentability evaluation for combining {herb_str_en} under Indian Patent Law:\n\n"
+                f"1. Established Prior Art: Component herbs ({cit_en}) are classical substances documented in the Ayurvedic Pharmacopoeia of India.\n\n"
+                f"2. Statutory Bars: Section 3(p) of the Patents Act, 1970 excludes traditional knowledge, while Section 3(e) bars patenting a mere admixture resulting only in the aggregation of component properties.\n\n"
+                f"3. Patentability Requirement: To overcome Sections 3(e) and 3(p), the applicant must scientifically substantiate empirical synergistic efficacy exceeding mere arithmetic aggregation, accompanied by mandatory National Biodiversity Authority approval (NBA Form III under Section 6 of Biological Diversity Act)."
             )
         return ans, category, ip_regimes, regulatory_pathway
 
@@ -546,23 +648,57 @@ def generate_dynamic_statutory_response(
     # -------------------------------------------------------------
     else:
         category = "Patent / Proprietary & Statutory ASU Regulatory Framework"
-        top_excerpt = retrieved_docs[0].get("chunk_text", "")[:260] if retrieved_docs else ""
-        if language == "hi":
-            ans = (
-                f"आपके प्रश्न के संबंध में आधिकारिक वैधानिक एवं औषधीय साक्ष्य:\n\n"
-                f"'{top_excerpt}...'\n\n"
-                f"भारतीय कानूनों के तहत आयुर्वेदिक उत्पादों का विनियमन पेटेंट अधिनियम, 1970 (धारा 3(p), 3(e)), औषधि एवं प्रसाधन सामग्री अधिनियम, 1940 (नियम 158B), तथा जैविक विविधता अधिनियम, 2002 के तहत किया जाता है।"
-            )
-        elif language == "ta":
-            ans = (
-                f"உங்கள் கேள்விக்கான அதிகாரப்பூர்வ சட்ட மற்றும் மருத்துவ சான்றுகள்:\n\n"
-                f"'{top_excerpt}...'\n\n"
-                f"இந்தியாவில் ஆயுர்வேத தயாரிப்புகள் காப்புரிமைச் சட்டம் 1970 (பிரிவு 3(p), 3(e)), மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் 1940 (விதி 158B) மற்றும் பல்லுயிர் சட்டம் 2002 ஆகியவற்றின் கீழ் நிர்வகிக்கப்படுகின்றன."
-            )
+        top_doc = retrieved_docs[0] if retrieved_docs else None
+        top_score = top_doc.get("similarity_score", 0.0) if top_doc else 0.0
+        top_excerpt = top_doc.get("chunk_text", "").strip()[:260] if top_doc else ""
+
+        if not top_doc or top_score < 0.35:
+            # Explicit honest statement when corpus does not establish the answer
+            if language == "hi":
+                ans = (
+                    "उपलब्ध आधिकारिक वैधानिक एवं औषधीय दस्तावेजों में इस विशिष्ट प्रश्न का पर्याप्त प्रत्यक्ष साक्ष्य नहीं मिला है।\n\n"
+                    "सटीक वैधानिक निर्धारण के लिए, कृपया निम्नलिखित विवरण निर्दिष्ट करें:\n"
+                    "1. संबंधित फॉर्मूलेशन की सटीक वानस्पतिक या खनिज सामग्री।\n"
+                    "2. इच्छित अनुप्रयोग (शास्त्रीय आयुर्वेदिक दवा, प्रोप्रायटरी औषधि, सौंदर्य प्रसाधन, या आयुर्वेद आहार)।\n"
+                    "3. लक्षित बौद्धिक संपदा अधिकार (पेटेंट, ट्रेडमार्क, या लाइसेंसिंग)।"
+                )
+            elif language == "ta":
+                ans = (
+                    "கிடைக்கப்பெற்ற அதிகாரப்பூர்வ சட்ட ஆவணங்களில் இந்த குறிப்பிட்ட கேள்விக்கு போதுமான நேரடி சான்றுகள் கிடைக்கவில்லை.\n\n"
+                    "துல்லியமான சட்ட வழிகாட்டலுக்கு, பின்வரும் விவரங்களை குறிப்பிடவும்:\n"
+                    "1. மூலிகைகள் அல்லது கலவையின் துல்லியமான தாவரவியல் பெயர்கள்.\n"
+                    "2. தயாரிப்பு வகை (பாரம்பரிய மருந்து, தனியுரிமை தயாரிப்பு, அழகுசாதனம், அல்லது ஆயுர்வேத ஆகார்).\n"
+                    "3. தேவையான அறிவுசார் சொத்துரிமை (காப்புரிமை, வர்த்தக முத்திரை, அல்லது உற்பத்தி உரிமம்)."
+                )
+            else:
+                ans = (
+                    "The available statutory and pharmacopoeial documents in the corpus do not establish a definitive answer for this specific query.\n\n"
+                    "To determine the precise statutory classification and regulatory pathway, please specify:\n"
+                    "1. The botanical/herbal ingredients and whether they are processed via classical or novel extraction techniques.\n"
+                    "2. The intended regulatory category (Classical ASU Drug, Patent/Proprietary Medicine, Herbal Cosmetic, or Ayurveda Aahar).\n"
+                    "3. The specific IP regime sought (patent protection, trademark registration, or state manufacturing licensing)."
+                )
         else:
-            ans = (
-                f"Authoritative statutory and Ayurvedic regulatory assessment regarding your query:\n\n"
-                f"\"{top_excerpt}...\"\n\n"
-                f"Ayurvedic products in India are regulated under the Patents Act, 1970 (Sections 3(p), 3(e)), Drugs & Cosmetics Act, 1940 (Rule 158B licensing), and the Biological Diversity Act, 2002 (mandatory NBA/SBB clearances)."
-            )
+            pdf_source = top_doc.get("pdf_filename", "Statutory Document")
+            page_num = top_doc.get("page_number", "")
+            page_cite = f" (Source: {pdf_source}, Page {page_num})" if page_num else f" (Source: {pdf_source})"
+
+            if language == "hi":
+                ans = (
+                    f"आपके प्रश्न के संबंध में आधिकारिक वैधानिक एवं औषधीय साक्ष्य{page_cite}:\n\n"
+                    f"'{top_excerpt}...'\n\n"
+                    f"भारतीय कानूनों के तहत आयुर्वेदिक उत्पादों का विनियमन पेटेंट अधिनियम, 1970 (धारा 3(p), 3(e)), औषधि एवं प्रसाधन सामग्री अधिनियम, 1940 (नियम 158B), तथा जैविक विविधता अधिनियम, 2002 के तहत किया जाता है।"
+                )
+            elif language == "ta":
+                ans = (
+                    f"உங்கள் கேள்விக்கான அதிகாரப்பூர்வ சட்ட மற்றும் மருத்துவ சான்றுகள்{page_cite}:\n\n"
+                    f"'{top_excerpt}...'\n\n"
+                    f"இந்தியாவில் ஆயுர்வேத தயாரிப்புகள் காப்புரிமைச் சட்டம் 1970 (பிரிவு 3(p), 3(e)), மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் 1940 (விதி 158B) மற்றும் பல்லுயிர் சட்டம் 2002 ஆகியவற்றின் கீழ் நிர்வகிக்கப்படுகின்றன."
+                )
+            else:
+                ans = (
+                    f"Authoritative statutory and Ayurvedic regulatory assessment regarding your query{page_cite}:\n\n"
+                    f"\"{top_excerpt}...\"\n\n"
+                    f"Ayurvedic products in India are regulated under the Patents Act, 1970 (Sections 3(p), 3(e)), Drugs & Cosmetics Act, 1940 (Rule 158B licensing), and the Biological Diversity Act, 2002 (mandatory NBA/SBB clearances)."
+                )
         return ans, category, ip_regimes, regulatory_pathway

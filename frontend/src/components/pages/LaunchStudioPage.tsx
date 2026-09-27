@@ -1,3 +1,4 @@
+import { formatCitationUrl } from "../../lib/api";
 import React, { useState, useEffect } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
@@ -150,7 +151,7 @@ export const LaunchStudioPage: React.FC = () => {
 
   const handleDownload = () => {
     if (!selectedRecord) return;
-    const text = `IP-SAKTI REGULATORY ASSESSMENT REPORT\n======================================\nDate: ${selectedRecord.created_at || new Date().toISOString()}\nQuery: ${selectedRecord.query}\nJurisdiction: ${selectedRecord.jurisdiction}\nProduct Classification: ${selectedRecord.category}\nConfidence Score: ${selectedRecord.confidence_score}%\n\nSTATUTORY FINDING:\n${selectedRecord.short_answer}\n\nVERIFIED CITATIONS:\n${selectedRecord.citations.map((c: any, i: number) => `${i + 1}. ${c.title} (${c.section}) - ${c.source_url}`).join("\n")}\n\nDISCLAIMER:\nThis report is an automated regulatory intelligence assessment generated via IP-SAKTI Sahayak. Not legal advice.`;
+    const text = `IP-SAKTI REGULATORY ASSESSMENT REPORT\n======================================\nDate: ${selectedRecord.created_at || new Date().toISOString()}\nQuery: ${selectedRecord.query}\nJurisdiction: ${selectedRecord.jurisdiction}\nProduct Classification: ${selectedRecord.category}\nConfidence Score: ${selectedRecord.confidence_score}%\n\nSTATUTORY FINDING:\n${selectedRecord.short_answer}\n\nVERIFIED CITATIONS:\n${selectedRecord.citations.map((c: any, i: number) => `${i + 1}. ${c.title} (${c.section}) - ${formatCitationUrl(c.source_url)}`).join("\n")}\n\nDISCLAIMER:\nThis report is an automated regulatory intelligence assessment generated via IP-SAKTI Sahayak. Not legal advice.`;
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

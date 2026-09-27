@@ -54,8 +54,19 @@ class LLMGuard:
         num_docs = len(retrieved_docs)
         top_score = retrieved_docs[0].get("similarity_score", 0.0)
 
+        # For out-of-scope inquiries
+        if intent == "OUT_OF_SCOPE":
+            return {
+                "score": 92,
+                "label": "HIGH",
+                "evidence_quality": "OUT_OF_SCOPE_DETECTED",
+                "sources_found": 0,
+                "abstain_recommended": False,
+                "reason": "Inquiry accurately identified as non-Ayurvedic / out-of-scope with boundary guidance."
+            }
+
         # For vague queries that need clarification
-        if intent == "VAGUE_CLARIFICATION":
+        if intent in ("VAGUE_CLARIFICATION", "VAGUE_USE_AYURVEDA", "VAGUE_PATENT_THIS"):
             return {
                 "score": 85,
                 "label": "MEDIUM",
@@ -104,7 +115,7 @@ class LLMGuard:
         """
         verified = []
         q_lower = query.lower()
-        
+
         # Build map of doc_id -> chunk text
         doc_texts = {}
         for d in retrieved_docs:
@@ -112,6 +123,9 @@ class LLMGuard:
             doc_id = doc_dict.get("document_id")
             if doc_id:
                 doc_texts[doc_id] = (d.get("full_chunk_text", "") + " " + d.get("chunk_text", "")).lower()
+
+        if intent == "OUT_OF_SCOPE":
+            return []
 
         for c in citations:
             doc_id = c.get("document_id")
@@ -193,8 +207,9 @@ class LLMGuard:
 
         try:
             import requests
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-            
+            model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+
             # Format retrieved evidence strictly from actual PDF chunks
             evidence_lines = []
             for i, d in enumerate(retrieved_docs[:5], 1):
@@ -294,7 +309,7 @@ class LLMGuard:
                 "authority": doc_dict.get("authority", "Statutory Regulatory Authority"),
                 "jurisdiction": jurisdiction.capitalize(),
                 "version": "Official Standard",
-                "source_url": f"http://localhost:8000/data/{pdf_fname}#page={page_num}",
+                "source_url": f"/data/{pdf_fname}#page={page_num}",
                 "excerpt": chunk_txt[:260] + ("..." if len(chunk_txt) > 260 else "")
             })
 
@@ -312,8 +327,10 @@ class LLMGuard:
         ip_regimes = dynamic_ip_regimes
         reg_pathway = dynamic_reg_pathway
 
-        # Try Gemini dynamic synthesis first if configured
-        gemini_answer = self.call_gemini_synthesis(
+        # Try Gemini dynamic synthesis first if configured (skip for fixed out-of-scope intent)
+        gemini_answer = None
+        if intent != "OUT_OF_SCOPE":
+            gemini_answer = self.call_gemini_synthesis(
             query=query,
             retrieved_docs=retrieved,
             category=category,

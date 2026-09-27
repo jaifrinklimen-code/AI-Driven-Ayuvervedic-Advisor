@@ -69,6 +69,19 @@ MULTILINGUAL_EXPANSION = {
 }
 
 
+
+def clean_pdf_text(text: str) -> str:
+    """Filter out legacy PDF font mapping garbage, binary dumps, and non-printable Mojibake."""
+    if not text:
+        return ""
+    # Remove sequences of non-printable or corrupt font characters
+    cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', ' ', text)
+    cleaned = re.sub(r'[A-Za-z0-9+/=]{45,}', ' ', cleaned) # base64 / font binary dumps
+    cleaned = re.sub(r'[^\w\s\.,\(\)\-\':;\?\!/\u0900-\u097F\u0B80-\u0BFF]', ' ', cleaned) # keep Indic script, ASCII, punctuation
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
+
 def extract_focused_excerpt(text: str, query: str, max_len: int = 320) -> str:
     """Ensure the excerpt highlights the actual targeted statutory or botanical text."""
     q_lower = query.lower()
@@ -126,7 +139,7 @@ def extract_focused_excerpt(text: str, query: str, max_len: int = 320) -> str:
             snippet = "..." + snippet
         return snippet.replace("\n", " ")
 
-    clean = text.replace("\n", " ").strip()
+    clean = clean_pdf_text(text).replace("\n", " ").strip()
     return clean[:max_len] + ("..." if len(clean) > max_len else "")
 
 
@@ -374,7 +387,7 @@ class FAISSSemanticRetriever:
                     "authority": authority,
                     "jurisdiction": jurisdiction or "India",
                     "version": "Official Standard",
-                    "source_url": f"http://localhost:8000/data/{pdf_filename}#page={page_num}",
+                    "source_url": f"/data/{pdf_filename}#page={page_num}",
                     "text": focused_excerpt
                 }
             })
