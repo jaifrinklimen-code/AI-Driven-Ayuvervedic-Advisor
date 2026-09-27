@@ -72,11 +72,15 @@ def serve_pdf(filename: str):
     """
     Safely serve reference PDFs for citations.
     Enforces path traversal prevention: only .pdf files within backend/data are accessible.
+    Supports URL-encoded filenames with spaces and special characters.
     """
-    if ".." in filename or "/" in filename or "\\" in filename:
+    import urllib.parse
+    decoded_name = urllib.parse.unquote(filename)
+
+    if ".." in decoded_name or "/" in decoded_name or "\\" in decoded_name:
         raise HTTPException(status_code=400, detail="Invalid filename")
 
-    safe_filename = os.path.basename(filename)
+    safe_filename = os.path.basename(decoded_name)
     if not safe_filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files may be served")
 
@@ -95,6 +99,7 @@ def serve_pdf(filename: str):
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"inline; filename=\"{safe_filename}\"",
+            "Accept-Ranges": "bytes",
             "Access-Control-Allow-Origin": "*"
         }
     )
