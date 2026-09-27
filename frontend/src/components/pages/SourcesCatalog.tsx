@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import { GazetteReaderModal, GazetteDocument } from "../ui/GazetteReaderModal";
-import { getApiUrl } from "../../lib/api";
+import { getApiUrl, formatCitationUrl } from "../../lib/api";
 import {
   BookOpen,
   ExternalLink,
@@ -161,7 +161,7 @@ export const SourcesCatalog: React.FC = () => {
                     </button>
 
                     <a
-                      href={doc.source_url}
+                      href={formatCitationUrl(doc.source_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}

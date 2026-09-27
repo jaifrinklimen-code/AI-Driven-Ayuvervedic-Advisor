@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import {
@@ -8,11 +8,15 @@ import {
   Mic,
   Volume2,
   VolumeX,
-  Monitor
+  Monitor,
+  Sparkles,
+  BookOpen,
+  FileText,
+  ExternalLink,
 } from "lucide-react";
 import { QRCodeCanvas } from "../ui/QRCodeCanvas";
 import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
-import { getApiUrl } from "../../lib/api";
+import { getApiUrl, formatCitationUrl } from "../../lib/api";
 
 interface ABSComplianceResult {
   resource_analyzed: string;
@@ -33,6 +37,22 @@ interface ABSComplianceResult {
   disclaimer: string;
 }
 
+interface Citation {
+  citation_index: number;
+  document_id: string;
+  title: string;
+  section: string;
+  authority: string;
+  jurisdiction: string;
+  version: string;
+  source_url: string;
+  excerpt: string;
+  verification_status?: string;
+  supports_claim?: boolean;
+}
+
+type VoiceState = "idle" | "listening" | "transcribing" | "processing" | "speaking";
+
 export const ABSKioskPage: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
   const [entityType, setEntityType] = useState("indian_entity");
@@ -44,36 +64,56 @@ export const ABSKioskPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ABSComplianceResult | null>(null);
 
-  // Kiosk Showcase State
-  const [isRecording, setIsRecording] = useState(false);
-  const [isProcessingKiosk, setIsProcessingKiosk] = useState(false);
-  const [kioskSpeaking, setKioskSpeaking] = useState(false);
-  const [kioskQuery, setKioskQuery] = useState("Can I patent an Ayurvedic brain syrup made with Ashwagandha and Brahmi?");
-  const [kioskAnswer, setKioskAnswer] = useState<string>(
-    "Under Section 3(h) of the Drugs & Cosmetics Act, 1940, classical Ayurvedic formulations are regulated as Patent or Proprietary Medicines. Prior National Biodiversity Authority (NBA Form III) approval is mandatory under Section 6 of the Biological Diversity Act before any patent grant."
-  );
-  const [kioskClassification, setKioskClassification] = useState<string>("Patent / Proprietary Ayurvedic Medicine");
-  const [kioskStatute, setKioskStatute] = useState<string>("Regulated under Drugs & Cosmetics Act Section 3(h) & BD Act Section 6");
+  // Kiosk Voice Agent State Machine
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [kioskQuery, setKioskQuery] = useState<string>("");
+  const [transcriptPreview, setTranscriptPreview] = useState<string>("");
+  const [kioskAnswer, setKioskAnswer] = useState<string>("");
+  const [kioskClassification, setKioskClassification] = useState<string>("");
+  const [kioskStatute, setKioskStatute] = useState<string>("");
+  const [kioskCitations, setKioskCitations] = useState<Citation[]>([]);
+  const [kioskConfidence, setKioskConfidence] = useState<{ score: number; label: string; evidence_quality?: string } | null>(null);
+  const [kioskErrorMessage, setKioskErrorMessage] = useState<string | null>(null);
 
-  // Keep kiosk demo text in sync when user toggles language
+  // Audio player & recognition refs for interruptibility and cleanup
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Localized sample prompt suggestions
+  const samplePrompts: Record<SupportedLanguage, string[]> = {
+    en: [
+      "Can I patent an Ayurvedic brain syrup made with Ashwagandha and Brahmi?",
+      "Can a mere admixture of known substances be patented in India?",
+      "What is TKDL?",
+      "Can I sell my Ayurvedic medicine?",
+      "Can I breed brinjal and tomato?"
+    ],
+    hi: [
+      "क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?",
+      "क्या ज्ञात आयुर्वेदिक पदार्थों के केवल मिश्रण पर पेटेंट मिल सकता है?",
+      "TKDL क्या है?",
+      "क्या मैं अपनी आयुर्वेदिक दवा व्यावसायिक रूप से बेच सकता हूँ?",
+      "क्या मैं बैंगन और टमाटर का संकरण कर सकता हूँ?"
+    ],
+    ta: [
+      "அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?",
+      "பாரம்பரிய மருந்துகளின் எளிய கலவைக்கு காப்புரிமை கிடைக்குமா?",
+      "TKDL என்றால் என்ன?",
+      "எனது ஆயுர்வேத மருந்தை நான் வணிகரீதியாக விற்க முடியுமா?",
+      "நான் கத்தரிக்காயையும் தக்காளியையும் கலப்பினம் செய்யலாமா?"
+    ]
+  };
+
+  const defaultPlaceholder = samplePrompts[language]?.[0] || samplePrompts.en[0];
+
+  // Language update handler: update botanical name in form if untouched
   useEffect(() => {
     if (language === "ta") {
-      setKioskQuery("அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?");
-      setKioskAnswer("ஆதாரப்பூர்வ சட்ட விதிகளின்படி, மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் பிரிவு 3(h) கீழ் உங்கள் தயாரிப்பு கட்டுப்படுத்தப்படுகிறது. காப்புரிமை வழங்கும் முன் உயிரியல் பன்முகத்தன்மை சட்டம் பிரிவு 6-ன் கீழ் தேசிய பல்லுயிர் ஆணைய (NBA Form III) முன் அனுமதி பெறுவது கட்டாயமாகும்.");
-      setKioskClassification("தனியுரிம ஆயுர்வேத மருந்து (பிரிவு 3(h))");
-      setKioskStatute("பல்லுயிர் சட்டம் பிரிவு 6 மற்றும் காப்புரிமை சட்டம் பிரிவு 3(p)");
       setResourceName("விதானியா சோம்னிஃபெரா (அஸ்வகந்தா)");
     } else if (language === "hi") {
-      setKioskQuery("क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?");
-      setKioskAnswer("औषधि एवं प्रसाधन सामग्री अधिनियम, 1940 की धारा 3(h) के अनुसार, पारंपरिक आयुर्वेदिक योग पेटेंट या प्रोप्राइटरी दवाओं के रूप में विनियमित होते हैं। किसी भी पेटेंट अनुदान से पूर्व जैविक विविधता अधिनियम की धारा 6 के तहत राष्ट्रीय जैव विविधता प्राधिकरण (NBA Form III) की पूर्व अनुमति अनिवार्य है।");
-      setKioskClassification("पेटेंट / प्रोप्राइटरी आयुर्वेदिक औषधि");
-      setKioskStatute("ड्रग्स एंड कॉस्मेटिक्स एक्ट धारा 3(h) एवं जैव विविधता अधिनियम धारा 6");
       setResourceName("विथानिया सोम्निफेरा (अश्वगंधा)");
     } else {
-      setKioskQuery("Can I patent an Ayurvedic brain syrup made with Ashwagandha and Brahmi?");
-      setKioskAnswer("Under Section 3(h) of the Drugs & Cosmetics Act, 1940, classical Ayurvedic formulations are regulated as Patent or Proprietary Medicines. Prior National Biodiversity Authority (NBA Form III) approval is mandatory under Section 6 of the Biological Diversity Act before any patent grant.");
-      setKioskClassification("Patent / Proprietary Ayurvedic Medicine");
-      setKioskStatute("Regulated under Drugs & Cosmetics Act Section 3(h) & BD Act Section 6");
       setResourceName("Withania somnifera (Ashwagandha)");
     }
   }, [language]);
@@ -135,243 +175,309 @@ export const ABSKioskPage: React.FC = () => {
     }
   };
 
-  // Audio player reference for native multilingual TTS streaming
-  const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
-
-  const speakTextAloud = (text: string) => {
-    if (!text || !text.trim()) return;
-
-    // Stop any ongoing audio playback
+  // Stop any active TTS audio or synthesis
+  const stopAllAudio = () => {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
       audioPlayerRef.current.currentTime = 0;
       audioPlayerRef.current = null;
     }
-    if ('speechSynthesis' in window) {
+    if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+  };
 
-    // Auto-detect language script: Tamil, Hindi, or English
-    let targetLang: SupportedLanguage = language;
-    if (/[\u0B80-\u0BFF]/.test(text)) {
-      targetLang = 'ta';
-    } else if (/[\u0900-\u097F]/.test(text)) {
-      targetLang = 'hi';
+  // Browser SpeechSynthesis fallback
+  const fallbackBrowserSpeech = (cleanText: string, targetLang: SupportedLanguage) => {
+    if ("speechSynthesis" in window) {
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = targetLang === "ta" ? "ta-IN" : targetLang === "hi" ? "hi-IN" : "en-IN";
+        utterance.rate = 0.95;
+        utterance.onstart = () => setVoiceState("speaking");
+        utterance.onend = () => setVoiceState("idle");
+        utterance.onerror = () => setVoiceState("idle");
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("Browser speech synthesis failed:", err);
+        setVoiceState("idle");
+      }
+    } else {
+      setVoiceState("idle");
+    }
+  };
+
+  // Natural Text-to-Speech Streaming
+  const speakTextAloud = (text: string) => {
+    if (!text || !text.trim()) {
+      setVoiceState("idle");
+      return;
     }
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-    // Limit text length to 350 chars for prompt, responsive kiosk speech
-    const cleanSnippet = text.replace(/[*_#`[\]()]/g, '').trim().slice(0, 350);
+    stopAllAudio();
+
+    // Auto-detect language script from response text
+    let targetLang: SupportedLanguage = language;
+    if (/[\u0B80-\u0BFF]/.test(text)) {
+      targetLang = "ta";
+    } else if (/[\u0900-\u097F]/.test(text)) {
+      targetLang = "hi";
+    }
+
+    // Limit text length to clean natural spoken sentences without markdown or citations
+    const cleanSnippet = text
+      .replace(/[*_#`[\]()]/g, "")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/\bPage\s+\d+\b/gi, "")
+      .replace(/\b\d+\.\s+/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 380);
+
+    const backendUrl = getApiUrl("");
     const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(cleanSnippet)}&lang=${targetLang}`;
+
+    setVoiceState("speaking");
 
     const audio = new Audio(streamUrl);
     audioPlayerRef.current = audio;
-    setKioskSpeaking(true);
 
     audio.onended = () => {
-      setKioskSpeaking(false);
+      setVoiceState("idle");
       audioPlayerRef.current = null;
     };
 
     audio.onerror = (e) => {
-      console.warn("Backend audio stream error, falling back to Web Speech API:", e);
+      console.warn("Backend TTS stream error, falling back to Web Speech API:", e);
       audioPlayerRef.current = null;
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(cleanSnippet);
-        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
-        utterance.rate = 0.92;
-        utterance.onstart = () => setKioskSpeaking(true);
-        utterance.onend = () => setKioskSpeaking(false);
-        utterance.onerror = () => setKioskSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setKioskSpeaking(false);
-      }
+      fallbackBrowserSpeech(cleanSnippet, targetLang);
     };
 
     audio.play().catch((err) => {
-      console.warn("Audio autoplay blocked or playback failed:", err);
-      // Fallback to Web Speech API
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(cleanSnippet);
-        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
-        utterance.onstart = () => setKioskSpeaking(true);
-        utterance.onend = () => setKioskSpeaking(false);
-        utterance.onerror = () => setKioskSpeaking(false);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setKioskSpeaking(false);
-      }
+      console.warn("Audio autoplay blocked or stream failed, falling back to Web Speech API:", err);
+      fallbackBrowserSpeech(cleanSnippet, targetLang);
     });
   };
 
-
+  // Query Backend RAG Pipeline with real transcript
   const handleProcessKioskQuery = async (userQuery: string) => {
-    if (!userQuery.trim()) return;
-    setIsProcessingKiosk(true);
-    setKioskSpeaking(false);
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
+    const trimmed = userQuery.trim();
+    if (!trimmed) return;
+
+    setHasInteracted(true);
+    setKioskQuery(trimmed);
+    setVoiceState("processing");
+    setKioskErrorMessage(null);
+    stopAllAudio();
 
     try {
-      const trimmed = userQuery.trim().toLowerCase();
-      // Only handle genuine standalone conversational greetings (e.g., "hi", "hello", "namaste", "vanakkam")
-      // Do NOT match words like "this", "which", "Brahmi", "Shilajit" that contain the substring "hi"
-      const isPureGreeting = /^(hi|hello|hey|namaste|namaskaram|vanakkam|வணக்கம்|नमस्ते)[!?,.]*$/i.test(trimmed) ||
-                             /^(hi|hello|hey|namaste|vanakkam)\s+(there|ipsakti|ip-sakti|assistant)[!?,.]*$/i.test(trimmed) ||
-                             trimmed === "how are you" || trimmed === "who are you";
-
-      if (isPureGreeting) {
-        const greetingResponses: Record<SupportedLanguage, { answer: string; category: string; statute: string }> = {
-          en: {
-            answer: "Hello! I am IP-SAKTI, your statutory Ayurvedic advisor. You can ask me any question about patentability under Section 3(p), classical TKDL citations, or NBA biodiversity clearance under Section 6.",
-            category: "Ayurvedic Regulatory Assistant • Active",
-            statute: "Ministry of Ayush & National Biodiversity Authority Gateway"
-          },
-          hi: {
-            answer: "नमस्ते! मैं IP-SAKTI, आपका कानूनी आयुर्वेदिक सलाहकार हूँ। आप मुझसे पेटेंट धारा 3(p), टीकेडीएल संदर्भों या एनबीए जैव विविधता अनुमति के बारे में पूछ सकते हैं।",
-            category: "आयुर्वेदिक नियामक सहायक • सक्रिय",
-            statute: "आयुष मंत्रालय एवं राष्ट्रीय जैव विविधता प्राधिकरण गेटवे"
-          },
-          ta: {
-            answer: "வணக்கம்! நான் IP-SAKTI, உங்கள் ஆயுர்வேத சட்ட ஆலோசகர். காப்புரிமை பிரிவு 3(p), பாரம்பரிய அறிவு நூலக மேற்கோள்கள் மற்றும் பல்லுயிர் வாரிய அனுமதி பற்றி என்னிடம் கேட்கலாம்.",
-            category: "ஆயுர்வேத ஒழுங்குமுறை உதவியாளர் • தயார்",
-            statute: "ஆயுஷ் அமைச்சகம் மற்றும் தேசிய பல்லுயிர் ஆணைய தளம்"
-          }
-        };
-
-        const res = greetingResponses[language] || greetingResponses.en;
-        setKioskAnswer(res.answer);
-        setKioskClassification(res.category);
-        setKioskStatute(res.statute);
-        setIsProcessingKiosk(false);
-        speakTextAloud(res.answer);
-        return;
-      }
-
-      // Query the live RAG backend with language
       const res = await fetch(getApiUrl("/api/query"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userQuery, language: language })
+        body: JSON.stringify({
+          query: trimmed,
+          jurisdiction: "India",
+          language: language
+        })
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        const answerText = data.short_answer || data.answer || "Query analyzed under statutory provisions.";
-        setKioskAnswer(answerText);
-        setKioskClassification(data.product_classification || (language === "ta" ? "சட்டப்பூர்வ மருந்து மதிப்பீடு" : language === "hi" ? "वैधानिक औषधि मूल्यांकन" : "Statutory Formulation Evaluation"));
-        setKioskStatute(`Regulated under ${data.jurisdiction || "India"} Patents & Ayush Norms`);
-        setIsProcessingKiosk(false);
-        speakTextAloud(answerText);
-      } else {
-        throw new Error("Backend query failed");
+      if (!res.ok) {
+        throw new Error(`Backend service error (${res.status})`);
       }
+
+      const data = await res.json();
+      const answerText = data.short_answer || data.answer || "Query analyzed under statutory provisions.";
+      setKioskAnswer(answerText);
+      setKioskClassification(data.product_classification || "Statutory ASU Evaluation");
+      setKioskStatute(data.regulatory_pathway || `Regulated under ${data.jurisdiction || "India"} Patents & Ayush Norms`);
+      setKioskCitations(data.citations || []);
+      setKioskConfidence(data.confidence || null);
+
+      // Trigger realistic auditory playback of the ACTUAL generated response
+      speakTextAloud(answerText);
     } catch (err) {
-      console.warn("Kiosk query fallback:", err);
-      const fallbackAnswers: Record<SupportedLanguage, string> = {
-        en: `Regarding your inquiry on "${userQuery}". Pure Ayurvedic herbs face statutory exclusions under Section 3(p) for Traditional Knowledge and Section 3(e) for Mere Admixtures. Mandatory NBA Form III approval is required before patent grant.`,
-        hi: `आपकी जांच: "${userQuery}" के संबंध में। पारंपरिक ज्ञान होने के कारण पेटेंट अधिनियम की धारा 3(p) और धारा 3(e) के तहत प्रतिबंध लागू होते हैं। पेटेंट अनुदान से पहले एनबीए फॉर्म 3 अनुमोदन अनिवार्य है।`,
-        ta: `உங்கள் கேள்வி தொடர்பாக: "${userQuery}". பாரம்பரிய அறிவு மற்றும் எளிய கலவைகளுக்கு பிரிவு 3(p) மற்றும் 3(e) கீழ் காப்புரிமை விலக்குகள் பொருந்தும். காப்புரிமை வழங்கும் முன் என்பிஏ படிவம் 3 அனுமதி பெறுவது கட்டாயமாகும்.`
-      };
-      const fbAnswer = fallbackAnswers[language] || fallbackAnswers.en;
-      setKioskAnswer(fbAnswer);
-      setKioskClassification(language === "ta" ? "தனியுரிம ஆயுர்வேத மருந்து" : language === "hi" ? "पेटेंट / प्रोप्राइटरी आयुर्वेदिक औषधि" : "Patent / Proprietary Ayurvedic Medicine");
-      setKioskStatute(language === "ta" ? "மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் பிரிவு 3(h)" : language === "hi" ? "ड्रग्स एंड कॉस्मेटिक्स एक्ट धारा 3(h)" : "Regulated under Drugs & Cosmetics Act Section 3(h)");
-      setIsProcessingKiosk(false);
-      speakTextAloud(fbAnswer);
+      console.error("Kiosk backend query error:", err);
+      const errMsg =
+        language === "ta"
+          ? "IP-SAKTI அறிவு சேவையை தொடர்பு கொள்ள முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்."
+          : language === "hi"
+          ? "IP-SAKTI ज्ञान सेवा से संपर्क नहीं हो सका। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
+          : "I couldn't reach the IP-SAKTI knowledge service right now. Please try again.";
+      setKioskAnswer(errMsg);
+      setKioskErrorMessage(errMsg);
+      setVoiceState("idle");
     }
   };
 
-  const handleSpeak = () => {
-    if (kioskSpeaking) {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current.currentTime = 0;
-        audioPlayerRef.current = null;
-      }
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-      setKioskSpeaking(false);
+  // Toggle Audio Playback
+  const handleToggleSpeak = () => {
+    if (voiceState === "speaking") {
+      stopAllAudio();
+      setVoiceState("idle");
+    } else if (kioskAnswer) {
+      speakTextAloud(kioskAnswer);
+    }
+  };
+
+  // Start Real Speech Recognition
+  const startListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setKioskErrorMessage(
+        language === "ta"
+          ? "இந்த உலாவியில் குரல் அறிதல் ஆதரிக்கப்படவில்லை. Google Chrome அல்லது Edge உலாவியைப் பயன்படுத்தவும்."
+          : language === "hi"
+          ? "इस ब्राउज़र में वॉयस रिकग्निशन समर्थित नहीं है। कृपया Google Chrome या Edge का उपयोग करें।"
+          : "Speech recognition is not supported in this browser. Please use Chrome/Edge or type your question in Chatbot."
+      );
       return;
     }
 
-    speakTextAloud(kioskAnswer);
-  };
-
-  // Clean up any speaking when unmounting
-  useEffect(() => {
-    return () => {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current = null;
-      }
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  // Voice recognition via Web Speech API with automatic query execution and speech feedback
-  const handleVoiceSimulation = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    // Stop active audio and abort existing recognition instance
+    stopAllAudio();
+    if (recognitionRef.current) {
       try {
-        const recognition = new SpeechRecognition();
-        const langLocales: Record<SupportedLanguage, string> = {
-          en: "en-IN",
-          hi: "hi-IN",
-          ta: "ta-IN"
-        };
-        recognition.lang = langLocales[language] || "en-IN";
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        recognition.onstart = () => setIsRecording(true);
-        recognition.onresult = async (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          if (transcript) {
-            setKioskQuery(transcript);
-            setIsRecording(false);
-            await handleProcessKioskQuery(transcript);
-          }
-        };
-        recognition.onerror = (err: any) => {
-          console.warn("Speech recognition error:", err);
-          setIsRecording(false);
-          const sampleQueries: Record<SupportedLanguage, string> = {
-            en: "Can I patent an Ayurvedic brain syrup with Ashwagandha and Brahmi?",
-            hi: "क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?",
-            ta: "அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?"
-          };
-          const sample = sampleQueries[language] || sampleQueries.en;
-          setKioskQuery(sample);
-          handleProcessKioskQuery(sample);
-        };
-        recognition.onend = () => setIsRecording(false);
-        recognition.start();
-        return;
-      } catch (err) {
-        console.warn("Speech recognition initialization failed:", err);
+        recognitionRef.current.abort();
+      } catch (e) {
+        // ignore
       }
     }
 
-    // Fallback simulation if browser blocks or lacks mic
-    setIsRecording(true);
-    setTimeout(() => {
-      setIsRecording(false);
-      const sampleQueries: Record<SupportedLanguage, string> = {
-        en: "Can I patent an Ayurvedic brain syrup with Ashwagandha and Brahmi?",
-        hi: "क्या मैं अश्वगंधा और ब्राह्मी से बने आयुर्वेदिक सिरप पर पेटेंट प्राप्त कर सकता हूँ?",
-        ta: "அஸ்வகந்தா மற்றும் பிராமி கொண்டு தயாரிக்கப்படும் ஆயுர்வேத மருந்துக்கு காப்புரிமை பெற முடியுமா?"
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+
+      const langLocales: Record<SupportedLanguage, string> = {
+        en: "en-IN",
+        hi: "hi-IN",
+        ta: "ta-IN"
       };
-      const sample = sampleQueries[language] || sampleQueries.en;
-      setKioskQuery(sample);
-      handleProcessKioskQuery(sample);
-    }, 1500);
+      recognition.lang = langLocales[language] || "en-IN";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      setVoiceState("listening");
+      setKioskErrorMessage(null);
+      setTranscriptPreview("");
+
+      recognition.onstart = () => {
+        setVoiceState("listening");
+      };
+
+      recognition.onresult = async (event: any) => {
+        let interim = "";
+        let final = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+
+        if (interim) {
+          setVoiceState("transcribing");
+          setTranscriptPreview(interim);
+        }
+
+        if (final) {
+          const finalTrimmed = final.trim();
+          if (finalTrimmed) {
+            setTranscriptPreview("");
+            setKioskQuery(finalTrimmed);
+            setVoiceState("processing");
+            try {
+              recognition.stop();
+            } catch (e) {
+              // ignore
+            }
+            await handleProcessKioskQuery(finalTrimmed);
+          }
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        if (event.error === "not-allowed" || event.error === "permission-denied") {
+          setKioskErrorMessage(
+            language === "ta"
+              ? "மைக்ரோஃபோன் அணுகல் மறுக்கப்பட்டது. உங்கள் உலாவி அமைப்புகளில் அனுமதியை வழங்கவும்."
+              : language === "hi"
+              ? "माइक्रोफ़ोन एक्सेस अस्वीकृत कर दिया गया। कृपया ब्राउज़र सेटिंग्स में अनुमति दें।"
+              : "Microphone access is required for voice inquiries. You can also type your question in the chatbot."
+          );
+        } else if (event.error === "no-speech") {
+          setKioskErrorMessage(
+            language === "ta"
+              ? "குரல் தெளிவாகக் கேட்கவில்லை. மீண்டும் மைக்ரோஃபோனைத் தட்டிப் பேசவும்."
+              : language === "hi"
+              ? "आवाज़ स्पष्ट सुनाई नहीं दी। कृपया पुनः माइक दबाकर बोलें।"
+              : "I couldn't clearly hear that. Please tap the microphone and try again."
+          );
+        } else if (event.error !== "aborted") {
+          setKioskErrorMessage(
+            language === "ta"
+              ? `குரல் பதிவு பிழை (${event.error}). மீண்டும் முயற்சிக்கவும்.`
+              : language === "hi"
+              ? `ध्वनि पहचान में त्रुटि (${event.error})। कृपया पुनः प्रयास करें।`
+              : `Speech recognition error (${event.error}). Please try again.`
+          );
+        }
+        setVoiceState("idle");
+      };
+
+      recognition.onend = () => {
+        if (voiceState === "listening" || voiceState === "transcribing") {
+          setVoiceState("idle");
+        }
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error("Failed to start speech recognition:", err);
+      setVoiceState("idle");
+      setKioskErrorMessage("Failed to initialize microphone service.");
+    }
   };
+
+  // Main Microphone Button Controller (Supports Interruptions)
+  const handleMicrophoneClick = () => {
+    if (voiceState === "speaking") {
+      // User tapped mic while AI was speaking -> interrupt speech and immediately listen
+      stopAllAudio();
+      setVoiceState("idle");
+      startListening();
+    } else if (voiceState === "listening" || voiceState === "transcribing") {
+      // User tapped mic while listening -> cancel listening
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore
+        }
+      }
+      setVoiceState("idle");
+    } else {
+      // Idle or error state -> start speech recognition
+      startListening();
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopAllAudio();
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-parchment-50 dark:bg-forest-950 text-forest-950 dark:text-parchment-50 flex flex-col font-sans transition-colors bg-atmospheric">
@@ -420,152 +526,191 @@ export const ABSKioskPage: React.FC = () => {
                 <select
                   value={entityType}
                   onChange={(e) => setEntityType(e.target.value)}
-                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none"
+                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="indian_entity">{t("indian_entity_opt")}</option>
-                  <option value="foreign_entity">{t("foreign_entity_opt")}</option>
-                  <option value="nri">{t("nri_opt")}</option>
+                  <option value="indian_entity">{t("entity_indian")}</option>
+                  <option value="foreign_entity">{t("entity_foreign")}</option>
+                  <option value="nri">{t("entity_nri")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70 mb-1.5">
-                  {t("resource_origin_label")}
+                  {t("resource_source")}
                 </label>
                 <select
                   value={resourceOrigin}
                   onChange={(e) => setResourceOrigin(e.target.value)}
-                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none"
+                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="cultivated">{t("cultivated_opt")}</option>
-                  <option value="wild_harvested">{t("wild_harvested_opt")}</option>
-                  <option value="market_commodity">{t("mandi_commodity_opt")}</option>
-                  <option value="imported">{t("imported_opt")}</option>
+                  <option value="cultivated">{t("source_cultivated")}</option>
+                  <option value="wild_harvested">{t("source_wild")}</option>
+                  <option value="market_commodity">{t("source_market")}</option>
+                  <option value="imported">{t("source_imported")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70 mb-1.5">
-                  {t("commercial_purpose")}
+                  {t("intended_purpose")}
                 </label>
                 <select
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none"
+                  className="w-full bg-parchment-50 dark:bg-forest-950/70 border border-parchment-200 dark:border-forest-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="commercial_utilization">{t("commercial_mfg_opt")}</option>
-                  <option value="ip_application">{t("patent_filing_opt")}</option>
-                  <option value="research">{t("academic_research_opt")}</option>
-                  <option value="bio_survey">{t("bio_survey_opt")}</option>
+                  <option value="commercial_utilization">{t("purpose_commercial")}</option>
+                  <option value="research">{t("purpose_research")}</option>
+                  <option value="ip_application">{t("purpose_ip")}</option>
+                  <option value="bio_survey">{t("purpose_bio")}</option>
                 </select>
               </div>
 
-              <label className="flex items-center space-x-2 text-xs cursor-pointer pt-2">
+              <div className="flex items-center space-x-3 pt-2">
                 <input
                   type="checkbox"
+                  id="tk"
                   checked={tkInvolved}
                   onChange={(e) => setTkInvolved(e.target.checked)}
-                  className="text-emerald-600 rounded focus:ring-emerald-500"
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500/40"
                 />
-                <span className="text-forest-900/80 dark:text-parchment-200">
-                  {t("tk_checkbox")}
-                </span>
-              </label>
+                <label htmlFor="tk" className="text-xs font-bold text-forest-900/80 dark:text-parchment-200/80">
+                  {t("tk_involved")}
+                </label>
+              </div>
 
               <button
-                type="button"
                 onClick={handleEvaluateABS}
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-parchment-50 dark:text-forest-950 text-xs font-bold shadow-md transition-all mt-4 border border-emerald-400/30"
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40 transition-all flex items-center justify-center space-x-2 text-sm neon-border-emerald"
               >
-                {loading ? t("evaluating_abs") : t("eval_abs_btn")}
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>{t("evaluating")}</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>{t("evaluate_btn")}</span>
+                  </>
+                )}
               </button>
             </div>
 
-            {/* Assessment Dossier Output */}
-            <div className="lg:col-span-7">
-              {result ? (
-                <div className="bg-white dark:bg-forest-900/70 rounded-3xl p-6 sm:p-8 border border-amber-500/30 dark:border-forest-700/60 shadow-elevated-luxury space-y-6 animate-in fade-in-50">
-                  <div className="flex items-center justify-between pb-4 border-b border-parchment-200 dark:border-forest-800">
-                    <div>
-                      <span className="font-display text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 block mb-0.5">
-                        {t("abs_audit_title")}
-                      </span>
-                      <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
-                        {result.resource_analyzed}
-                      </h3>
-                    </div>
-                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-900 dark:text-emerald-300 text-sm font-bold border border-emerald-500/30">
-                      {result.overall_status}
+            {/* Results Display */}
+            <div className="lg:col-span-7 bg-white dark:bg-forest-900/70 rounded-3xl p-6 sm:p-8 border border-parchment-200 dark:border-forest-800 shadow-elevated-luxury space-y-6 backdrop-blur-xl">
+              <h2 className="font-display text-lg font-bold text-forest-950 dark:text-parchment-50 pb-3 border-b border-parchment-200 dark:border-forest-800 flex items-center justify-between">
+                <span>{t("statutory_status")}</span>
+                {result && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    result.overall_status === "COMPLIANT"
+                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+                      : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20"
+                  }`}>
+                    {result.overall_status}
+                  </span>
+                )}
+              </h2>
+
+              {!result ? (
+                <div className="py-16 text-center text-forest-900/40 dark:text-parchment-200/40 space-y-2">
+                  <ShieldCheck className="w-12 h-12 mx-auto stroke-1" />
+                  <p className="text-sm">{t("no_result_msg")}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Authority Banner */}
+                  <div className="p-4 rounded-xl bg-parchment-100/60 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-200/60 block mb-1">
+                      {t("competent_authority")}
+                    </span>
+                    <span className="text-sm font-bold text-forest-950 dark:text-parchment-50">
+                      {result.regulatory_authority}
                     </span>
                   </div>
 
                   {/* Compliance Flags */}
                   <div className="space-y-3">
-                    <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                      {t("compliance_flags_title")}
-                    </span>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70">
+                      {t("statutory_obligations")}
+                    </h4>
                     {result.compliance_flags.map((flag, idx) => (
                       <div
                         key={idx}
-                        className={`p-4 rounded-2xl border text-sm space-y-1.5 ${
+                        className={`p-4 rounded-xl border flex items-start space-x-3 ${
                           flag.severity === "CRITICAL"
-                            ? "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-200"
-                            : "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200"
+                            ? "bg-rose-500/10 border-rose-500/20 text-rose-950 dark:text-rose-200"
+                            : flag.severity === "HIGH"
+                            ? "bg-amber-500/10 border-amber-500/20 text-amber-950 dark:text-amber-200"
+                            : "bg-emerald-500/10 border-emerald-500/20 text-emerald-950 dark:text-emerald-200"
                         }`}
                       >
-                        <div className="flex items-center space-x-1.5 font-bold">
-                          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                          <span>{flag.title}</span>
+                        {flag.severity === "CRITICAL" || flag.severity === "HIGH" ? (
+                          <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                        )}
+                        <div className="space-y-1">
+                          <span className="text-xs font-bold block">{flag.title}</span>
+                          <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
+                            {flag.description}
+                          </p>
                         </div>
-                        <p className="leading-relaxed font-sans">{flag.description}</p>
                       </div>
                     ))}
                   </div>
 
-                  {/* Mandatory Filings */}
+                  {/* Required Statutory Filings */}
                   <div className="space-y-2">
-                    <span className="font-display text-xs font-bold uppercase tracking-wider text-forest-900/60 dark:text-parchment-300/60 block">
-                      {t("required_filings_title")}
-                    </span>
-                    {result.required_statutory_filings.map((filing, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center space-x-2.5 p-3 rounded-xl bg-parchment-50 dark:bg-forest-950 text-sm text-forest-950 dark:text-parchment-50 font-semibold border border-parchment-200 dark:border-forest-800"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span>{filing}</span>
-                      </div>
-                    ))}
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70">
+                      {t("mandatory_filings")}
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {result.required_statutory_filings.map((filing, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-parchment-100/40 dark:bg-forest-950/40 border border-parchment-200/60 dark:border-forest-800/60 text-xs font-semibold text-forest-900 dark:text-parchment-200 flex items-center space-x-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span>{filing}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Applicable Statutes */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-forest-900/70 dark:text-parchment-200/70">
+                      {t("governing_statutes")}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {result.applicable_statutes.map((statute, i) => (
+                        <span key={i} className="px-3 py-1 rounded-md bg-forest-900/5 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 text-[11px] font-mono text-forest-800 dark:text-parchment-300">
+                          {statute}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   {/* TKDL Guidance */}
-                  <div className="p-4 rounded-2xl bg-parchment-100 dark:bg-forest-950 border border-amber-500/20 text-sm space-y-1.5">
-                    <span className="font-display font-bold text-amber-700 dark:text-amber-400 block">
-                      {t("tkdl_pointer_title")}
-                    </span>
-                    <p className="text-forest-900/80 dark:text-parchment-300/80 leading-relaxed font-sans">
-                      {result.tkdl_guidance.status_note}
-                    </p>
-                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-bold block pt-1">
-                      Action: {result.tkdl_guidance.verification_step}
-                    </span>
-                  </div>
+                  {result.tkdl_guidance && (
+                    <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <h4 className="text-xs font-bold text-forest-950 dark:text-parchment-50">
+                          {t("tkdl_status_title")}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-forest-900/80 dark:text-parchment-200/80 leading-relaxed">
+                        {result.tkdl_guidance.status_note}
+                      </p>
+                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 block">
+                        {result.tkdl_guidance.verification_step}
+                      </span>
+                    </div>
+                  )}
 
-                  <div className="text-xs text-forest-900/70 dark:text-parchment-300/70 bg-parchment-50 dark:bg-forest-950 p-3.5 rounded-xl border border-parchment-200 dark:border-forest-800">
-                    <strong>{t("statutory_disclaimer")}:</strong> {result.disclaimer}
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full bg-white dark:bg-forest-900/60 rounded-3xl p-12 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury flex flex-col items-center justify-center text-center space-y-3">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 dark:bg-forest-800 flex items-center justify-center text-emerald-500">
-                    <ShieldCheck className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-display text-xl font-bold text-forest-950 dark:text-parchment-50">
-                    {t("abs_audit_title")}
-                  </h3>
-                  <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 max-w-sm">
-                    {t("abs_audit_desc")}
+                  {/* Disclaimer */}
+                  <p className="text-[10px] text-forest-900/50 dark:text-parchment-200/50 italic border-t border-parchment-200 dark:border-forest-800 pt-3">
+                    {result.disclaimer}
                   </p>
                 </div>
               )}
@@ -573,63 +718,83 @@ export const ABSKioskPage: React.FC = () => {
           </div>
         </section>
 
-        {/* SECTION 2: IP-SAKTI Smart Kiosk Showcase */}
-        <section id="kiosk" className="pt-12 border-t border-parchment-200/80 dark:border-forest-900/60 space-y-8">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-rose-500/10 text-rose-800 dark:text-rose-300 text-xs font-semibold border border-rose-500/20 shadow-subtle-luxury">
-              <Monitor className="w-3.5 h-3.5 text-rose-600" />
-              <span className="font-display">{t("physical_layer_badge")}</span>
+        {/* SECTION 2: Interactive Voice IP-SAKTI Kiosk Station */}
+        <section className="space-y-8 pt-8 border-t border-parchment-200 dark:border-forest-800">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="inline-flex items-center space-x-2 px-4 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 text-xs font-semibold border border-amber-500/30">
+              <Monitor className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="font-display">{t("kiosk_badge")}</span>
             </div>
-            <h2 className="font-display text-3xl sm:text-4xl font-light text-forest-950 dark:text-parchment-50">
-              {t("kiosk_hardware_title")}
+            <h2 className="font-display text-2xl sm:text-4xl font-light tracking-tight text-forest-950 dark:text-parchment-50">
+              {t("kiosk_title")}
             </h2>
-            <p className="text-sm sm:text-base text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-md mx-auto">
-              {t("kiosk_hardware_sub")}
+            <p className="text-xs sm:text-sm text-forest-900/70 dark:text-parchment-200/70 leading-relaxed max-w-xl mx-auto">
+              {t("kiosk_subtitle")}
             </p>
           </div>
 
-          {/* Luxury Hardware Kiosk Chassis with Neon Glow */}
-          <div className="max-w-4xl mx-auto bg-gradient-to-b from-forest-950 via-forest-900 to-black text-parchment-50 rounded-3xl p-6 sm:p-10 border-2 border-amber-400/40 shadow-2xl space-y-6 neon-glow-gold">
-            {/* Kiosk Bezel Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-forest-800 text-sm">
-              <div className="flex items-center space-x-3">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#10b981]" />
-                <span className="font-mono text-amber-300 font-bold tracking-widest text-xs uppercase">
-                  {t("kiosk_badge")}
-                </span>
+          {/* Kiosk Station Frame */}
+          <div className="max-w-4xl mx-auto rounded-3xl bg-forest-950 p-4 sm:p-8 shadow-2xl border-4 border-forest-800 relative overflow-hidden">
+            {/* Top Status Bar with Live Indicator & Quick Controls */}
+            <div className="flex items-center justify-between pb-6 border-b border-forest-800/80 text-xs text-parchment-300/80 font-mono">
+              <div className="flex items-center space-x-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${
+                  voiceState === "listening" || voiceState === "transcribing"
+                    ? "bg-rose-500 animate-ping"
+                    : voiceState === "processing"
+                    ? "bg-amber-400 animate-pulse"
+                    : voiceState === "speaking"
+                    ? "bg-emerald-400 animate-pulse"
+                    : "bg-emerald-500"
+                }`} />
+                <span className="text-white font-bold tracking-wider">IP-SAKTI KIOSK 2.0</span>
+                <span className="hidden sm:inline text-parchment-400/60">• REAL-TIME MULTILINGUAL VOICE & LEGAL RAG</span>
               </div>
-
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={handleSpeak}
-                  className={`px-4 py-2 rounded-xl flex items-center space-x-2 font-bold text-sm transition-all ${
-                    kioskSpeaking
-                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.4)]"
+                  onClick={handleToggleSpeak}
+                  disabled={!kioskAnswer}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                    !kioskAnswer
+                      ? "opacity-40 cursor-not-allowed bg-forest-900 text-parchment-400 border border-forest-800"
+                      : voiceState === "speaking"
+                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
                       : "bg-forest-900 hover:bg-forest-800 text-amber-300 border border-amber-500/30"
                   }`}
-                  title={kioskSpeaking ? "Stop speech" : "Listen to audio explanation"}
+                  title={voiceState === "speaking" ? "Stop audio speech" : "Listen to audio explanation"}
+                  aria-label={voiceState === "speaking" ? "Stop audio speech" : "Listen to audio explanation"}
                 >
-                  {kioskSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  <span>{kioskSpeaking ? t("stop_audio") : t("simulate_audio")}</span>
+                  {voiceState === "speaking" ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  <span>{voiceState === "speaking" ? t("stop_audio") : t("simulate_audio")}</span>
                 </button>
               </div>
             </div>
 
             {/* Touchscreen Glass Area */}
-            <div className="bg-forest-900/80 rounded-2xl p-6 sm:p-8 border border-emerald-500/30 space-y-6 backdrop-blur-md neon-border-emerald">
+            <div className="bg-forest-900/80 rounded-2xl p-6 sm:p-8 border border-emerald-500/30 space-y-6 backdrop-blur-md mt-6">
+              {/* Header inside Touchscreen: Live AI Badge + Language Selector */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <h3 className="font-display text-xl font-bold text-white flex items-center gap-2">
                     <span>{t("kiosk_title")}</span>
-                    <span className="px-2.5 py-0.5 text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 rounded-md">LIVE AI</span>
+                    <span className="px-2.5 py-0.5 text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 rounded-md">
+                      {voiceState === "listening" ? "RECORDING" : voiceState === "processing" ? "REASONING" : voiceState === "speaking" ? "SPEAKING" : "READY"}
+                    </span>
                   </h3>
-                  <p className="text-sm text-parchment-300/80 font-sans mt-0.5">{t("kiosk_subtitle")}</p>
+                  <p className="text-sm text-parchment-300/80 font-sans mt-0.5">
+                    {language === "ta"
+                      ? "தமிழ், இந்தி அல்லது ஆங்கிலத்தில் சட்ட கேள்விகளைக் கேளுங்கள்"
+                      : language === "hi"
+                      ? "हिंदी, तमिल या अंग्रेजी में कानूनी प्रश्न पूछें"
+                      : "Speak your inquiry in English, Hindi, or Tamil"}
+                  </p>
                 </div>
                 <div className="flex space-x-1.5 bg-forest-950/80 p-1 rounded-xl border border-forest-800">
                   {(["en", "hi", "ta"] as const).map((l) => (
                     <button
                       key={l}
                       onClick={() => setLanguage(l)}
+                      aria-label={`Switch language to ${l.toUpperCase()}`}
                       className={`px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all ${
                         language === l
                           ? "bg-amber-400 text-forest-950 font-extrabold shadow-[0_0_12px_rgba(251,191,36,0.6)]"
@@ -642,56 +807,138 @@ export const ABSKioskPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Central Audio Microphone Simulator */}
-              <div className="flex flex-col items-center justify-center py-8 bg-forest-950/90 rounded-2xl border border-forest-800 space-y-4">
+              {/* Central Voice Station with Animated Interactive States */}
+              <div className="flex flex-col items-center justify-center py-8 bg-forest-950/90 rounded-2xl border border-forest-800 space-y-4 relative">
                 <button
-                  onClick={handleVoiceSimulation}
-                  className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isRecording
-                      ? "bg-rose-600 scale-110 shadow-lg shadow-rose-600/50 animate-pulse"
-                      : "bg-gradient-to-br from-amber-400 to-amber-600 text-forest-950 hover:scale-105 shadow-[0_0_20px_rgba(245,158,11,0.5)]"
+                  onClick={handleMicrophoneClick}
+                  aria-label={
+                    voiceState === "speaking"
+                      ? "Interrupt speech and speak new question"
+                      : voiceState === "listening" || voiceState === "transcribing"
+                      ? "Stop listening"
+                      : "Start voice inquiry"
+                  }
+                  title={
+                    voiceState === "speaking"
+                      ? "Interrupt speech and speak new question"
+                      : voiceState === "listening" || voiceState === "transcribing"
+                      ? "Stop listening"
+                      : "Click to speak"
+                  }
+                  className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    voiceState === "listening" || voiceState === "transcribing"
+                      ? "bg-rose-600 scale-110 shadow-[0_0_30px_rgba(225,29,72,0.7)] animate-pulse ring-4 ring-rose-400/50"
+                      : voiceState === "speaking"
+                      ? "bg-emerald-600 scale-105 shadow-[0_0_30px_rgba(16,185,129,0.7)] ring-4 ring-emerald-400/40"
+                      : voiceState === "processing"
+                      ? "bg-amber-500 scale-100 shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-spin"
+                      : "bg-gradient-to-br from-amber-400 to-amber-600 text-forest-950 hover:scale-105 shadow-[0_0_25px_rgba(245,158,11,0.5)] ring-2 ring-amber-300/40"
                   }`}
-                  title="Tap to speak"
                 >
-                  <Mic className="w-8 h-8" />
+                  {voiceState === "speaking" ? (
+                    <Volume2 className="w-10 h-10 text-white animate-bounce" />
+                  ) : voiceState === "processing" ? (
+                    <Sparkles className="w-10 h-10 text-forest-950" />
+                  ) : (
+                    <Mic className="w-10 h-10 text-forest-950" />
+                  )}
                 </button>
-                <span className="text-sm font-bold text-parchment-200">
-                  {isRecording
-                    ? (language === "ta" ? "உங்கள் குரல் கேட்கப்படுகிறது (பேசவும்)..." : language === "hi" ? "आपकी आवाज सुनी जा रही है (बोलें)..." : "Listening to Voice Input (Web Speech API)...")
-                    : t("speak_btn")}
-                </span>
+
+                {/* State Label Caption */}
+                <div className="text-center space-y-1">
+                  <span className="text-base font-bold text-parchment-100 block">
+                    {voiceState === "listening"
+                      ? (language === "ta" ? "உங்கள் குரல் கேட்கப்படுகிறது (பேசவும்)..." : language === "hi" ? "आपकी आवाज सुनी जा रही है (बोलें)..." : "Listening... Speak your regulatory inquiry now")
+                      : voiceState === "transcribing"
+                      ? (language === "ta" ? "குரல் படியெடுக்கப்படுகிறது..." : language === "hi" ? "आवाज ट्रांसक्राइब हो रही है..." : "Transcribing your voice...")
+                      : voiceState === "processing"
+                      ? (language === "ta" ? "சட்ட தரவுத்தளத்தில் ஆய்வு செய்யப்படுகிறது..." : language === "hi" ? "वैधानिक डेटाबेस में विश्लेषण हो रहा है..." : "Analyzing inquiry with Statutory RAG Pipeline...")
+                      : voiceState === "speaking"
+                      ? (language === "ta" ? "IP-SAKTI பதிலளிக்கிறது (குரல்)..." : language === "hi" ? "IP-SAKTI उत्तर दे रहा है (ऑडियो)..." : "IP-SAKTI is speaking... (Tap mic to interrupt)")
+                      : t("speak_btn")}
+                  </span>
+                  <span className="text-xs text-parchment-300/60 block font-mono">
+                    {voiceState === "speaking"
+                      ? "Click microphone button anytime to interrupt and speak a new question"
+                      : "Click microphone to start / stop speech-to-text"}
+                  </span>
+                </div>
 
                 {/* Animated Waveform Visualizer */}
-                <div className="flex items-center space-x-1 h-6">
-                  {[4, 12, 20, 8, 16, 24, 14, 6, 18, 10, 22, 12].map((h, i) => (
+                <div className="flex items-center space-x-1.5 h-8 pt-1">
+                  {[6, 14, 24, 10, 20, 28, 16, 8, 22, 12, 26, 14, 20, 10].map((h, i) => (
                     <div
                       key={i}
-                      className="w-1 bg-amber-400/80 rounded-full transition-all duration-150"
+                      className={`w-1 rounded-full transition-all duration-150 ${
+                        voiceState === "listening" || voiceState === "transcribing"
+                          ? "bg-rose-400"
+                          : voiceState === "speaking"
+                          ? "bg-emerald-400"
+                          : voiceState === "processing"
+                          ? "bg-amber-400 animate-pulse"
+                          : "bg-forest-800"
+                      }`}
                       style={{
-                        height: isRecording || kioskSpeaking ? `${(h * 1.4)}px` : '4px'
+                        height: voiceState === "listening" || voiceState === "speaking" ? `${h}px` : voiceState === "transcribing" ? `${h * 0.7}px` : "4px"
                       }}
                     />
                   ))}
                 </div>
 
-                <p className="text-sm text-parchment-300/80 italic max-w-md text-center px-4 bg-forest-900/40 py-2 rounded-xl border border-forest-800/60">
-                  "{kioskQuery}"
-                </p>
+                {/* Error Notice if Speech/Backend fails */}
+                {kioskErrorMessage && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 max-w-md text-center">
+                    {kioskErrorMessage}
+                  </div>
+                )}
+
+                {/* Active Inquiry / Live Transcript Box */}
+                <div className="w-full max-w-xl px-4">
+                  <div className="p-3 bg-forest-900/60 border border-forest-800 rounded-xl text-center">
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-amber-400/80 block mb-1">
+                      {hasInteracted ? "Active Voice Transcript" : "Sample Inquiry (Speak or Tap to Ask)"}
+                    </span>
+                    <p className="text-sm font-medium text-parchment-200 italic">
+                      "{transcriptPreview || kioskQuery || defaultPlaceholder}"
+                    </p>
+                  </div>
+                </div>
+
+                {/* Demo Suggestion Chips */}
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-2 max-w-2xl px-4">
+                  <span className="text-xs font-mono text-parchment-400/60 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>Quick Inquiries:</span>
+                  </span>
+                  {(samplePrompts[language] || samplePrompts.en).slice(0, 4).map((sample, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleProcessKioskQuery(sample)}
+                      disabled={voiceState === "processing"}
+                      className="px-2.5 py-1 rounded-lg bg-forest-900/90 hover:bg-forest-800 text-[11px] text-parchment-300 hover:text-amber-300 border border-forest-800 hover:border-amber-500/40 transition-all text-left truncate max-w-xs"
+                    >
+                      {sample}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Loading State when query is being processed */}
-              {isProcessingKiosk && (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center space-y-2 animate-pulse">
-                  <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
+              {voiceState === "processing" && (
+                <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3 animate-pulse">
+                  <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
                   <p className="text-sm font-semibold text-amber-300">
                     {t("kiosk_analyzing")}
+                  </p>
+                  <p className="text-xs text-parchment-300/60 font-mono">
+                    Checking Patents Act 1970, Ayurvedic Pharmacopoeia (API), and Biodiversity Act
                   </p>
                 </div>
               )}
 
               {/* Spoken Auditory Verdict Box */}
-              {!isProcessingKiosk && kioskAnswer && (
-                <div className="p-5 rounded-2xl bg-forest-950/90 border border-amber-500/30 space-y-3 shadow-inner">
+              {voiceState !== "processing" && kioskAnswer && (
+                <div className="p-6 rounded-2xl bg-forest-950/90 border border-amber-500/30 space-y-4 shadow-inner">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -700,34 +947,95 @@ export const ABSKioskPage: React.FC = () => {
                       </span>
                     </div>
                     <button
-                      onClick={handleSpeak}
+                      onClick={handleToggleSpeak}
                       className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all ${
-                        kioskSpeaking
+                        voiceState === "speaking"
                           ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
                           : "bg-forest-900 hover:bg-forest-800 text-amber-300 border border-amber-500/30"
                       }`}
                     >
-                      {kioskSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                      <span>{kioskSpeaking ? t("stop_audio") : t("simulate_audio")}</span>
+                      {voiceState === "speaking" ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                      <span>{voiceState === "speaking" ? t("stop_audio") : t("simulate_audio")}</span>
                     </button>
                   </div>
-                  <p className="font-display text-base sm:text-lg text-parchment-100 leading-relaxed font-light">
-                    "{kioskAnswer}"
+                  <p className="font-display text-base sm:text-lg text-parchment-100 leading-relaxed font-light whitespace-pre-line">
+                    {kioskAnswer}
                   </p>
+                </div>
+              )}
+
+              {/* Verified Authoritative Citations Drawer */}
+              {voiceState !== "processing" && kioskCitations.length > 0 && (
+                <div className="p-5 rounded-2xl bg-forest-950/70 border border-forest-800 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-forest-800/80">
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="w-4 h-4 text-emerald-400" />
+                      <span className="font-mono text-xs uppercase font-bold text-emerald-300 tracking-wider">
+                        Grounded Statutory Citations ({kioskCitations.length})
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-parchment-400/60">
+                      FAISS Vectorstore Grounding
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {kioskCitations.map((cit, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-xl bg-forest-900/60 border border-forest-800/80 space-y-1.5 hover:border-emerald-500/40 transition-all"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-amber-300 flex items-center gap-1 truncate max-w-[180px]">
+                            <FileText className="w-3 h-3 text-amber-400 flex-shrink-0" />
+                            <span className="truncate">{cit.title}</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                            cit.verification_status === "VERIFIED_STATUTORY_RECORD"
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                              : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                          }`}>
+                            {cit.verification_status === "VERIFIED_STATUTORY_RECORD" ? "VERIFIED" : "RECORD"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-parchment-300/80 line-clamp-2 leading-relaxed italic">
+                          "{cit.excerpt}"
+                        </p>
+                        <div className="flex items-center justify-between text-[10px] text-parchment-400/70 font-mono pt-1">
+                          <span>{cit.section}</span>
+                          <a
+                            href={formatCitationUrl(cit.source_url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5 underline"
+                          >
+                            <span>View PDF</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {/* Screen Split: Immediate Verdict + Mobile QR */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 rounded-xl bg-forest-950 border border-forest-800 space-y-1">
-                  <span className="font-mono text-xs uppercase font-bold text-emerald-400 block">
-                    {t("kiosk_instant_verdict")}
-                  </span>
-                  <p className="font-display text-lg font-bold text-white">
-                    {kioskClassification}
+                <div className="p-4 rounded-xl bg-forest-950 border border-forest-800 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs uppercase font-bold text-emerald-400 block">
+                      {t("kiosk_instant_verdict")}
+                    </span>
+                    {kioskConfidence && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300 font-bold">
+                        {kioskConfidence.score}% CONFIDENCE
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-display text-base sm:text-lg font-bold text-white">
+                    {kioskClassification || "Statutory ASU Formulation Evaluation"}
                   </p>
-                  <span className="text-sm text-parchment-300/80 block font-sans">
-                    {kioskStatute}
+                  <span className="text-xs sm:text-sm text-parchment-300/80 block font-sans">
+                    {kioskStatute || "Regulated under Patents Act 1970 & Ayush Statutory Framework"}
                   </span>
                 </div>
 
@@ -736,7 +1044,7 @@ export const ABSKioskPage: React.FC = () => {
                     <span className="font-mono text-xs uppercase font-bold text-amber-400 block">
                       {t("mobile_handoff_title")}
                     </span>
-                    <p className="text-parchment-200 text-sm font-semibold">
+                    <p className="text-parchment-200 text-xs sm:text-sm font-semibold">
                       {t("mobile_handoff_title")}
                     </p>
                     <span className="text-xs text-parchment-300/70 block font-sans">

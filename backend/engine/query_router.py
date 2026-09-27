@@ -151,31 +151,91 @@ def extract_entities(query_norm: str) -> Dict[str, Any]:
 
 def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> Dict[str, Any]:
     """
-    Intelligent routing of user queries into structured domain, intent, jurisdiction,
-    target source types, and ambiguity status.
+    Deterministically routes user query to its statutory domain, intent, and target evidence.
+    Supports English, Hindi, and Tamil input.
     """
     q_norm = normalize_query(query)
-    q_lower = query.lower()
     entities = extract_entities(q_norm)
-    words = [w for w in re.findall(r"\w+", q_norm) if len(w) > 2]
+    words = [w for w in re.split(r"\W+", q_norm) if w]
 
-    # Detect language
-    is_tamil = any('\u0b80' <= c <= '\u0bff' for c in query)
-    is_hindi = any('\u0900' <= c <= '\u097f' for c in query)
-    language = "ta" if is_tamil else ("hi" if is_hindi else "en")
+    # Detect language if Tamil or Hindi script is present
+    language = "en"
+    if any('\u0b80' <= c <= '\u0bff' for c in query):
+        language = "ta"
+    elif any('\u0900' <= c <= '\u097f' for c in query):
+        language = "hi"
 
     # Detect jurisdiction preference from query or toggle
     jurisdiction = "International" if ("international" in q_norm or "abroad" in q_norm or "foreign" in q_norm or "wipo" in q_norm or "pct" in q_norm or selected_jurisdiction.lower() == "international") else "India"
 
     # -------------------------------------------------------------
+    # 0. OUT-OF-SCOPE / NON-AYURVEDIC INQUIRIES
+    # -------------------------------------------------------------
+    # Plant breeding / agricultural hybridization / non-Ayurvedic non-IP topics
+    # Detect plant breeding in EN, HI, or TA
+    is_plant_breeding = (
+        (bool(re.search(r"\b(breed|breeding|crossbreed|cross-breed|hybridize|hybridization|graft|grafting)\b", q_norm)) and any(
+            w in q_norm for w in ["brinjal", "tomato", "potato", "plant", "plants", "crop", "crops", "eggplant", "vegetable", "species", "fruit", "wheat", "rice", "maize", "seed", "seeds", "grain"]
+        )) or
+        any(w in q_norm for w in ["संकरण", "पादप प्रजनन", "क्रॉस-ब्रीड", "बैंगन और टमाटर", "टमाटर और बैंगन", "गेहूं"]) or
+        any(w in q_norm for w in ["கலப்பினம்", "இனப்பெருக்கம்", "கத்தரிக்காய்", "தக்காளி", "கோதுமை"])
+    )
+    is_general_out_of_scope = (
+        not entities["herbs"] and not entities["sections"] and
+        not any(w in q_norm for w in ["ayurveda", "ayurvedic", "asu", "siddha", "unani", "ayush", "patent", "tkdl", "trademark", "fssai", "nba", "sbb", "cosmetic", "medicine", "herb", "drug", "herbal", "formulation", "phytopharmaceutical", "extract"]) and
+        any(w in q_norm for w in ["crypto", "bitcoin", "weather", "cricket", "football", "stock market", "coding", "python", "javascript", "car", "engine"])
+    )
+
+    if is_plant_breeding or is_general_out_of_scope:
+        return {
+            "domain": "Out-of-Scope / Non-Ayurvedic",
+            "intent": "OUT_OF_SCOPE",
+            "category": "Out-of-Scope Inquiry — Non-Ayurvedic / Plant Breeding Topic",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "GENERAL_GUIDANCE",
+            "needs_clarification": False,
+            "keywords": ["out of scope", "plant breeding", "ayurveda scope"]
+        }
+
+    # -------------------------------------------------------------
     # 1. AMBIGUOUS / VAGUE QUERIES (Needs Clarification)
     # -------------------------------------------------------------
-    # Brief queries without specific ingredients, actions, or sections
+    # 1A. "Can I use ayurvedha?" / "Can I use ayurveda?"
+    if re.match(r"^can\s+i\s+use\s+(ayurveda|ayurvedha|ayurweda|ayush)(\s+medicine|\s+herbs)?\??$", q_norm) or \
+       (len(words) <= 4 and "use" in words and any(w in q_norm for w in ["ayurveda", "ayurvedha", "ayurweda"]) and not entities["herbs"] and not entities["sections"] and not any(w in words for w in ["patent", "sell", "trademark", "breed"])):
+        return {
+            "domain": "Clarification",
+            "intent": "VAGUE_USE_AYURVEDA",
+            "category": "Ayurvedic General Use & Multi-Pathway Clarification",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "GENERAL_CATALOG",
+            "needs_clarification": True,
+            "keywords": ["ayurveda", "licensing", "patent", "formulation", "commercialization"]
+        }
+
+    # 1B. "Can I patent this?" / "Can this be patented?" (when no specific herb/entity is supplied)
+    if (re.match(r"^can\s+i\s+patent\s+(this|it)\??$", q_norm) or re.match(r"^(is\s+this|can\s+this\s+be)\s+patentable\??$", q_norm) or q_norm in ["can i patent this", "can i patent this?", "patent this", "can i patent it", "is this patentable", "is this patentable?"]) and not entities["herbs"] and not entities["sections"]:
+        return {
+            "domain": "Clarification",
+            "intent": "VAGUE_PATENT_THIS",
+            "category": "Patentability Assessment — Target Invention Specification Required",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "PATENT_STATUTE",
+            "needs_clarification": True,
+            "keywords": ["patentability", "invention", "ayurveda", "section 3(p)", "section 3(e)"]
+        }
+
+    # 1C. Other brief vague questions
     vague_patterns = [
-        r"^can\s+i\s+use\s+(ayurveda|ayurvedic|ayurvedha|ayush)(\s+medicine|\s+herbs)?\??$",
         r"^is\s+(ayurveda|ayurvedic)\s+(allowed|legal|valid)\??$",
-        r"^can\s+i\s+(sell|patent|register|make)\s+this\??$",
-        r"^is\s+this\s+(legal|allowed|patentable)\??$",
+        r"^can\s+i\s+(sell|register|make)\s+this\??$",
+        r"^is\s+this\s+(legal|allowed)\??$",
         r"^can\s+i\s+do\s+ayurveda\??$",
         r"^how\s+to\s+use\s+ayurveda\??$"
     ]
@@ -201,7 +261,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
         return {
             "domain": "Ayurveda Pharmacopoeia",
             "intent": "HERB_MONOGRAPH",
-            "category": f"Classical / Generic Ayurvedic Monograph & Pharmacopoeial Standard — {entities['herbs'][0]['botanical']}",
+            "category": f"Classical / Generic Botanical Monograph — {entities['herbs'][0]['botanical']}",
             "jurisdiction": jurisdiction,
             "language": language,
             "entities": entities,
@@ -249,7 +309,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
         return {
             "domain": "Patent Law",
             "intent": "PATENTABILITY_MERE_ADMIXTURE",
-            "category": "Patent / Proprietary Assessment — Section 3(e) Mere Admixture Prohibition",
+            "category": "Patent / Proprietary — Section 3(e) Mere Admixture Prohibition",
             "jurisdiction": jurisdiction,
             "language": language,
             "entities": entities,
@@ -259,25 +319,9 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
         }
 
     # -------------------------------------------------------------
-    # 6. PATENTABILITY — TRADITIONAL KNOWLEDGE (Section 3(p))
+    # 6. PATENTABILITY — NOVEL COMBINATIONS (Ashwagandha + Curcumin, etc.)
     # -------------------------------------------------------------
-    if (("patent" in q_norm or "ipr" in q_norm or "காப்புரிமை" in q_norm or "पेटेंट" in q_norm) and any(w in q_norm for w in ["traditional", "classical", "ancient", "recipe", "3(p)", "charaka", "first schedule", "known use", "ayurvedic medicine", "ayurvedic formulation"])) and not ("admixture" in q_norm or "novel combination" in q_norm):
-        return {
-            "domain": "Patent Law",
-            "intent": "PATENTABILITY_TRADITIONAL_KNOWLEDGE",
-            "category": "Patent / Proprietary & Classical Assessment — Section 3(p) Traditional Knowledge Exclusion",
-            "jurisdiction": jurisdiction,
-            "language": language,
-            "entities": entities,
-            "source_type": "PATENT_STATUTE",
-            "needs_clarification": False,
-            "keywords": ["section 3(p)", "patents act 1970", "traditional knowledge", "prior art", "classical formulation"]
-        }
-
-    # -------------------------------------------------------------
-    # 7. PATENTABILITY — NOVEL COMBINATIONS (Ashwagandha + Brahmi, etc.)
-    # -------------------------------------------------------------
-    if ("patent" in q_norm or "novel" in q_norm or "combination" in q_norm) and len(entities["herbs"]) >= 2:
+    if ("patent" in q_norm or "novel" in q_norm or "combination" in q_norm or "formulation" in q_norm or "modified" in q_norm) and len(entities["herbs"]) >= 2:
         return {
             "domain": "Patent Law",
             "intent": "PATENTABILITY_POLYHERBAL_COMBINATION",
@@ -288,6 +332,22 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
             "source_type": "PATENT_STATUTE",
             "needs_clarification": False,
             "keywords": ["section 3(e)", "section 3(p)", "synergy", "polyherbal combination"] + [h["key"] for h in entities["herbs"]]
+        }
+
+    # -------------------------------------------------------------
+    # 7. PATENTABILITY — TRADITIONAL KNOWLEDGE (Section 3(p))
+    # -------------------------------------------------------------
+    if (("patent" in q_norm or "ipr" in q_norm or "காப்புரிமை" in q_norm or "पेटेंट" in q_norm) and any(w in q_norm for w in ["traditional", "classical", "ancient", "recipe", "3(p)", "charaka", "first schedule", "known use", "ayurvedic medicine", "ayurvedic formulation"])) and not ("admixture" in q_norm or "novel combination" in q_norm):
+        return {
+            "domain": "Patent Law",
+            "intent": "PATENTABILITY_TRADITIONAL_KNOWLEDGE",
+            "category": "Patent / Proprietary & Classical / Generic — Section 3(p) Traditional Knowledge Exclusion",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "PATENT_STATUTE",
+            "needs_clarification": False,
+            "keywords": ["section 3(p)", "patents act 1970", "traditional knowledge", "prior art", "classical formulation"]
         }
 
     # -------------------------------------------------------------

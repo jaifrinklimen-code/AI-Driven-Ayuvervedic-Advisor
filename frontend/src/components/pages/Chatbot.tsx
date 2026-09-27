@@ -21,10 +21,12 @@ import {
   Layers,
   Sparkles,
   Volume2,
-  VolumeX
+  VolumeX,
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
-import { getApiUrl } from "../../lib/api";
+import { getApiUrl, formatCitationUrl } from "../../lib/api";
 
 interface Citation {
   citation_index: number;
@@ -78,6 +80,7 @@ export const Chatbot: React.FC = () => {
   const [showGraph, setShowGraph] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Read query from URL if passed from landing page
   useEffect(() => {
@@ -103,6 +106,7 @@ export const Chatbot: React.FC = () => {
 
     setLoading(true);
     setResponse(null);
+    setErrorMessage(null);
     setSelectedCitation(null);
     setBookmarked(false);
 
@@ -117,11 +121,17 @@ export const Chatbot: React.FC = () => {
         }),
       });
 
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}: ${res.statusText || "Service error"}`);
+      }
       const data: QueryResponse = await res.json();
+      
+      if (!data || !data.short_answer) {
+        throw new Error("Invalid or empty response received from statutory guidance pipeline.");
+      }
       setResponse(data);
 
-      // Persist to Supabase & local history
+      // Persist authentic RAG response to Supabase & local history
       await saveQueryRecord({
         query: q,
         jurisdiction: data.jurisdiction || jurisdiction,
@@ -130,69 +140,12 @@ export const Chatbot: React.FC = () => {
         short_answer: data.short_answer,
         citations: data.citations || [],
       });
-    } catch (err) {
-      console.warn("Direct backend query note, applying grounded statutory engine:", err);
-      const fallbackData: QueryResponse = {
-        status: "SUCCESS",
-        short_answer:
-          "Under Indian Patent Law, pure Ayurvedic herbal formulations face stringent statutory exclusions under Section 3(p) (Traditional Knowledge) and Section 3(e) (Mere Admixture) of the Patents Act, 1970. To obtain a valid patent, you must prove unexpected synergistic therapeutic efficacy (Combination Index < 1.0). Furthermore, National Biodiversity Authority (NBA Form III) approval is mandatory before patent grant under Section 6 of the Biological Diversity Act, 2002.",
-        product_classification: "Patent / Proprietary Ayurvedic Medicine (Sec 3(h))",
-        jurisdiction: jurisdiction.toUpperCase(),
-        applicable_ip_regimes: [
-          "Patents Act, 1970 (Sections 3(p), 3(e), 3(d), 10(4)(d)(ii))",
-          "Biological Diversity Act, 2002 (Section 6 NBA Form III)",
-          "Drugs and Cosmetics Act, 1940 (Rule 158B licensing)"
-        ],
-        regulatory_pathway: "State Licensing Authority manufacturing license under Rule 158B with proof of safety and synergistic efficacy.",
-        abs_considerations: "Mandatory prior approval from National Biodiversity Authority (NBA Form III) before grant of patent.",
-        citations: [
-          {
-            citation_index: 1,
-            document_id: "IN-PAT-1970-SEC3P",
-            title: "The Patents Act, 1970 - Section 3(p)",
-            section: "Section 3(p)",
-            authority: "CGPDTM / Parliament of India",
-            jurisdiction: "India",
-            version: "Amended 2005",
-            source_url: "https://www.indiacode.nic.in/handle/123456789/1392",
-            excerpt: "Section 3(p) bars patenting an invention which in effect is traditional knowledge or an aggregation of known properties of traditionally known components..."
-          },
-          {
-            citation_index: 2,
-            document_id: "IN-BDA-2002-SEC6",
-            title: "Biological Diversity Act, 2002 - Section 6",
-            section: "Section 6",
-            authority: "National Biodiversity Authority (NBA)",
-            jurisdiction: "India",
-            version: "2023 Amendment",
-            source_url: "https://www.indiacode.nic.in/handle/123456789/2046",
-            excerpt: "No person shall apply for any intellectual property right based on Indian biological resources without obtaining prior approval of the NBA..."
-          }
-        ],
-        confidence: {
-          score: 94,
-          label: "HIGH",
-          evidence_quality: "STRONG",
-          sources_found: 2,
-          reason: "Authoritative statutory sources verified"
-        },
-        important_limitations: "Preliminary assessment. Does not replace statutory Freedom-To-Operate search.",
-        actionable_next_steps: [
-          "Conduct prior-art clearance search across InPASS and TKDL references.",
-          "Obtain laboratory synergy index data to overcome Section 3(e).",
-          "File NBA Form III with National Biodiversity Authority."
-        ],
-        disclaimer: "Based on retrieved authoritative sources, this is a preliminary informational assessment. Not legal advice."
-      };
-      setResponse(fallbackData);
-      saveQueryRecord({
-        query: q,
-        jurisdiction: jurisdiction.toUpperCase(),
-        category: fallbackData.product_classification,
-        confidence_score: fallbackData.confidence.score,
-        short_answer: fallbackData.short_answer,
-        citations: fallbackData.citations,
-      });
+    } catch (err: any) {
+      console.error("Backend query failure:", err);
+      setResponse(null);
+      setErrorMessage(
+        err?.message || "Failed to connect to the IP-SAKTI statutory guidance engine. Please verify the backend service is running and retry."
+      );
     } finally {
       setLoading(false);
     }
@@ -251,7 +204,7 @@ export const Chatbot: React.FC = () => {
     if (!response) return;
     const authCites = response.citations.filter((c) => c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true);
     const suppCites = response.citations.filter((c) => !(c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true));
-    const text = `IP-SAKTI REGULATORY ASSESSMENT DOSSIER\n======================================\nGenerated: ${new Date().toLocaleString()}\nJurisdiction: ${response.jurisdiction}\nProduct Classification: ${response.product_classification}\nConfidence Score: ${response.confidence.score}%\n\nUSER QUERY:\n${query}\n\nSTATUTORY VERDICT:\n${response.short_answer}\n\nAPPLICABLE IP REGIMES:\n${response.applicable_ip_regimes.map((r) => `- ${r}`).join("\n")}\n\nREGULATORY PATHWAY:\n${response.regulatory_pathway}\n\nBIODIVERSITY / ABS COMPLIANCE:\n${response.abs_considerations}\n\nAUTHORITATIVE STATUTORY CITATIONS:\n${authCites.length > 0 ? authCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${c.source_url}`).join("\n\n") : "None"}${suppCites.length > 0 ? `\n\nSUPPLEMENTARY SOURCES:\n${suppCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${c.source_url}`).join("\n\n")}` : ""}\n\nACTIONABLE NEXT STEPS:\n${response.actionable_next_steps.map((s) => `[ ] ${s}`).join("\n")}\n\nDISCLAIMER:\n${response.disclaimer}`;
+    const text = `IP-SAKTI REGULATORY ASSESSMENT DOSSIER\n======================================\nGenerated: ${new Date().toLocaleString()}\nJurisdiction: ${response.jurisdiction}\nProduct Classification: ${response.product_classification}\nConfidence Score: ${response.confidence.score}%\n\nUSER QUERY:\n${query}\n\nSTATUTORY VERDICT:\n${response.short_answer}\n\nAPPLICABLE IP REGIMES:\n${response.applicable_ip_regimes.map((r) => `- ${r}`).join("\n")}\n\nREGULATORY PATHWAY:\n${response.regulatory_pathway}\n\nBIODIVERSITY / ABS COMPLIANCE:\n${response.abs_considerations}\n\nAUTHORITATIVE STATUTORY CITATIONS:\n${authCites.length > 0 ? authCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${formatCitationUrl(c.source_url)}`).join("\n\n") : "None"}${suppCites.length > 0 ? `\n\nSUPPLEMENTARY SOURCES:\n${suppCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${formatCitationUrl(c.source_url)}`).join("\n\n")}` : ""}\n\nACTIONABLE NEXT STEPS:\n${response.actionable_next_steps.map((s) => `[ ] ${s}`).join("\n")}\n\nDISCLAIMER:\n${response.disclaimer}`;
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -536,6 +489,33 @@ export const Chatbot: React.FC = () => {
               <p className="text-xs text-forest-900/60 dark:text-parchment-300/60 mt-1 max-w-sm mx-auto">
                 Consulting Indian Patents Act, Biological Diversity Act 2023, and Rule 158B licensing criteria.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State Banner */}
+        {errorMessage && !loading && (
+          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-3xl p-6 sm:p-8 text-center shadow-subtle-luxury space-y-4 animate-in fade-in-50 duration-300">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/20">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-display text-lg font-bold text-rose-950 dark:text-rose-200">
+                {t("api_error_title")}
+              </h3>
+              <p className="text-xs sm:text-sm text-rose-800/80 dark:text-rose-300/80 max-w-lg mx-auto leading-relaxed">
+                {errorMessage}
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => handleSearch()}
+                className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>{t("retry_btn")}</span>
+              </button>
             </div>
           </div>
         )}
@@ -842,7 +822,7 @@ export const Chatbot: React.FC = () => {
               </div>
 
               <a
-                href={selectedCitation.source_url}
+                href={formatCitationUrl(selectedCitation.source_url)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-forest-900 text-white dark:bg-emerald-600 text-xs font-semibold hover:opacity-90 shadow-md transition-opacity w-full justify-center"

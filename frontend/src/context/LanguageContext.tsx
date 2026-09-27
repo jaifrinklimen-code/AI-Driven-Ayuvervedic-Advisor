@@ -438,6 +438,138 @@ const translations: Translations = {
     hi: "सुलभ भौतिक उपकरण प्रणाली",
     ta: "நேரடி பயன்பாட்டுக்கான உபகரணம்",
   },
+
+  // ABS Clearance Engine & Kiosk UI
+  resource_source: {
+    en: "Resource Origin / Source",
+    hi: "संसाधन का स्रोत / उत्पत्ति",
+    ta: "வளத்தின் தோற்றம் / ஆதாரம்",
+  },
+  intended_purpose: {
+    en: "Intended Activity / Purpose",
+    hi: "उद्देश्य / गतिविधि",
+    ta: "உத்தேசிக்கப்பட்ட செயல்பாடு / நோக்கம்",
+  },
+  entity_indian: {
+    en: "Indian Entity / Resident Citizen",
+    hi: "भारतीय संस्था / निवासी नागरिक",
+    ta: "இந்திய நிறுவனம் / குடிமகன்",
+  },
+  entity_foreign: {
+    en: "Foreign Entity / Non-Resident / Overseas Company",
+    hi: "विदेशी संस्था / अनिवासी / विदेशी कंपनी",
+    ta: "வெளிநாட்டு நிறுவனம் / வெளிநாட்டு நிறுவனம்",
+  },
+  entity_nri: {
+    en: "Non-Resident Indian (NRI)",
+    hi: "अनिवासी भारतीय (NRI)",
+    ta: "வெளிநாடு வாழ் இந்தியர் (NRI)",
+  },
+  source_cultivated: {
+    en: "Cultivated / Farm Harvested",
+    hi: "कृषि योग्य / खेत से काटा गया",
+    ta: "பயிரிடப்பட்டது / பண்ணை அறுவடை",
+  },
+  source_wild: {
+    en: "Wild Harvested / Forest Origin",
+    hi: "वन्य संग्रह / वन उत्पत्ति",
+    ta: "காட்டு வளர்ப்பு / வனத் தோற்றம்",
+  },
+  source_market: {
+    en: "Market Commodity / Commercial Supply",
+    hi: "बाजार वस्तु / वाणिज्यिक आपूर्ति",
+    ta: "சந்தை பொருள் / வணிக விநியோகம்",
+  },
+  source_imported: {
+    en: "Imported Biological Material",
+    hi: "आयातित जैविक सामग्री",
+    ta: "இறக்குமதி செய்யப்பட்ட உயிரியல் பொருள்",
+  },
+  purpose_commercial: {
+    en: "Commercial Utilization & Manufacture",
+    hi: "वाणिज्यिक उपयोग एवं निर्माण",
+    ta: "வணிக பயன்பாடு மற்றும் உற்பத்தி",
+  },
+  purpose_research: {
+    en: "Scientific Research & Development",
+    hi: "वैज्ञानिक अनुसंधान एवं विकास",
+    ta: "அறிவியல் ஆராய்ச்சி & வளர்ச்சி",
+  },
+  purpose_ip: {
+    en: "Intellectual Property / Patent Application",
+    hi: "बौद्धिक संपदा / पेटेंट आवेदन",
+    ta: "அறிவுசார் சொத்துரிமை / காப்புரிமை விண்ணப்பம்",
+  },
+  purpose_bio: {
+    en: "Bio-survey & Bio-utilization",
+    hi: "जैव सर्वेक्षण एवं उपयोग",
+    ta: "உயிரியல் கணக்கெடுப்பு & பயன்பாடு",
+  },
+  tk_involved: {
+    en: "Associated Traditional Knowledge (TK) Involved",
+    hi: "संबद्ध पारंपरिक ज्ञान (TK) शामिल है",
+    ta: "தொடர்புடைய பாரம்பரிய அறிவு (TK) சேர்க்கப்பட்டுள்ளது",
+  },
+  evaluate_btn: {
+    en: "Evaluate Statutory ABS Compliance",
+    hi: "वैधानिक ABS अनुपालन का मूल्यांकन करें",
+    ta: "சட்டப்பூர்வ ABS இணக்கத்தை மதிப்பிடுங்கள்",
+  },
+  evaluating: {
+    en: "Evaluating Compliance Profile...",
+    hi: "अनुपालन का मूल्यांकन हो रहा है...",
+    ta: "மதிப்பீடு செய்யப்படுகிறது...",
+  },
+  no_result_msg: {
+    en: "Configure biological resource profile to run automated NBA compliance assessment.",
+    hi: "स्वचालित NBA अनुपालन मूल्यांकन चलाने के लिए जैविक संसाधन प्रोफ़ाइल कॉन्फ़िगर करें।",
+    ta: "தானியங்கி NBA இணக்க மதிப்பீட்டை இயக்க உயிரியல் வள விவரக்குறிப்பை உள்ளிடவும்.",
+  },
+  statutory_status: {
+    en: "Statutory ABS Compliance Assessment",
+    hi: "वैधानिक ABS अनुपालन मूल्यांकन",
+    ta: "சட்டப்பூர்வ ABS இணக்க மதிப்பீடு",
+  },
+  competent_authority: {
+    en: "Competent Statutory Authority",
+    hi: "सक्षम वैधानिक प्राधिकरण",
+    ta: "தகுதியான சட்டப்பூர்வ அதிகாரம்",
+  },
+  statutory_obligations: {
+    en: "Statutory Obligations & Compliance Flags",
+    hi: "वैधानिक दायित्व एवं अनुपालन संकेत",
+    ta: "சட்டப்பூர்வ கடமைகள் மற்றும் இணக்க எச்சரிக்கைகள்",
+  },
+  mandatory_filings: {
+    en: "Mandatory Statutory Filings Required",
+    hi: "अनिवार्य वैधानिक आवेदन आवश्यक",
+    ta: "கட்டாய சட்டப்பூர்வ ஆவணத் தாக்கல்",
+  },
+  governing_statutes: {
+    en: "Governing Statutes & Legal Provisions",
+    hi: "शासी कानून एवं कानूनी प्रावधान",
+    ta: "நிர்வகிக்கும் சட்டங்கள் & சட்ட விதிகள்",
+  },
+  tkdl_status_title: {
+    en: "TKDL & Public Domain Verification",
+    hi: "TKDL एवं सार्वजनिक डोमेन सत्यापन",
+    ta: "TKDL & பொதுக் களச் சரிபார்ப்பு",
+  },
+  api_error_title: {
+    en: "Service Unavailable",
+    hi: "सेवा अनुपलब्ध",
+    ta: "சேவை கிடைக்கவில்லை",
+  },
+  api_error_desc: {
+    en: "Unable to connect to the statutory guidance engine. Please verify the backend service is running and retry.",
+    hi: "वैधानिक मार्गदर्शन इंजन से कनेक्ट करने में असमर्थ। कृपया जांचें कि बैकएंड सेवा चालू है और पुनः प्रयास करें।",
+    ta: "சட்ட வழிகாட்டல் இயந்திரத்துடன் இணைக்க முடியவில்லை. பின்தள சேவை இயங்குகிறதா என்பதை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+  },
+  retry_btn: {
+    en: "Retry Query",
+    hi: "पुनः प्रयास करें",
+    ta: "மீண்டும் முயற்சிக்கவும்",
+  },
 };
 
 interface LanguageContextType {
