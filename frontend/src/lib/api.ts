@@ -12,14 +12,23 @@ const getInitialBase = (): string => {
   if (import.meta.env.DEV) {
     return "http://localhost:8000";
   }
-  // In production without an explicit VITE_BACKEND_URL, use relative origin or window.location.origin
-  return typeof window !== "undefined" ? window.location.origin : "";
+  // In production builds without VITE_BACKEND_URL configured,
+  // do NOT fall back to Vercel's host because the static frontend does not host the backend PDFs.
+  return "";
 };
 
 export const API_BASE = getInitialBase();
 
+export const isBackendConfigured = (): boolean => {
+  return Boolean(API_BASE && API_BASE.trim() !== "");
+};
+
 export const getApiUrl = (endpoint: string): string => {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  if (!API_BASE) {
+    // If running in browser and no backend configured, return relative endpoint
+    return cleanEndpoint;
+  }
   return `${API_BASE}${cleanEndpoint}`;
 };
 
@@ -27,7 +36,7 @@ export const getApiUrl = (endpoint: string): string => {
 export const formatCitationUrl = (url: string | undefined | null): string => {
   if (!url) return "#";
 
-  // If already an absolute external web URL (not pointing to local backend /data), return as is
+  // If already an absolute external web URL (e.g. WIPO, WTO, India Code), return as is
   if (
     (url.startsWith("http://") || url.startsWith("https://")) &&
     !url.startsWith("http://localhost:8000/data/") &&
@@ -47,7 +56,7 @@ export const formatCitationUrl = (url: string | undefined | null): string => {
     clean = clean.slice(0, hashIdx);
   }
 
-  // Normalize path to /data/{filename}
+  // Normalize path to get the pure PDF filename
   let filename = clean;
   if (filename.startsWith("/data/")) {
     filename = filename.slice(6);
@@ -66,7 +75,18 @@ export const formatCitationUrl = (url: string | undefined | null): string => {
       // keep as is if malformed
     }
     const encodedFilename = encodeURIComponent(filename);
-    return `${getApiUrl(`/data/${encodedFilename}`)}${hash}`;
+
+    // In production without a configured backend URL, do NOT point to Vercel origin
+    // which results in a blank 404 page. Return empty string so UI can inform user.
+    if (!API_BASE) {
+      return "";
+    }
+
+    return `${API_BASE}/data/${encodedFilename}${hash}`;
+  }
+
+  if (!API_BASE) {
+    return clean.startsWith("http") ? clean : "";
   }
 
   return `${getApiUrl(clean)}${hash}`;
