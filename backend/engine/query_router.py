@@ -29,95 +29,111 @@ TERM_NORMALIZATIONS = {
     r"\bchavanprash\b": "chyawanprash",
 }
 
-# Detected botanical herbs database
+# Detected botanical herbs database with comprehensive multilingual aliases
 KNOWN_HERBS = {
     "ashwagandha": {
         "botanical": "Withania somnifera Dunal",
         "family": "Solanaceae",
         "sanskrit": "अश्वगंधा (Ashwagandha)",
         "tamil": "அஸ்வகந்தா (அமுக்கரா)",
+        "tamil_clean": "அஸ்வகந்தா",
         "source_pdf": "API-Vol-1.pdf",
         "page": 31,
         "actives": "withanolides (withaferin A, withanolide D), somniferine",
         "classical_use": "Balya (strength promoting), Rasayana (rejuvenator), Medhya, Sandhivata",
-        "tkdl_status": "Documented in Charaka Samhita and Sushruta Samhita; classical prior art."
+        "tkdl_status": "Documented in Charaka Samhita and Sushruta Samhita; classical prior art.",
+        "aliases": ["ashwagandha", "withania", "somnifera", "asvagandha", "அஸ்வகந்தா", "அமுக்கரா", "அமுக்கிராகிழங்கு", "अश्वगंधा", "अश्वगन्धा"]
     },
     "brahmi": {
         "botanical": "Bacopa monnieri (L.) Pennell",
         "family": "Plantaginaceae",
         "sanskrit": "ब्राह्मी (Brahmi)",
         "tamil": "பிராமி (Brahmi)",
+        "tamil_clean": "பிராமி",
         "source_pdf": "API-Vol-2.1.pdf",
         "page": 92,
         "actives": "bacosides (bacoside A, bacoside B), brahmine",
         "classical_use": "Medhya Rasayana (cognitive enhancer), Smritiprada, Unmada",
-        "tkdl_status": "Documented in Charaka Samhita; prior art for memory and nootropic uses."
+        "tkdl_status": "Documented in Charaka Samhita; prior art for memory and nootropic uses.",
+        "aliases": ["brahmi", "bacopa", "monnieri", "பிராமி", "வல்லாரை", "ब्राह्मी"]
     },
     "turmeric": {
         "botanical": "Curcuma longa L.",
         "family": "Zingiberaceae",
         "sanskrit": "हरिद्रा (Haridra / Curcumin)",
         "tamil": "மஞ்சள் (Turmeric)",
+        "tamil_clean": "மஞ்சள்",
         "source_pdf": "API-Vol-1.pdf",
         "page": 45,
         "actives": "curcuminoids (curcumin, demethoxycurcumin), volatile oils",
         "classical_use": "Varnya, Krimighna, Kushtaghna, Pramehahara",
-        "tkdl_status": "Landmark CSIR patent revocation (US Patent 5,401,504) based on classical TKDL prior art."
+        "tkdl_status": "Landmark CSIR patent revocation (US Patent 5,401,504) based on classical TKDL prior art.",
+        "aliases": ["turmeric", "curcuma", "longa", "haldi", "haridra", "மஞ்சள்", "ஹரித்ரா", "हल्दी", "हरिद्रा"]
     },
     "curcumin": {
         "botanical": "Curcuma longa L. (Curcumin)",
         "family": "Zingiberaceae",
         "sanskrit": "हरिद्रा (Haridra)",
         "tamil": "மஞ்சள் சாறு (Curcumin)",
+        "tamil_clean": "மஞ்சள் சாறு (குர்குமின்)",
         "source_pdf": "API-Vol-1.pdf",
         "page": 45,
         "actives": "curcuminoids (95% standard fraction)",
         "classical_use": "Anti-inflammatory, wound healing, antioxidant",
-        "tkdl_status": "Documented in TKDL; isolated fractions require Rule 122E CDSCO phytopharmaceutical clearance or Section 3(d) therapeutic efficacy proof."
+        "tkdl_status": "Documented in TKDL; isolated fractions require Rule 122E CDSCO phytopharmaceutical clearance or Section 3(d) therapeutic efficacy proof.",
+        "aliases": ["curcumin", "curcuminoids", "குர்குமின்", "மஞ்சள் சாறு", "करक्यूमिन"]
     },
     "neem": {
         "botanical": "Azadirachta indica A. Juss.",
         "family": "Meliaceae",
         "sanskrit": "निम्ब (Nimba)",
         "tamil": "வேம்பு (Neem)",
+        "tamil_clean": "வேம்பு",
         "source_pdf": "API-Vol-2.pdf",
         "page": 115,
         "actives": "azadirachtin, nimbin, nimbidin",
         "classical_use": "Krimighna, Kushtaghna, Kandughna (antimicrobial, skin care)",
-        "tkdl_status": "Landmark EPO revocation (EP 436257) based on Indian traditional knowledge."
+        "tkdl_status": "Landmark EPO revocation (EP 436257) based on Indian traditional knowledge.",
+        "aliases": ["neem", "azadirachta", "indica", "nimba", "வேம்பு", "வேப்பிலை", "நீம்", "नीम", "निम्ब"]
     },
     "tulsi": {
         "botanical": "Ocimum sanctum L.",
         "family": "Lamiaceae",
         "sanskrit": "तुलसी (Tulsi)",
         "tamil": "துளசி (Tulsi)",
+        "tamil_clean": "துளசி",
         "source_pdf": "API-Vol-2.pdf",
         "page": 165,
         "actives": "eugenol, rosmarinic acid, caryophyllene",
         "classical_use": "Svasahara, Kasahara, Hridya (respiratory and adaptogenic)",
-        "tkdl_status": "Documented across classical Ayurvedic literature; prior art against biopiracy."
+        "tkdl_status": "Documented across classical Ayurvedic literature; prior art against biopiracy.",
+        "aliases": ["tulsi", "ocimum", "sanctum", "துளசி", "தும்பை", "तुलसी"]
     },
     "triphala": {
         "botanical": "Emblica officinalis + Terminalia chebula + Terminalia bellirica",
         "family": "Polyherbal Classical Combination",
         "sanskrit": "त्रिफला (Triphala)",
         "tamil": "திரிபலா (Triphala)",
+        "tamil_clean": "திரிபலா",
         "source_pdf": "API-Vol-1.pdf",
         "page": 25,
         "actives": "gallic acid, ellagic acid, chebulagic acid, vitamin C",
         "classical_use": "Chakshushya, Deepana, Rasayana, Anulomana",
-        "tkdl_status": "First Schedule classical formulation; public domain; barred from patenting under Sec 3(p) and generic trademark monopoly under Sec 9(1)(b)."
+        "tkdl_status": "First Schedule classical formulation; public domain; barred from patenting under Sec 3(p) and generic trademark monopoly under Sec 9(1)(b).",
+        "aliases": ["triphala", "திரிபலா", "திரிபலை", "கடுக்காய்", "त्रिफला"]
     },
     "giloy": {
         "botanical": "Tinospora cordifolia (Willd.) Miers",
         "family": "Menispermaceae",
         "sanskrit": "गुडूची / गिलोय (Guduchi / Giloy)",
         "tamil": "சீந்தில் கொடி (Giloy)",
+        "tamil_clean": "சீந்தில் கொடி",
         "source_pdf": "API-Vol-1.pdf",
         "page": 41,
         "actives": "tinosporide, cordifolide, berberine",
         "classical_use": "Jvarahara, Rasayana, Dahaprashamana, Tridoshashamana",
-        "tkdl_status": "Prominent classical immunomodulator; extensively cataloged in TKDL."
+        "tkdl_status": "Prominent classical immunomodulator; extensively cataloged in TKDL.",
+        "aliases": ["giloy", "guduchi", "tinospora", "cordifolia", "சீந்தில்", "சீந்தில் கொடி", "கிலோய்", "गिलोय", "गुडूची"]
     }
 }
 
@@ -132,14 +148,24 @@ def normalize_query(query: str) -> str:
 
 
 def extract_entities(query_norm: str) -> Dict[str, Any]:
-    """Extract recognized herbs, statutes, institutions, and sections from query."""
+    """Extract recognized herbs, statutes, institutions, and sections from query in EN, TA, and HI."""
     herbs_found = []
+    seen = set()
     for herb_key, data in KNOWN_HERBS.items():
-        if herb_key in query_norm or data["botanical"].lower() in query_norm:
-            herbs_found.append({"key": herb_key, **data})
+        aliases = data.get("aliases", [herb_key, data["botanical"].lower()])
+        if any(a.lower() in query_norm for a in aliases):
+            if herb_key not in seen:
+                herbs_found.append({"key": herb_key, **data})
+                seen.add(herb_key)
 
     sections_found = []
-    for sec in ["3(p)", "3(e)", "3(d)", "3(a)", "3(h)", "3(aaa)", "10(4)", "158b", "161", "170", "33eea", "rule 122e", "section 6", "section 7", "section 3", "section 39", "form iii", "form 24-d", "form 32-a"]:
+    sec_terms = [
+        "3(p)", "3(e)", "3(d)", "3(a)", "3(h)", "3(aaa)", "10(4)", "158b", "161", "170", "33eea",
+        "rule 122e", "section 6", "section 7", "section 3", "section 39", "form iii", "form 24-d", "form 32-a",
+        "பிரிவு 3(p)", "பிரிவு 3(e)", "பிரிவு 3(d)", "பிரிவு 6", "பிரிவு 39", "விதி 158b", "படிவம் iii", "படிவம் 24-d",
+        "धारा 3(p)", "धारा 3(e)", "धारा 3(d)", "धारा 6", "धारा 39", "नियम 158b", "फॉर्म iii", "फॉर्म 24-d"
+    ]
+    for sec in sec_terms:
         if sec in query_norm:
             sections_found.append(sec)
 
@@ -305,7 +331,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 5. PATENTABILITY — MERE ADMIXTURE (Section 3(e))
     # -------------------------------------------------------------
-    if any(w in q_norm for w in ["admixture", "mere admixture", "3(e)", "mixing known", "combine known substances", "aggregation of properties"]):
+    if any(w in q_norm for w in ["admixture", "mere admixture", "3(e)", "mixing known", "combine known substances", "aggregation of properties", "வெறும் கலவை", "கலவை", "பிரிவு 3(e)", "சேர்க்கை", "मात्र मिश्रण", "साधारण मिश्रण", "धारा 3(e)"]):
         return {
             "domain": "Patent Law",
             "intent": "PATENTABILITY_MERE_ADMIXTURE",
@@ -321,7 +347,12 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 6. PATENTABILITY — NOVEL COMBINATIONS (Ashwagandha + Curcumin, etc.)
     # -------------------------------------------------------------
-    if ("patent" in q_norm or "novel" in q_norm or "combination" in q_norm or "formulation" in q_norm or "modified" in q_norm) and len(entities["herbs"]) >= 2:
+    poly_terms = [
+        "patent", "novel", "combination", "formulation", "modified",
+        "காப்புரிமை", "கலவை", "சேர்த்து", "மருந்து", "தயாரிக்கும்", "தயாரிப்பு",
+        "पेटेंट", "संयोजन", "मिश्रण", "दवा", "फार्मूलेशन"
+    ]
+    if any(w in q_norm for w in poly_terms) and len(entities["herbs"]) >= 2:
         return {
             "domain": "Patent Law",
             "intent": "PATENTABILITY_POLYHERBAL_COMBINATION",
@@ -337,7 +368,14 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 7. PATENTABILITY — TRADITIONAL KNOWLEDGE (Section 3(p))
     # -------------------------------------------------------------
-    if (("patent" in q_norm or "ipr" in q_norm or "காப்புரிமை" in q_norm or "पेटेंट" in q_norm) and any(w in q_norm for w in ["traditional", "classical", "ancient", "recipe", "3(p)", "charaka", "first schedule", "known use", "ayurvedic medicine", "ayurvedic formulation"])) and not ("admixture" in q_norm or "novel combination" in q_norm):
+    patent_terms = ["patent", "ipr", "காப்புரிமை", "காப்புரிமைச்", "पेटेंट"]
+    tk_terms = [
+        "traditional", "classical", "ancient", "recipe", "3(p)", "charaka", "first schedule", "known use", "ayurvedic medicine", "ayurvedic formulation",
+        "பாரம்பரிய", "பழமையான", "சாஸ்திர", "பிரிவு 3(p)", "சரகர்", "மருந்து",
+        "पारंपरिक", "शास्त्रीय", "धारा 3(p)", "चरक"
+    ]
+    is_tk_patent = (any(p in q_norm for p in patent_terms) and any(t in q_norm for t in tk_terms)) or (len(entities["herbs"]) == 1 and any(p in q_norm for p in patent_terms))
+    if is_tk_patent and not ("admixture" in q_norm or "வெறும் கலவை" in q_norm or len(entities["herbs"]) >= 2):
         return {
             "domain": "Patent Law",
             "intent": "PATENTABILITY_TRADITIONAL_KNOWLEDGE",
@@ -353,7 +391,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 8. BIODIVERSITY & ABS APPROVAL (NBA / BDA Act)
     # -------------------------------------------------------------
-    if any(w in q_norm for w in ["biodiversity", "biodiversity approval", "abs", "national biodiversity", "nba", "sbb", "biological diversity act", "form iii", "form 3", "benefit sharing", "state biodiversity board"]):
+    if any(w in q_norm for w in ["biodiversity", "biodiversity approval", "abs", "national biodiversity", "nba", "sbb", "biological diversity act", "form iii", "form 3", "benefit sharing", "state biodiversity board", "பல்லுயிர்", "பன்முகத்தன்மை", "தேசிய பல்லுயிர்", "படிவம் iii", "படிவம் 3", "जैव विविधता", "एनबीए", "फॉर्म iii", "फॉर्म 3"]):
         return {
             "domain": "Biodiversity & ABS",
             "intent": "BIODIVERSITY_ABS",
@@ -398,7 +436,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 11. BRAND PROTECTION & TRADEMARKS
     # -------------------------------------------------------------
-    if any(w in q_norm for w in ["brand", "protect my brand", "trademark", "trade mark", "logo", "brand name", "class 5", "class 3", "prefix", "ayurshakti", "section 9", "anti-dissection", "section 17"]):
+    if any(w in q_norm for w in ["brand", "protect my brand", "trademark", "trade mark", "logo", "brand name", "class 5", "class 3", "prefix", "ayurshakti", "section 9", "anti-dissection", "section 17", "வர்த்தக முத்திரை", "ட்ரேட்மார்க்", "ट्रेडमार्क"]):
         return {
             "domain": "Trade Marks",
             "intent": "BRAND_PROTECTION_TRADEMARK",
@@ -414,7 +452,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 12. COMMERCIAL SALE, LICENSING & MANUFACTURING
     # -------------------------------------------------------------
-    if any(w in q_norm for w in ["sell", "commercial", "commercially", "manufacturing license", "manufacture", "drug license", "start business", "market ayurvedic", "rule 158b", "form 24-d", "gmp license", "sla"]):
+    if any(w in q_norm for w in ["sell", "commercial", "commercially", "manufacturing license", "manufacture", "drug license", "start business", "market ayurvedic", "rule 158b", "form 24-d", "gmp license", "sla", "விற்பனை", "வணிக", "உரிமம்", "உற்பத்தி", "படிவம் 24-d", "விதி 158b", "தயாரித்து விற்க", "பயன்படுத்தலாமா", "बिक्री", "व्यावसायिक", "निर्माण", "लाइसेंस", "फॉर्म 24-d", "नियम 158b"]):
         return {
             "domain": "AYUSH Commercial Licensing",
             "intent": "COMMERCIAL_SALE_LICENSING",

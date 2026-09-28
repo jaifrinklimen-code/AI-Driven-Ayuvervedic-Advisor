@@ -53,6 +53,7 @@ interface HerbInfo {
   actives: string;
   classical_use: string;
   tkdl_status: string;
+  aliases?: string[];
 }
 
 const KNOWN_HERBS: Record<string, HerbInfo> = {
@@ -65,7 +66,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 31,
     actives: "withanolides (withaferin A, withanolide D), somniferine",
     classical_use: "Balya (strength promoting), Rasayana (rejuvenator), Medhya, Sandhivata",
-    tkdl_status: "Documented in Charaka Samhita and Sushruta Samhita; classical prior art."
+    tkdl_status: "Documented in Charaka Samhita and Sushruta Samhita; classical prior art.",
+    aliases: ["ashwagandha", "withania", "somnifera", "asvagandha", "அஸ்வகந்தா", "அமுக்கரா", "अश्वगंधा"]
   },
   brahmi: {
     key: "brahmi",
@@ -76,7 +78,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 92,
     actives: "bacosides (bacoside A, bacoside B), brahmine",
     classical_use: "Medhya Rasayana (cognitive enhancer), Smritiprada, Unmada",
-    tkdl_status: "Documented in Charaka Samhita; prior art for memory and nootropic uses."
+    tkdl_status: "Documented in Charaka Samhita; prior art for memory and nootropic uses.",
+    aliases: ["brahmi", "bacopa", "monnieri", "பிராமி", "வல்லாரை", "ब्राह्मी"]
   },
   turmeric: {
     key: "turmeric",
@@ -87,7 +90,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 45,
     actives: "curcuminoids (curcumin, demethoxycurcumin), volatile oils",
     classical_use: "Varnya, Krimighna, Kushtaghna, Pramehahara",
-    tkdl_status: "Landmark CSIR patent revocation (US Patent 5,401,504) based on classical TKDL prior art."
+    tkdl_status: "Landmark CSIR patent revocation (US Patent 5,401,504) based on classical TKDL prior art.",
+    aliases: ["turmeric", "curcuma", "longa", "haldi", "haridra", "மஞ்சள்", "हल्दी"]
   },
   curcumin: {
     key: "curcumin",
@@ -98,7 +102,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 45,
     actives: "curcuminoids (95% standard fraction)",
     classical_use: "Anti-inflammatory, wound healing, antioxidant",
-    tkdl_status: "Documented in TKDL; isolated fractions require Rule 122E CDSCO phytopharmaceutical clearance or Section 3(d) therapeutic efficacy proof."
+    tkdl_status: "Documented in TKDL; isolated fractions require Rule 122E CDSCO phytopharmaceutical clearance or Section 3(d) therapeutic efficacy proof.",
+    aliases: ["curcumin", "curcuminoids", "குர்குமின்", "மஞ்சள் சாறு", "करक्यूमिन"]
   },
   neem: {
     key: "neem",
@@ -109,7 +114,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 114,
     actives: "azadirachtin, nimbin, nimbidin, salannin",
     classical_use: "Kushtaghna, Tikta Rasayana, Krimihara, Vranashodhana",
-    tkdl_status: "Landmark EPO patent revocation (EP 0436257) for antifungal use based on Indian traditional knowledge."
+    tkdl_status: "Landmark EPO patent revocation (EP 0436257) for antifungal use based on Indian traditional knowledge.",
+    aliases: ["neem", "azadirachta", "indica", "nimba", "வேம்பு", "வேப்பிலை", "நீம்", "नीम"]
   },
   tulsi: {
     key: "tulsi",
@@ -120,7 +126,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 156,
     actives: "eugenol, caryophyllene, ursolic acid, rosmarinic acid",
     classical_use: "Kaphahara, Shwasahara, Kasahara, Vishaghna",
-    tkdl_status: "Documented in Charaka Samhita; prior art for respiratory and immunomodulatory uses."
+    tkdl_status: "Documented in Charaka Samhita; prior art for respiratory and immunomodulatory uses.",
+    aliases: ["tulsi", "ocimum", "sanctum", "துளசி", "தும்பை", "तुलसी"]
   },
   giloy: {
     key: "giloy",
@@ -131,7 +138,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 53,
     actives: "tinosporine, cordifolide, berberine, giloin",
     classical_use: "Jvarahara, Rasayana, Tridoshashamana, Vayasthapana",
-    tkdl_status: "Documented in Bhavaprakasha; prior art for antipyretic and immunomodulatory properties."
+    tkdl_status: "Documented in Bhavaprakasha; prior art for antipyretic and immunomodulatory properties.",
+    aliases: ["giloy", "guduchi", "tinospora", "cordifolia", "சீந்தில்", "சீந்தில் கொடி", "गिलोय"]
   },
   triphala: {
     key: "triphala",
@@ -142,7 +150,8 @@ const KNOWN_HERBS: Record<string, HerbInfo> = {
     page: 18,
     actives: "tannins, gallic acid, ellagic acid, chebulinic acid, vitamin C",
     classical_use: "Chakshushya, Deepana, Pachana, Virechana",
-    tkdl_status: "Classical formulation in First Schedule of Drugs & Cosmetics Act; non-patentable under Section 3(p)."
+    tkdl_status: "Classical formulation in First Schedule of Drugs & Cosmetics Act; non-patentable under Section 3(p).",
+    aliases: ["triphala", "திரிபலா", "திரிபலை", "கடுக்காய்", "त्रिफला"]
   }
 };
 
@@ -222,11 +231,13 @@ export async function generateClientStatutoryResponse(
   // 1. Detect herbs mentioned
   const detectedHerbs: HerbInfo[] = [];
   for (const [key, herb] of Object.entries(KNOWN_HERBS)) {
+    const matchAlias = herb.aliases && herb.aliases.some(alias => qLower.includes(alias.toLowerCase()) || query.includes(alias));
     if (
       qLower.includes(key) ||
       qLower.includes(herb.botanical.toLowerCase()) ||
       query.includes(herb.sanskrit) ||
-      query.includes(herb.tamil)
+      query.includes(herb.tamil) ||
+      matchAlias
     ) {
       detectedHerbs.push(herb);
     }
@@ -238,20 +249,28 @@ export async function generateClientStatutoryResponse(
       qLower.match(/\b(plant|plants|crop|tomato|brinjal|potato|seed)\b/)) ||
     (!detectedHerbs.length &&
       !qLower.match(/\b(ayurveda|ayurvedic|patent|tkdl|herb|medicine|drug|ayush|fssai|nba|sbb|cosmetic)\b/) &&
+      !query.match(/(ஆயுர்வேத|காப்புரிமை|மூலிகை|மருந்து|உரிமம்|சட்டம்|आयुर्वेद|पेटेंट|जड़ी-बूटी|दवा)/) &&
       qLower.match(/\b(stock|tesla|bitcoin|crypto|weather|cricket|football|coding|python|car|movie|song|recipe)\b/));
 
   const isMereAdmixture =
     qLower.includes("admixture") ||
     qLower.includes("3(e)") ||
     qLower.includes("mixing known") ||
-    (detectedHerbs.length >= 2 && qLower.includes("patent"));
+    query.includes("சேர்த்து") ||
+    query.includes("கலவை") ||
+    query.includes("மற்றும்") ||
+    query.includes("मिश्रण") ||
+    (detectedHerbs.length >= 2 && (qLower.includes("patent") || query.includes("காப்புரிமை") || query.includes("पेटेंट")));
 
   const isTraditionalKnowledge =
     qLower.includes("3(p)") ||
     qLower.includes("traditional knowledge") ||
     qLower.includes("classical") ||
     qLower.includes("ancient") ||
-    (detectedHerbs.length === 1 && qLower.includes("patent"));
+    query.includes("பாரம்பரிய") ||
+    query.includes("பழங்கால") ||
+    query.includes("पारंपरिक") ||
+    (detectedHerbs.length === 1 && (qLower.includes("patent") || query.includes("காப்புரிமை") || query.includes("पेटेंट")));
 
   const isBiodiversityABS =
     qLower.includes("nba") ||
@@ -259,7 +278,10 @@ export async function generateClientStatutoryResponse(
     qLower.includes("biodiversity") ||
     qLower.includes("biological diversity") ||
     qLower.includes("form iii") ||
-    qLower.includes("form 3");
+    qLower.includes("form 3") ||
+    query.includes("பல்லுயிர்") ||
+    query.includes("உயிரியல் பன்முகத்தன்மை") ||
+    query.includes("जैव विविधता");
 
   const isInternationalIP =
     qLower.includes("abroad") ||
@@ -268,7 +290,10 @@ export async function generateClientStatutoryResponse(
     qLower.includes("international") ||
     qLower.includes("section 39") ||
     qLower.includes("pct") ||
-    qLower.includes("wipo");
+    qLower.includes("wipo") ||
+    query.includes("வெளிநாடு") ||
+    query.includes("சர்வதேச") ||
+    query.includes("विदेश");
 
   const isHerbMonograph =
     detectedHerbs.length === 1 &&
@@ -278,6 +303,8 @@ export async function generateClientStatutoryResponse(
       qLower.includes("benefits") ||
       qLower.includes("monograph") ||
       query.includes("என்ன") ||
+      query.includes("பயன்கள்") ||
+      query.includes("பற்றி") ||
       query.includes("क्या है"));
 
   // 3. Assemble response based on intent
@@ -312,9 +339,23 @@ export async function generateClientStatutoryResponse(
         "IP-SAKTI Sahayak specifically assists with Ayurvedic patentability (Sections 3(p), 3(e), 3(d)), TKDL prior art, NBA / ABS clearance, Rule 158B licensing, and botanical monographs. Please submit a question related to Ayurvedic formulations, patent clearances, or regulatory pathways.";
     }
   } else if (isMereAdmixture || isTraditionalKnowledge) {
+    const cleanHerbNames = detectedHerbs.map(h => {
+      if (language === "ta") return h.tamil.split("(")[0].trim();
+      if (language === "hi") return h.sanskrit.split("(")[0].trim();
+      return h.key.toUpperCase();
+    }).join(" + ");
+
     classification = detectedHerbs.length >= 2
-      ? `Patent / Proprietary Polyherbal Assessment — ${detectedHerbs.map(h => h.key.toUpperCase()).join(" + ")}`
-      : "Patent / Proprietary — Section 3(p) & 3(e) Patentability Assessment";
+      ? (language === "ta"
+          ? `காப்புரிமை / கூட்டுக் கலவை மதிப்பீடு — ${cleanHerbNames}`
+          : language === "hi"
+          ? `पेटेंट / बहु-हर्बल मूल्यांकन — ${cleanHerbNames}`
+          : `Patent / Proprietary Polyherbal Assessment — ${cleanHerbNames}`)
+      : (language === "ta"
+          ? "காப்புரிமை தகுதி மதிப்பீடு — பிரிவு 3(p) & 3(e)"
+          : language === "hi"
+          ? "पेटेंट योग्यता मूल्यांकन — धारा 3(p) & 3(e)"
+          : "Patent / Proprietary — Section 3(p) & 3(e) Patentability Assessment");
 
     if (language === "hi") {
       shortAnswer =
@@ -337,7 +378,11 @@ export async function generateClientStatutoryResponse(
         `3. Mandatory NBA Clearance: Under Section 6 of the Biological Diversity Act, 2002, obtaining biological resources from India mandates securing prior approval via Form III from the National Biodiversity Authority (NBA) before patent grant.`;
     }
   } else if (isBiodiversityABS) {
-    classification = "Biodiversity & ABS Compliance — National Biodiversity Authority (NBA)";
+    classification = language === "ta"
+      ? "உயிரியல் பன்முகத்தன்மை & ABS அனுமதி — தேசிய பல்லுயிர் ஆணையம் (NBA)"
+      : language === "hi"
+      ? "जैव विविधता एवं ABS अनुपालन — राष्ट्रीय जैव विविधता प्राधिकरण (NBA)"
+      : "Biodiversity & ABS Compliance — National Biodiversity Authority (NBA)";
     if (language === "hi") {
       shortAnswer =
         `जैविक विविधता अधिनियम, 2002 (समेकित 2023) के तहत वैधानिक अनुपालन:\n\n` +
@@ -356,7 +401,11 @@ export async function generateClientStatutoryResponse(
         `3. Benefit Sharing: Fair and equitable benefit sharing applies (typically 0.1% to 0.5% of ex-factory sales or milestone-based sharing) deposited into the National Biodiversity Fund.`;
     }
   } else if (isInternationalIP) {
-    classification = "International IP — Section 39 Patents Act & WIPO GRATK Treaty Route";
+    classification = language === "ta"
+      ? "சர்வதேச காப்புரிமை — பிரிவு 39 காப்புரிமைச் சட்டம் & WIPO GRATK ஒப்பந்தம்"
+      : language === "hi"
+      ? "अंतरराष्ट्रीय पेटेंट — धारा 39 पेटेंट अधिनियम एवं WIPO GRATK संधि"
+      : "International IP — Section 39 Patents Act & WIPO GRATK Treaty Route";
     if (language === "hi") {
       shortAnswer =
         `भारतीय पेटेंट अधिनियम, 1970 की धारा 39 और अंतरराष्ट्रीय संधियों के तहत विदेश में पेटेंट फाइलिंग:\n\n` +
@@ -376,16 +425,42 @@ export async function generateClientStatutoryResponse(
     }
   } else if (isHerbMonograph && detectedHerbs[0]) {
     const herb = detectedHerbs[0];
-    classification = `Classical / Generic Botanical Monograph — ${herb.botanical}`;
-    shortAnswer =
-      `Official Ayurvedic Pharmacopoeia of India (API) Monograph Summary:\n\n` +
-      `• Botanical Name: ${herb.botanical}\n` +
-      `• Classical Sanskrit / Tamil Name: ${herb.sanskrit} / ${herb.tamil}\n` +
-      `• Authoritative API Reference: ${herb.source_pdf}, Page ${herb.page}\n` +
-      `• Key Chemical Actives: ${herb.actives}\n` +
-      `• Classical Therapeutic Properties: ${herb.classical_use}\n` +
-      `• TKDL Status: ${herb.tkdl_status}\n\n` +
-      `Regulatory Note: Classical formulations containing this herb are listed under the First Schedule of the Drugs & Cosmetics Act, 1940 and qualify for Rule 158B classical ASU manufacturing licenses without clinical trial requirements.`;
+    if (language === "ta") {
+      const cleanTa = herb.tamil.split("(")[0].trim();
+      classification = `மூலிகை விவரக்குறிப்பு — ${cleanTa}`;
+      shortAnswer =
+        `அதிகாரப்பூர்வ இந்திய ஆயுர்வேத மருந்தியல் (API) விவரக்குறிப்பு சுருக்கம்:\n\n` +
+        `• தாவரவியல் பெயர்: ${herb.botanical}\n` +
+        `• பாரம்பரிய பெயர்: ${cleanTa}\n` +
+        `• அதிகாரப்பூர்வ API ஆதாரம்: ${herb.source_pdf}, பக்கம் ${herb.page}\n` +
+        `• முக்கிய வேதியியல் மூலக்கூறுகள்: ${herb.actives}\n` +
+        `• பாரம்பரிய மருத்துவ பயன்கள்: ${herb.classical_use}\n` +
+        `• TKDL நிலை: பாரம்பரிய அறிவு நூலகத்தில் ஆவணப்படுத்தப்பட்டுள்ளது.\n\n` +
+        `ஒழுங்குமுறை குறிப்பு: மருந்து மற்றும் அழகுசாதனப் பொருட்கள் விதிகள் 1945-இன் முதல் அட்டவணையில் பட்டியலிடப்பட்ட பாரம்பரிய சூத்திரங்களுக்கு விதி 158B கீழ் ஆயுஷ் உரிமம் பெறலாம்.`;
+    } else if (language === "hi") {
+      const cleanHi = herb.sanskrit.split("(")[0].trim();
+      classification = `शास्त्रीय वनस्पति मोनोग्राफ — ${cleanHi}`;
+      shortAnswer =
+        `आधिकारिक भारतीय आयुर्वेदिक फार्माकोपोइया (API) मोनोग्राफ सारांश:\n\n` +
+        `• वानस्पतिक नाम: ${herb.botanical}\n` +
+        `• शास्त्रीय नाम: ${cleanHi}\n` +
+        `• आधिकारिक API संदर्भ: ${herb.source_pdf}, पृष्ठ ${herb.page}\n` +
+        `• प्रमुख रासायनिक घटक: ${herb.actives}\n` +
+        `• पारंपरिक चिकित्सीय उपयोग: ${herb.classical_use}\n` +
+        `• TKDL स्थिति: पारंपरिक ज्ञान डिजिटल लाइब्रेरी में प्रलेखित।\n\n` +
+        `नियामक नोट: औषधि एवं प्रसाधन सामग्री नियम 1945 के नियम 158B के तहत शास्त्रीय विनिर्माण लाइसेंस हेतु नैदानिक परीक्षण की आवश्यकता नहीं है।`;
+    } else {
+      classification = `Classical / Generic Botanical Monograph — ${herb.botanical}`;
+      shortAnswer =
+        `Official Ayurvedic Pharmacopoeia of India (API) Monograph Summary:\n\n` +
+        `• Botanical Name: ${herb.botanical}\n` +
+        `• Classical Sanskrit / Tamil Name: ${herb.sanskrit} / ${herb.tamil}\n` +
+        `• Authoritative API Reference: ${herb.source_pdf}, Page ${herb.page}\n` +
+        `• Key Chemical Actives: ${herb.actives}\n` +
+        `• Classical Therapeutic Properties: ${herb.classical_use}\n` +
+        `• TKDL Status: ${herb.tkdl_status}\n\n` +
+        `Regulatory Note: Classical formulations containing this herb are listed under the First Schedule of the Drugs & Cosmetics Act, 1940 and qualify for Rule 158B classical ASU manufacturing licenses without clinical trial requirements.`;
+    }
   } else {
     // General statutory synthesis
     if (language === "hi") {
@@ -456,9 +531,17 @@ export async function generateClientStatutoryResponse(
     applicable_ip_regimes: ipRegimes,
     regulatory_pathway: regulatoryPathway,
     abs_considerations:
-      "Biological resources from India trigger NBA Section 3 approval for foreign entities, SBB Section 7 prior intimation for Indian commercial manufacturers, and NBA Form III before patent grant.",
+      language === "ta"
+        ? "இந்திய உயிரியல் வளங்களைப் பயன்படுத்துவதற்கு வெளிநாட்டு நிறுவனங்களுக்கு NBA பிரிவு 3 அனுமதியும், இந்திய உற்பத்தியாளர்களுக்கு SBB பிரிவு 7 அறிவிப்பும், காப்புரிமைக்கு முன் NBA படிவம் III அனுமதியும் கட்டாயமாகும்."
+        : language === "hi"
+        ? "भारतीय जैविक संसाधनों के उपयोग के लिए विदेशी संस्थाओं को NBA धारा 3 अनुमोदन, भारतीय निर्माताओं को SBB धारा 7 सूचना, तथा पेटेंट से पहले NBA फॉर्म III अनिवार्य है।"
+        : "Biological resources from India trigger NBA Section 3 approval for foreign entities, SBB Section 7 prior intimation for Indian commercial manufacturers, and NBA Form III before patent grant.",
     traditional_knowledge_guidance:
-      "Classical Ayurvedic literature documented in TKDL acts as destructive prior art against patent claims. Novelty must be proven through technical processing or synergistic efficacy data not in TKDL.",
+      language === "ta"
+        ? "TKDL-இல் ஆவணப்படுத்தப்பட்ட பாரம்பரிய ஆயுர்வேத அறிவு காப்புரிமை கோரிக்கைகளுக்கு எதிராக செயல்படுகிறது. புதுமை மற்றும் கூடுதல் செயல்திறன் நிரூபிக்கப்பட வேண்டும்."
+        : language === "hi"
+        ? "TKDL में प्रलेखित शास्त्रीय आयुर्वेदिक ज्ञान पेटेंट दावों के विरुद्ध पूर्व कला के रूप में कार्य करता है। नवीनता और सहक्रियाशीलता सिद्ध करना आवश्यक है."
+        : "Classical Ayurvedic literature documented in TKDL acts as destructive prior art against patent claims. Novelty must be proven through technical processing or synergistic efficacy data not in TKDL.",
     citations: citations,
     confidence: {
       score: confidenceScore,
@@ -469,7 +552,11 @@ export async function generateClientStatutoryResponse(
       reason: "Authoritative statutory sources verified in catalog"
     },
     important_limitations:
-      "Assessments depend on user-supplied ingredient profiles and intended claims. Does not replace statutory Freedom-To-Operate (FTO) patent searches or state drug licensing inspections.",
+      language === "ta"
+        ? "இந்த மதிப்பீடு பயனர் சமர்ப்பித்த மூலப்பொருள் விவரங்களை அடிப்படையாகக் கொண்டது. இது முழுமையான காப்புரிமை அலுவலக தேடலுக்கு மாற்றாகாது."
+        : language === "hi"
+        ? "यह मूल्यांकन उपयोगकर्ता द्वारा प्रदान की गई सामग्री पर आधारित है। यह औपचारिक पेटेंट खोज या औषधि निरीक्षण का विकल्प नहीं है।"
+        : "Assessments depend on user-supplied ingredient profiles and intended claims. Does not replace statutory Freedom-To-Operate (FTO) patent searches or state drug licensing inspections.",
     actionable_next_steps: actionSteps,
     disclaimer: disclaimer,
     latency_seconds: 0.12

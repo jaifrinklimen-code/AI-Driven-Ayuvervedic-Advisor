@@ -284,27 +284,34 @@ class LLMGuard:
             # Multi-Key Failover:
             # If an API key encounters rate-limiting (429), server error (500), or auth error,
             # it fails over to the next key in under 300ms.
-            # If an inference request exceeds 6.0s, local statutory synthesis takes over immediately.
+            # Timeout is 3.0s per key to ensure super-fast, snappy user experience (<3s total latency).
             for idx, key in enumerate(keys_to_try):
                 try:
                     headers = {
                         "Authorization": f"Bearer {key}",
                         "Content-Type": "application/json"
                     }
-                    resp = requests.post(url, headers=headers, json=payload, timeout=6.0)
+                    resp = requests.post(url, headers=headers, json=payload, timeout=3.0)
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                         if text and len(text.strip()) > 30:
                             cleaned = text.strip()
+                            # Script validation: ensure requested language matches output script
+                            if language == "ta" and not re.search(r"[\u0B80-\u0BFF]", cleaned):
+                                print("NVIDIA NIM output did not contain Tamil script. Reverting to verified statutory synthesis.")
+                                return None
+                            if language == "hi" and not re.search(r"[\u0900-\u097F]", cleaned):
+                                print("NVIDIA NIM output did not contain Hindi script. Reverting to verified statutory synthesis.")
+                                return None
                             _SYNTHESIS_CACHE[cache_key] = cleaned
                             return cleaned
                     else:
                         print(f"NVIDIA API Key #{idx+1} returned HTTP {resp.status_code}, immediately failing over to backup key...")
                         continue
                 except requests.exceptions.Timeout:
-                    print(f"NVIDIA Key #{idx+1} timed out (>6.0s). Seamlessly engaging fast local statutory engine...")
-                    break
+                    print(f"NVIDIA Key #{idx+1} timed out (>3.0s). Seamlessly trying next key or fast local statutory engine...")
+                    continue
                 except Exception as ex:
                     print(f"NVIDIA API Key #{idx+1} failed ({ex}), failing over to backup key...")
 
@@ -313,12 +320,16 @@ class LLMGuard:
             if gemini_key:
                 model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
-                resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=3.5)
+                resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=2.5)
                 if resp.status_code == 200:
                     data = resp.json()
                     text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                     if text and len(text.strip()) > 30:
                         cleaned = text.strip()
+                        if language == "ta" and not re.search(r"[\u0B80-\u0BFF]", cleaned):
+                            return None
+                        if language == "hi" and not re.search(r"[\u0900-\u097F]", cleaned):
+                            return None
                         _SYNTHESIS_CACHE[cache_key] = cleaned
                         return cleaned
         except Exception as e:
@@ -394,23 +405,30 @@ class LLMGuard:
         ip_regimes = dynamic_ip_regimes
         reg_pathway = dynamic_reg_pathway
 
-        # Try Gemini dynamic synthesis first if configured (skip for fixed out-of-scope intent)
+        # Synthesis Selection:
+        # If language is 'ta' or 'hi' and intent is one of the specific statutory intents,
+        # dynamic_answer is already an authoritative, handcrafted, pure-script response with zero latency.
+        # For English or general queries, attempt fast NIM inference with failover.
         gemini_answer = None
-        if intent != "OUT_OF_SCOPE":
-            gemini_answer = self.call_gemini_synthesis(
-            query=query,
-            retrieved_docs=retrieved,
-            category=category,
-            jurisdiction=jurisdiction,
-            language=language,
-            intent=intent
+        should_call_llm = (
+            intent != "OUT_OF_SCOPE" and
+            (language == "en" or intent in ("GENERAL_STATUTORY_QUERY", "UNSPECIFIED_LEGAL_QUERY"))
         )
+        if should_call_llm:
+            gemini_answer = self.call_gemini_synthesis(
+                query=query,
+                retrieved_docs=retrieved,
+                category=category,
+                jurisdiction=jurisdiction,
+                language=language,
+                intent=intent
+            )
 
         short_answer = gemini_answer if gemini_answer else dynamic_answer
         cache_key = f"{query.strip().lower()}|{language}|{jurisdiction}"
         _SYNTHESIS_CACHE[cache_key] = short_answer
 
-        # Localized disclaimer & action steps
+        # Localized disclaimer, action steps, and ABS guidance
         if language == "hi":
             disclaimer = "यह सूचना केवल प्रारंभिक मार्गदर्शन के लिए है — यह कोई कानूनी सलाह नहीं है। आधिकारिक पेटेंट एजेंट या आयुष विशेषज्ञ से परामर्श अवश्य करें।"
             action_steps = [
@@ -418,13 +436,19 @@ class LLMGuard:
                 "NBA कार्यालय से जांच करें कि क्या आप भारतीय जैविक संसाधनों का उपयोग कर रहे हैं।",
                 "अपने विशिष्ट उत्पाद वर्ग के लिए अधिकृत AYUSH नियामक सलाहकार से संपर्क करें।"
             ]
+            abs_text = "भारतीय जैविक संसाधनों के उपयोग के लिए विदेशी संस्थाओं को NBA धारा 3 अनुमोदन, भारतीय निर्माताओं को SBB धारा 7 सूचना, तथा पेटेंट से पहले NBA फॉर्म III अनिवार्य है।"
+            tk_text = "TKDL में प्रलेखित शास्त्रीय आयुर्वेदिक ज्ञान पेटेंट दावों के विरुद्ध पूर्व कला के रूप में कार्य करता है। नवीनता सिद्ध करना आवश्यक है।"
+            limitations_text = "यह मूल्यांकन उपयोगकर्ता द्वारा प्रदान की गई सामग्री पर आधारित है। यह औपचारिक पेटेंट खोज या औषधि निरीक्षण का विकल्प नहीं है।"
         elif language == "ta":
             disclaimer = "இது தகவல் நோக்கங்களுக்கான ஆரம்ப மதிப்பீடு மட்டுமே — சட்ட ஆலோசனை அல்ல. தகுதிவாய்ந்த அறிவுசார் சொத்து நிபுணரை அணுகவும்."
             action_steps = [
                 "இந்திய காப்புரிமை அலுவலகத்தில் (InPASS) மற்றும் TKDL (tkdl.res.in)-ல் முன் கலை தேடல் நடத்தவும்.",
-                "NBA அலுவலகத்திடம் இந்திய உயிரியல் வளங்களை பயன்படுத்துகிறீர்களா என்பதை சரிபார்க்கவும்.",
+                "தேசிய பல்லுயிர் ஆணையத்திடம் (NBA Form III) உயிரியல் வளங்களுக்கான முன் அனுமதி பெறவும்.",
                 "உங்கள் குறிப்பிட்ட தயாரிப்பு வகைக்கு தகுதிவாய்ந்த ஆயுஷ் ஒழுங்குமுறை ஆலோசகரை தொடர்பு கொள்ளவும்."
             ]
+            abs_text = "இந்திய உயிரியல் வளங்களைப் பயன்படுத்துவதற்கு வெளிநாட்டு நிறுவனங்களுக்கு NBA பிரிவு 3 அனுமதியும், இந்திய உற்பத்தியாளர்களுக்கு SBB பிரிவு 7 அறிவிப்பும், காப்புரிமை மானியத்திற்கு முன் NBA படிவம் III அனுமதியும் கட்டாயமாகும்."
+            tk_text = "TKDL-இல் ஆவணப்படுத்தப்பட்ட பாரம்பரிய ஆயுர்வேத நூல்கள் காப்புரிமை கோரிக்கைகளுக்கு எதிராக செயல்படுகின்றன. புதுமை மற்றும் கூடுதல் மருத்துவ நன்மை நிரூபிக்கப்பட வேண்டும்."
+            limitations_text = "இந்த மதிப்பீடு பயனர் வழங்கிய மூலப்பொருள் விவரங்களை அடிப்படையாகக் கொண்டது. இது முழுமையான காப்புரிமை அலுவலக தேடலுக்கு மாற்றாகாது."
         else:
             disclaimer = (
                 "This is a preliminary informational assessment based on retrieved statutory sources and pharmacopoeial standards. "
@@ -435,6 +459,18 @@ class LLMGuard:
                 "Verify NBA biodiversity access requirements with the National Biodiversity Authority (Form III).",
                 "Ensure formulation and manufacturing comply with State AYUSH licensing (Form 24-D / Rule 158B) and Schedule T GMP standards."
             ]
+            abs_text = (
+                "Biological resources from India trigger NBA Section 3 approval for foreign entities, "
+                "SBB Section 7 prior intimation for Indian commercial manufacturers, and NBA Form III before patent grant."
+            )
+            tk_text = (
+                "Classical Ayurvedic literature documented in TKDL acts as destructive prior art against patent claims. "
+                "Novelty must be proven through technical processing or synergistic efficacy data not in TKDL."
+            )
+            limitations_text = (
+                "Assessments depend on user-supplied ingredient profiles and intended claims. "
+                "Does not replace statutory Freedom-To-Operate (FTO) patent searches or state drug licensing inspections."
+            )
 
         return {
             "status": "SUCCESS",
@@ -443,20 +479,11 @@ class LLMGuard:
             "jurisdiction": jurisdiction.upper(),
             "applicable_ip_regimes": ip_regimes,
             "regulatory_pathway": reg_pathway,
-            "abs_considerations": (
-                "Biological resources from India trigger NBA Section 3 approval for foreign entities, "
-                "SBB Section 7 prior intimation for Indian commercial manufacturers, and NBA Form III before patent grant."
-            ),
-            "traditional_knowledge_guidance": (
-                "Classical Ayurvedic literature documented in TKDL acts as destructive prior art against patent claims. "
-                "Novelty must be proven through technical processing or synergistic efficacy data not in TKDL."
-            ),
+            "abs_considerations": abs_text,
+            "traditional_knowledge_guidance": tk_text,
             "citations": verified_citations,
             "confidence": confidence,
-            "important_limitations": (
-                "Assessments depend on user-supplied ingredient profiles and intended claims. "
-                "Does not replace statutory Freedom-To-Operate (FTO) patent searches or state drug licensing inspections."
-            ),
+            "important_limitations": limitations_text,
             "actionable_next_steps": action_steps,
             "disclaimer": disclaimer
         }

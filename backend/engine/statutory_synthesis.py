@@ -336,9 +336,8 @@ def generate_dynamic_statutory_response(
     # 6. PATENTABILITY — POLYHERBAL COMBINATIONS
     # -------------------------------------------------------------
     elif intent == "PATENTABILITY_POLYHERBAL_COMBINATION":
-        herb_titles = [h.get("sanskrit", h.get("key", "").capitalize()) for h in herbs]
-        herb_str_hi = " और ".join(herb_titles) if herb_titles else "आयुर्वेदिक जड़ी-बूटियों"
-        herb_str_ta = " மற்றும் ".join([h.get("tamil", h.get("key", "").capitalize()) for h in herbs]) if herbs else "ஆயுர்வேத மூலிகைகள்"
+        herb_str_hi = " और ".join([h.get("sanskrit", h.get("key", "")).split("(")[0].strip() for h in herbs]) if herbs else "आयुर्वेदिक जड़ी-बूटियों"
+        herb_str_ta = " மற்றும் ".join([h.get("tamil_clean", h.get("tamil", "").split("(")[0].strip()) for h in herbs]) if herbs else "ஆயுர்வேத மூலிகைகள்"
         herb_str_en = " and ".join([f"{h.get('key', '').capitalize()} ({h.get('botanical', '')})" for h in herbs]) if herbs else "Ayurvedic botanical components"
         category = f"Patent / Proprietary Polyherbal Assessment — {' + '.join([h['key'].capitalize() for h in herbs]) if herbs else 'Herbal Combination'}"
         ip_regimes = [
@@ -355,8 +354,8 @@ def generate_dynamic_statutory_response(
         for h in herbs:
             if h.get("source_pdf") and h.get("page"):
                 herb_citations_en.append(f"{h.get('key', '').capitalize()} ({h.get('botanical', '')}, {h.get('source_pdf')}, Page {h.get('page')})")
-                herb_citations_hi.append(f"{h.get('sanskrit', h.get('key', ''))} ({h.get('source_pdf')}, पृष्ठ {h.get('page')})")
-                herb_citations_ta.append(f"{h.get('tamil', h.get('key', ''))} ({h.get('source_pdf')}, பக்கம் {h.get('page')})")
+                herb_citations_hi.append(f"{h.get('sanskrit', h.get('key', '')).split('(')[0].strip()} ({h.get('source_pdf')}, पृष्ठ {h.get('page')})")
+                herb_citations_ta.append(f"{h.get('tamil_clean', h.get('tamil', '').split('(')[0].strip())} ({h.get('source_pdf')}, பக்கம் {h.get('page')})")
         
         cit_en = ", ".join(herb_citations_en) if herb_citations_en else "Ayurvedic Pharmacopoeia monographs"
         cit_hi = ", ".join(herb_citations_hi) if herb_citations_hi else "भारतीय आयुर्वेदिक फार्माकोपिया संदर्भ"
@@ -709,15 +708,17 @@ def generate_dynamic_statutory_response(
 
             if language == "hi":
                 ans = (
-                    f"आपके प्रश्न के संबंध में आधिकारिक वैधानिक एवं औषधीय साक्ष्य{page_cite}:\n\n"
-                    f"'{top_excerpt}...'\n\n"
-                    f"भारतीय कानूनों के तहत आयुर्वेदिक उत्पादों का विनियमन पेटेंट अधिनियम, 1970 (धारा 3(p), 3(e)), औषधि एवं प्रसाधन सामग्री अधिनियम, 1940 (नियम 158B), तथा जैविक विविधता अधिनियम, 2002 के तहत किया जाता है।"
+                    f"आपके प्रश्न के संबंध में आधिकारिक वैधानिक एवं औषधीय मार्गदर्शन{page_cite}:\n\n"
+                    f"1. पेटेंट योग्यता: भारतीय पेटेंट अधिनियम 1970 की धारा 3(p) और 3(e) के तहत पारंपरिक ज्ञान और ज्ञात जड़ी-बूटियों के साधारण मिश्रण पर पेटेंट नहीं मिल सकता। इसके लिए अप्रत्याशित सहक्रियाशीलता (Synergy) सिद्ध करना अनिवार्य है।\n\n"
+                    f"2. औषधि लाइसेंस: व्यावसायिक निर्माण के लिए औषधि नियम 1945 के नियम 158B के तहत राज्य आयुष लाइसेंसिंग प्राधिकरण से फॉर्म 24-D पर लाइसेंस लेना आवश्यक है।\n\n"
+                    f"3. जैव विविधता अनुपालन: भारतीय जैविक संसाधनों के उपयोग के लिए राष्ट्रीय जैव विविधता प्राधिकरण (NBA) अथवा राज्य जैव विविधता बोर्ड (SBB) की पूर्व अनुमति अनिवार्य है।"
                 )
             elif language == "ta":
                 ans = (
-                    f"உங்கள் கேள்விக்கான அதிகாரப்பூர்வ சட்ட மற்றும் மருத்துவ சான்றுகள்{page_cite}:\n\n"
-                    f"'{top_excerpt}...'\n\n"
-                    f"இந்தியாவில் ஆயுர்வேத தயாரிப்புகள் காப்புரிமைச் சட்டம் 1970 (பிரிவு 3(p), 3(e)), மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் சட்டம் 1940 (விதி 158B) மற்றும் பல்லுயிர் சட்டம் 2002 ஆகியவற்றின் கீழ் நிர்வகிக்கப்படுகின்றன."
+                    f"உங்கள் கேள்விக்கான அதிகாரப்பூர்வ சட்ட மதிப்பீடு{page_cite}:\n\n"
+                    f"1. காப்புரிமை எல்லைகள்: இந்திய காப்புரிமைச் சட்டம் 1970 பிரிவு 3(p) மற்றும் 3(e)-ன் கீழ் பாரம்பரிய ஆயுர்வேத சூத்திரங்கள் மற்றும் வெறும் மூலிகைக் கலவைகளுக்கு காப்புரிமை பெற முடியாது. அறியப்பட்ட விளைவை விட கூடுதல் மருத்துவ நன்மையை (Synergistic Efficacy) நிரூபித்தால் மட்டுமே பரிசீலிக்கப்படும்.\n\n"
+                    f"2. மருந்து உற்பத்தி உரிமம்: வணிகரீதியான உற்பத்திக்கு மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் விதிகள் 1945, விதி 158B-ன் கீழ் மாநில ஆயுஷ் உரிம ஆணையத்திடம் (SLA) படிவம் 24-D உரிமம் பெற வேண்டும்.\n\n"
+                    f"3. பல்லுயிர் அனுமதி: இந்திய மூலிகைகளை வணிக ரீதியாகப் பயன்படுத்த தேசிய பல்லுயிர் ஆணையம் (NBA Form III) அல்லது மாநில பன்முகத்தன்மை வாரியத்தின் (SBB) முன் அனுமதி பெற வேண்டும்."
                 )
             else:
                 ans = (

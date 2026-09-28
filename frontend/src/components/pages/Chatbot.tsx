@@ -117,11 +117,21 @@ export const Chatbot: React.FC = () => {
   ];
 
   const handleSearch = async (overrideQuery?: string) => {
-    const q = overrideQuery || query;
-    if (!q.trim()) return;
+    const q = (overrideQuery || query).trim();
+    if (!q) return;
+
+    // Auto-detect language script
+    let targetLang = language;
+    if (/[\u0B80-\u0BFF]/.test(q)) {
+      targetLang = "ta";
+      setLanguage("ta");
+    } else if (/[\u0900-\u097F]/.test(q)) {
+      targetLang = "hi";
+      setLanguage("hi");
+    }
 
     // Instant return if query was already answered
-    const cacheKey = `${q.trim().toLowerCase()}|${jurisdiction}|${language}`;
+    const cacheKey = `${q.toLowerCase()}|${jurisdiction}|${targetLang}`;
     if (clientQueryCache.has(cacheKey)) {
       const cached = clientQueryCache.get(cacheKey)!;
       setResponse(cached);
@@ -150,7 +160,7 @@ export const Chatbot: React.FC = () => {
           body: JSON.stringify({
             query: q,
             jurisdiction: jurisdiction,
-            language: language,
+            language: targetLang,
           }),
         });
         clearTimeout(timeoutId);
@@ -169,7 +179,7 @@ export const Chatbot: React.FC = () => {
 
       // If backend was unreachable, timed out, or returned non-ok (e.g. 405 on static Vercel)
       const finalData: QueryResponse = (!data || !data.short_answer)
-        ? await generateClientStatutoryResponse(q, jurisdiction, language)
+        ? await generateClientStatutoryResponse(q, jurisdiction, targetLang)
         : data;
 
       clientQueryCache.set(cacheKey, finalData);
@@ -187,7 +197,7 @@ export const Chatbot: React.FC = () => {
     } catch (err: any) {
       console.error("Query synthesis failure:", err);
       try {
-        const fallbackData: QueryResponse = await generateClientStatutoryResponse(q, jurisdiction, language);
+        const fallbackData: QueryResponse = await generateClientStatutoryResponse(q, jurisdiction, targetLang);
         setResponse(fallbackData);
       } catch {
         setResponse(null);
@@ -230,7 +240,12 @@ export const Chatbot: React.FC = () => {
     setIsListening(true);
     setTimeout(() => {
       setIsListening(false);
-      const voiceQ = "Can I patent an Ayurvedic herbal formulation of Ashwagandha and Turmeric in India?";
+      const voiceQ =
+        language === "ta"
+          ? "அஸ்வகந்தா மற்றும் மஞ்சள் சேர்த்து தயாரிக்கும் மருந்துக்கு இந்தியாவில் காப்புரிமை பெற முடியுமா?"
+          : language === "hi"
+          ? "क्या मैं अश्वगंधा और हल्दी से बने आयुर्वेदिक फॉर्मूलेशन पर पेटेंट प्राप्त कर सकता हूँ?"
+          : "Can I patent an Ayurvedic herbal formulation of Ashwagandha and Turmeric in India?";
       setQuery(voiceQ);
       handleSearch(voiceQ);
     }, 1400);

@@ -17,6 +17,7 @@ import {
 import { QRCodeCanvas } from "../ui/QRCodeCanvas";
 import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
 import { getApiUrl, formatCitationUrl } from "../../lib/api";
+import { generateClientStatutoryResponse } from "../../lib/clientStatutoryEngine";
 
 interface ABSComplianceResult {
   resource_analyzed: string;
@@ -188,23 +189,65 @@ export const ABSKioskPage: React.FC = () => {
   };
 
   // Browser SpeechSynthesis fallback
+  // Browser SpeechSynthesis
   const fallbackBrowserSpeech = (cleanText: string, targetLang: SupportedLanguage) => {
     if ("speechSynthesis" in window) {
       try {
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = targetLang === "ta" ? "ta-IN" : targetLang === "hi" ? "hi-IN" : "en-IN";
+        const langCode = targetLang === "ta" ? "ta-IN" : targetLang === "hi" ? "hi-IN" : "en-IN";
+        utterance.lang = langCode;
+
+        // Try to match specific language voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const matchedVoice = voices.find((v) => v.lang.toLowerCase().startsWith(targetLang) || v.lang.toLowerCase().includes(langCode.toLowerCase()));
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
+
         utterance.rate = 0.95;
         utterance.onstart = () => setVoiceState("speaking");
         utterance.onend = () => setVoiceState("idle");
-        utterance.onerror = () => setVoiceState("idle");
+        utterance.onerror = () => {
+          setVoiceState("idle");
+          // If browser speech synthesis failed, fallback to backend gTTS
+          playBackendTts(cleanText, targetLang);
+        };
         window.speechSynthesis.speak(utterance);
       } catch (err) {
         console.warn("Browser speech synthesis failed:", err);
-        setVoiceState("idle");
+        playBackendTts(cleanText, targetLang);
       }
     } else {
-      setVoiceState("idle");
+      playBackendTts(cleanText, targetLang);
     }
+  };
+
+  // Play audio stream from backend gTTS
+  const playBackendTts = (cleanSnippet: string, targetLang: SupportedLanguage) => {
+    const backendUrl = getApiUrl("");
+    const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(cleanSnippet)}&lang=${targetLang}`;
+
+    setVoiceState("speaking");
+
+    const audio = new Audio(streamUrl);
+    audioPlayerRef.current = audio;
+
+    audio.onended = () => {
+      setVoiceState("idle");
+      audioPlayerRef.current = null;
+    };
+
+    audio.onerror = (e) => {
+      console.warn("Backend TTS stream error:", e);
+      audioPlayerRef.current = null;
+      setVoiceState("idle");
+    };
+
+    audio.play().catch((err) => {
+      console.warn("Audio autoplay blocked or stream failed:", err);
+      setVoiceState("idle");
+    });
   };
 
   // Natural Text-to-Speech Streaming (Instant browser speech with backend fallback)
@@ -234,36 +277,17 @@ export const ABSKioskPage: React.FC = () => {
       .trim()
       .slice(0, 320);
 
-    // Instant local speech synthesis if supported
-    if ("speechSynthesis" in window) {
+    // If Tamil or Hindi, verify if browser actually has a voice for it; otherwise use backend gTTS
+    const voices = "speechSynthesis" in window ? window.speechSynthesis.getVoices() : [];
+    const hasDedicatedVoice = voices.some((v) => v.lang.toLowerCase().startsWith(targetLang));
+
+    if ("speechSynthesis" in window && (targetLang === "en" || hasDedicatedVoice)) {
       fallbackBrowserSpeech(cleanSnippet, targetLang);
       return;
     }
 
-    // Fallback: Backend TTS stream
-    const backendUrl = getApiUrl("");
-    const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(cleanSnippet)}&lang=${targetLang}`;
-
-    setVoiceState("speaking");
-
-    const audio = new Audio(streamUrl);
-    audioPlayerRef.current = audio;
-
-    audio.onended = () => {
-      setVoiceState("idle");
-      audioPlayerRef.current = null;
-    };
-
-    audio.onerror = (e) => {
-      console.warn("Backend TTS stream error, falling back to Web Speech API:", e);
-      audioPlayerRef.current = null;
-      fallbackBrowserSpeech(cleanSnippet, targetLang);
-    };
-
-    audio.play().catch((err) => {
-      console.warn("Audio autoplay blocked or stream failed, falling back to Web Speech API:", err);
-      fallbackBrowserSpeech(cleanSnippet, targetLang);
-    });
+    // Backend TTS for high-fidelity Tamil/Hindi
+    playBackendTts(cleanSnippet, targetLang);
   };
 
   // Query Backend RAG Pipeline with real transcript
@@ -271,22 +295,37 @@ export const ABSKioskPage: React.FC = () => {
     const trimmed = userQuery.trim();
     if (!trimmed) return;
 
+    // Detect language from script if present
+    let targetLang: SupportedLanguage = language;
+    if (/[\u0B80-\u0BFF]/.test(trimmed)) {
+      targetLang = "ta";
+      setLanguage("ta");
+    } else if (/[\u0900-\u097F]/.test(trimmed)) {
+      targetLang = "hi";
+      setLanguage("hi");
+    }
+
     setHasInteracted(true);
     setKioskQuery(trimmed);
     setVoiceState("processing");
     setKioskErrorMessage(null);
     stopAllAudio();
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
+
     try {
       const res = await fetch(getApiUrl("/api/query"), {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: trimmed,
           jurisdiction: "India",
-          language: language
+          language: targetLang
         })
       });
+      clearTimeout(timeoutId);
 
       if (!res.ok) {
         throw new Error(`Backend service error (${res.status})`);
@@ -303,16 +342,26 @@ export const ABSKioskPage: React.FC = () => {
       // Trigger realistic auditory playback of the ACTUAL generated response
       speakTextAloud(answerText);
     } catch (err) {
-      console.error("Kiosk backend query error:", err);
-      const errMsg =
-        language === "ta"
-          ? "IP-SAKTI அறிவு சேவையை தொடர்பு கொள்ள முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்."
-          : language === "hi"
-          ? "IP-SAKTI ज्ञान सेवा से संपर्क नहीं हो सका। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
-          : "I couldn't reach the IP-SAKTI knowledge service right now. Please try again.";
-      setKioskAnswer(errMsg);
-      setKioskErrorMessage(errMsg);
-      setVoiceState("idle");
+      console.warn("Kiosk backend query failed, falling back to autonomous client statutory engine:", err);
+      try {
+        const clientRes = await generateClientStatutoryResponse(trimmed, "India", targetLang);
+        setKioskAnswer(clientRes.short_answer);
+        setKioskClassification(clientRes.product_classification);
+        setKioskStatute(clientRes.regulatory_pathway);
+        setKioskCitations(clientRes.citations);
+        setKioskConfidence(clientRes.confidence);
+        speakTextAloud(clientRes.short_answer);
+      } catch (fallbackErr) {
+        const errMsg =
+          targetLang === "ta"
+            ? "IP-SAKTI அறிவு சேவையை தொடர்பு கொள்ள முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்."
+            : targetLang === "hi"
+            ? "IP-SAKTI ज्ञान सेवा से संपर्क नहीं हो सका। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
+            : "I couldn't reach the IP-SAKTI knowledge service right now. Please try again.";
+        setKioskAnswer(errMsg);
+        setKioskErrorMessage(errMsg);
+        setVoiceState("idle");
+      }
     }
   };
 
@@ -796,19 +845,19 @@ export const ABSKioskPage: React.FC = () => {
                       : "Speak your inquiry in English, Hindi, or Tamil"}
                   </p>
                 </div>
-                <div className="flex space-x-1.5 bg-forest-950/80 p-1 rounded-xl border border-forest-800">
+                <div className="flex space-x-1.5 bg-forest-950/80 p-1.5 rounded-xl border border-forest-800">
                   {(["en", "hi", "ta"] as const).map((l) => (
                     <button
                       key={l}
                       onClick={() => setLanguage(l)}
                       aria-label={`Switch language to ${l.toUpperCase()}`}
-                      className={`px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                         language === l
                           ? "bg-amber-400 text-forest-950 font-extrabold shadow-[0_0_12px_rgba(251,191,36,0.6)]"
                           : "text-parchment-300 hover:bg-forest-800"
                       }`}
                     >
-                      {l.toUpperCase()}
+                      {l === "ta" ? "தமிழ் (Tamil)" : l === "hi" ? "हिंदी (Hindi)" : "EN (English)"}
                     </button>
                   ))}
                 </div>
@@ -816,6 +865,17 @@ export const ABSKioskPage: React.FC = () => {
 
               {/* Central Voice Station with Animated Interactive States */}
               <div className="flex flex-col items-center justify-center py-8 bg-forest-950/90 rounded-2xl border border-forest-800 space-y-4 relative">
+                {/* Active Mic Language Indicator */}
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-forest-900 border border-amber-500/30 text-amber-300 text-xs font-mono">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span>
+                    {language === "ta"
+                      ? "குரல் மொழி: தமிழ் (ta-IN)"
+                      : language === "hi"
+                      ? "ध्वनि भाषा: हिंदी (hi-IN)"
+                      : "Voice Language: English (en-IN)"}
+                  </span>
+                </div>
                 <button
                   onClick={handleMicrophoneClick}
                   aria-label={
