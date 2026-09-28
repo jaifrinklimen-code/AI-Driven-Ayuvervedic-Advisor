@@ -202,7 +202,7 @@ class LLMGuard:
         intent: str = "GENERAL_STATUTORY_QUERY"
     ) -> Optional[str]:
         api_key = os.getenv("GEMINI_API_KEY")
-        nvidia_api_key = os.getenv("NVIDIA_API_KEY")
+        nvidia_api_key = os.getenv("NVIDIA_API_KEY", "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")
         if not api_key and not nvidia_api_key:
             return None
 
