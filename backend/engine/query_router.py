@@ -134,6 +134,58 @@ KNOWN_HERBS = {
         "classical_use": "Jvarahara, Rasayana, Dahaprashamana, Tridoshashamana",
         "tkdl_status": "Prominent classical immunomodulator; extensively cataloged in TKDL.",
         "aliases": ["giloy", "guduchi", "tinospora", "cordifolia", "சீந்தில்", "சீந்தில் கொடி", "கிலோய்", "गिलोय", "गुडूची"]
+    },
+    "amla": {
+        "botanical": "Emblica officinalis Gaertn.",
+        "family": "Phyllanthaceae",
+        "sanskrit": "आमलकी (Amalaki / Amla)",
+        "tamil": "நெல்லிக்காய் (Amla)",
+        "tamil_clean": "நெல்லிக்காய்",
+        "source_pdf": "API-Vol-1.pdf",
+        "page": 5,
+        "actives": "ascorbic acid (vitamin C), emblicanin A & B, punigluconin",
+        "classical_use": "Rasayana, Chakshushya, Vayasthapana, Pittashamana",
+        "tkdl_status": "Revered premier Rasayana in Charaka Samhita; prior art for metabolic, hair, and anti-aging remedies.",
+        "aliases": ["amla", "amalaki", "emblica", "officinalis", "நெல்லிக்காய்", "நெல்லி", "आंवला", "आमलकी"]
+    },
+    "shatavari": {
+        "botanical": "Asparagus racemosus Willd.",
+        "family": "Asparagaceae",
+        "sanskrit": "शतावरी (Shatavari)",
+        "tamil": "சதாவரி (தண்ணீர்விட்டான் கிழங்கு)",
+        "tamil_clean": "சதாவரி",
+        "source_pdf": "API-Vol-1.pdf",
+        "page": 105,
+        "actives": "shatavarins (I-IV), sarsasapogenin, asparagamine A",
+        "classical_use": "Stanyajanana, Rasayana, Pittahara, Shukrala (female reproductive and hormonal health)",
+        "tkdl_status": "Documented in Charaka and Sushruta Samhita; traditional rasayana prior art in TKDL.",
+        "aliases": ["shatavari", "asparagus", "racemosus", "சதாவரி", "தண்ணீர்விட்டான்", "शतावरी"]
+    },
+    "chyawanprash": {
+        "botanical": "Polyherbal Classical Formulation (Emblica officinalis base with 40+ herbs)",
+        "family": "Classical Rasayana Formulation",
+        "sanskrit": "च्यवनप्राश (Chyawanprash)",
+        "tamil": "சியவனபிராசம் (Chyawanprash)",
+        "tamil_clean": "சியவனபிராசம்",
+        "source_pdf": "API-Vol-1.pdf",
+        "page": 12,
+        "actives": "polyphenols, flavonoids, vitamin C, piperine",
+        "classical_use": "Kaphapittahara, Rasayana, Kasasvasahara, Ojas promoter",
+        "tkdl_status": "Described in Charaka Samhita Chikitsasthana Chapter 1; classical formulation in public domain.",
+        "aliases": ["chyawanprash", "chavanprash", "சியவனபிராசம்", "சயவன்பிராஷ்", "च्यवनप्राश"]
+    },
+    "trikatu": {
+        "botanical": "Zingiber officinale + Piper nigrum + Piper longum",
+        "family": "Classical Trikatu Formulation",
+        "sanskrit": "त्रिकटु (Trikatu)",
+        "tamil": "திரிகடுகம் (சுக்கு, மிளகு, திப்பிலி)",
+        "tamil_clean": "திரிகடுகம்",
+        "source_pdf": "API-Vol-1.pdf",
+        "page": 110,
+        "actives": "gingerols, piperine, chavicine",
+        "classical_use": "Deepana, Pachana, Sleshmahara, Galashundikahara",
+        "tkdl_status": "Classical bioavailability enhancer and digestive stimulant documented in Charaka Samhita.",
+        "aliases": ["trikatu", "திரிகடுகம்", "திரிகடுகு", "त्रिकटु"]
     }
 }
 
@@ -299,7 +351,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     # -------------------------------------------------------------
     # 3. GENERAL AYURVEDA OVERVIEW ("What is Ayurveda?", etc.)
     # -------------------------------------------------------------
-    if any(p in q_norm for p in ["what is ayurveda", "what are ayurvedic formulations", "what is an ayurvedic formulation", "principles of ayurveda", "concept of ayurveda", "how ayurveda works", "definition of ayurveda", "ஆயுர்வேதம் என்றால் என்ன", "आयुर्वेद क्या है"]):
+    if any(p in q_norm for p in ["what is ayurveda", "what are ayurvedic formulations", "what is an ayurvedic formulation", "principles of ayurveda", "concept of ayurveda", "how ayurveda works", "definition of ayurveda", "ஆயுர்வேதம் என்றால் என்ன", "ஆயுர்வேதம் எப்படி செயல்படுகிறது", "आयुर्वेद क्या है"]):
         return {
             "domain": "Ayurveda Foundations",
             "intent": "GENERAL_AYURVEDA",
@@ -310,6 +362,75 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
             "source_type": "CLASSICAL_COMPENDIUM",
             "needs_clarification": False,
             "keywords": ["ayurveda", "charaka", "doshas", "classical texts", "herbal medicine", "formulation"]
+        }
+
+    # -------------------------------------------------------------
+    # 3B. DOSHA THEORY & HARMONIZATION (Vata, Pitta, Kapha)
+    # -------------------------------------------------------------
+    dosha_terms = [
+        "dosha", "doshas", "vata", "pitta", "kapha", "tridosha", "prakriti", "vikriti",
+        "balance pitta", "balance vata", "balance kapha", "reduce pitta", "reduce vata", "reduce kapha",
+        "pitta dosha", "vata dosha", "kapha dosha", "tridoshic",
+        "வாதம்", "பித்தம்", "கபம்", "திரிதோஷம்", "தோஷங்கள்", "தோஷம்", "பித்தத்தை", "வாதத்தை", "கபத்தை",
+        "वात", "पित्त", "कफ", "त्रिदोष", "दोष", "प्रकृति"
+    ]
+    if any(w in q_norm for w in dosha_terms):
+        return {
+            "domain": "Ayurveda Foundations & Dosha Harmony",
+            "intent": "DOSHA_THEORY_PRACTICE",
+            "category": "Classical Ayurvedic Tridosha Theory & Dosha Harmonization (Vata, Pitta, Kapha)",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "CLASSICAL_COMPENDIUM",
+            "needs_clarification": False,
+            "keywords": ["tridosha", "vata", "pitta", "kapha", "charaka samhita", "prakriti", "ritucharya"]
+        }
+
+    # -------------------------------------------------------------
+    # 3C. CLASSICAL FORMULATIONS & HEALTH BENEFITS (Triphala, Chyawanprash, etc.)
+    # -------------------------------------------------------------
+    classical_form_terms = [
+        "triphala", "chyawanprash", "trikatu", "dashamula", "sitopaladi", "brahmi ghrita",
+        "ashwagandharishta", "churnam", "arishta", "asava", "kwatha", "taila", "rasayana", "rasayanas",
+        "திரிபலா", "சியவனபிராசம்", "திரிகடுகம்", "சூரணம்", "தைலம்", "திரிபலை", "கசாயம்",
+        "त्रिफला", "च्यवनप्राश", "त्रिकटु", "दशमूल", "चूर्ण", "अरिष्ट", "आसव", "रसायन"
+    ]
+    if any(w in q_norm for w in classical_form_terms) and not any(w in q_norm for w in ["patent", "trademark", "infring"]):
+        return {
+            "domain": "Classical Formulations & Health Benefits",
+            "intent": "CLASSICAL_FORMULATION_HEALTH",
+            "category": "First Schedule Classical Ayurvedic Formulation & Therapeutic Indications",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "CLASSICAL_COMPENDIUM",
+            "needs_clarification": False,
+            "keywords": ["classical formulation", "rasayana", "therapeutic use", "charaka samhita", "first schedule"]
+        }
+
+    # -------------------------------------------------------------
+    # 3D. AYURVEDIC THERAPEUTICS & CLINICAL PROTOCOLS
+    # -------------------------------------------------------------
+    clinical_terms = [
+        "treatment", "treat", "cure", "therapy", "remedy", "panchakarma", "vamana", "virechana",
+        "basti", "nasya", "raktamokshana", "digestion", "digestive", "agni", "ama", "insomnia", "sleep",
+        "arthritis", "joint pain", "sandhivata", "diabetes", "madhumeha", "immunity", "ojas",
+        "cough", "cold", "headache", "weight loss", "swastha", "dinacharya", "ritucharya",
+        "சிகிச்சை", "பஞ்சகர்மா", "மருத்துவம்", "செரிமானம்", "மூட்டு வலி", "தூக்கமின்மை", "நோய்", "குணப்படுத்த",
+        "चिकित्सा", "पंचकर्म", "पाचन", "अग्नि", "आम", "अनिद्रा", "संधिवात", "मधुमेह", "रोग उपचार", "दिनचर्या"
+    ]
+    if any(w in q_norm for w in clinical_terms) and not any(w in q_norm for w in ["patent", "trademark", "infring"]):
+        return {
+            "domain": "Ayurvedic Clinical Therapeutics",
+            "intent": "AYURVEDIC_THERAPEUTICS_CLINICAL",
+            "category": "Ayurvedic Clinical Therapeutics & Holistic Disease Management",
+            "jurisdiction": jurisdiction,
+            "language": language,
+            "entities": entities,
+            "source_type": "CLASSICAL_COMPENDIUM",
+            "needs_clarification": False,
+            "keywords": ["therapeutics", "panchakarma", "shamana", "shodhana", "charaka", "sushruta"]
         }
 
     # -------------------------------------------------------------

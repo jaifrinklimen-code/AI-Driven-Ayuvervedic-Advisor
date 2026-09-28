@@ -241,40 +241,25 @@ class LLMGuard:
 
             if language == "ta":
                 lang_instruction = (
-                    "MANDATORY: Write your ENTIRE response in natural fluent Tamil (தமிழ்). "
-                    "Use authentic legal and medical Tamil terminology. Do NOT mix English sentences."
+                    "MANDATORY: Write your ENTIRE response in natural, fluent Tamil (தமிழ்). "
+                    "Use authentic Tamil words (தமிழ் எழுத்துக்கள்). Do NOT write in English."
                 )
             elif language == "hi":
                 lang_instruction = (
-                    "MANDATORY: Write your ENTIRE response in natural fluent Hindi (हिंदी). "
-                    "Use authentic legal and AYUSH Hindi terminology. Do NOT mix English sentences."
+                    "MANDATORY: Write your ENTIRE response in natural, fluent Hindi (हिंदी). "
+                    "Use authentic Devanagari Hindi words (हिंदी लिपि). Do NOT write in English."
                 )
             else:
                 lang_instruction = "Write response in clear, authoritative, professional English."
 
-            ayurveda_rules_text = (
-                "AYURVEDIC STATUTORY RULES:\n"
-                "1. Sec 3(p) Patents Act: Classical Ayurvedic knowledge (Charaka/Sushruta/TKDL) is non-patentable prior art.\n"
-                "2. Sec 3(e) Patents Act: Mere herbal admixtures without proven synergistic efficacy are unpatentable.\n"
-                "3. Sec 3(d) Patents Act: Standardized extracts/fractions require proof of enhanced therapeutic efficacy.\n"
-                "4. Rule 158B ASU Rules: Manufacturing requires Form 24-D license from State Licensing Authority with Schedule T GMP.\n"
-                "5. Biological Diversity Act (Sec 6 & 7): Mandatory NBA Form III approval before patent grant; SBB Form I for manufacturing.\n"
-                "6. Trade Marks Act: Generic botanical names cannot be trademarked under Sec 9(1)(b) (Class 5 medicines, Class 3 cosmetics).\n"
-                "7. Cosmetics (Schedule S / IS 4707): Form 32-A license required; therapeutic disease-curing claims prohibited.\n"
-                "8. Ayurveda Aahar (FSSAI 2022): Category 100 license required with official logo; medicinal claims prohibited."
-            )
-
             prompt = (
-                f"You are IP-SAKTI Sahayak, official AI statutory advisor for Ministry of Ayush & AIIA.\n\n"
-                f"{ayurveda_rules_text}\n\n"
+                f"You are IP-SAKTI Sahayak, official AYUSH AI expert for Government of India.\n"
+                f"Answer the user's question completely, authoritatively, and accurately based on authentic Ayurvedic compendia (Charaka Samhita, Sushruta Samhita, Ashtanga Hridaya, Ayurvedic Pharmacopoeia of India) and Indian statutory laws (Patents Act Sections 3(p)/3(e)/3(d), Rule 158B, Form 24-D, National Biodiversity Authority).\n\n"
                 f"User Question: {query}\n"
-                f"Product Classification: {category}\n"
+                f"Topic: {category}\n"
                 f"Jurisdiction: {jurisdiction}\n\n"
                 f"{lang_instruction}\n\n"
-                f"INSTRUCTIONS:\n"
-                f"1. Answer the question directly and dynamically in 3-4 concise bullet points (max 110 words).\n"
-                f"2. Apply the specific Ayurvedic rules above to the user's exact formulation or scenario.\n"
-                f"3. Do NOT repeat generic text; address the user's specific inquiry."
+                f"Provide a direct, complete, well-structured answer (110-150 words) specifically addressing the user's question."
             )
 
             # Rotate keys so load is evenly distributed across all active API keys
@@ -284,21 +269,21 @@ class LLMGuard:
                 "model": "meta/llama-3.2-11b-vision-instruct",
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.2,
-                "max_tokens": 180
+                "max_tokens": 160
             }
 
             url = "https://integrate.api.nvidia.com/v1/chat/completions"
 
             # Multi-Key Failover:
             # If an API key encounters rate-limiting (429), server error (500), or timeout,
-            # it fails over to the next key. Timeout is 9.8s per key for reliable LLM synthesis.
+            # it fails over to the next key. Timeout is 16.0s per key for reliable universal synthesis.
             for idx, key in enumerate(keys_to_try):
                 try:
                     headers = {
                         "Authorization": f"Bearer {key}",
                         "Content-Type": "application/json"
                     }
-                    resp = requests.post(url, headers=headers, json=payload, timeout=9.8)
+                    resp = requests.post(url, headers=headers, json=payload, timeout=16.0)
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -317,7 +302,7 @@ class LLMGuard:
                         print(f"NVIDIA API Key #{idx+1} returned HTTP {resp.status_code}, immediately failing over to backup key...")
                         continue
                 except requests.exceptions.Timeout:
-                    print(f"NVIDIA Key #{idx+1} timed out (>9.8s). Seamlessly trying next key or fast local statutory engine...")
+                    print(f"NVIDIA Key #{idx+1} timed out (>16.0s). Seamlessly trying next key or fast local statutory engine...")
                     continue
                 except Exception as ex:
                     print(f"NVIDIA API Key #{idx+1} failed ({ex}), failing over to backup key...")

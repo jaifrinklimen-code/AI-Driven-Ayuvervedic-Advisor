@@ -376,6 +376,87 @@ export async function generateClientStatutoryResponse(
     query.includes("அடர்த்தி") ||
     query.includes("अर्क");
 
+  const isDoshaTheory =
+    qLower.includes("dosha") ||
+    qLower.includes("vata") ||
+    qLower.includes("pitta") ||
+    qLower.includes("kapha") ||
+    qLower.includes("tridosha") ||
+    qLower.includes("prakriti") ||
+    qLower.includes("vikriti") ||
+    query.includes("வாதம்") ||
+    query.includes("பித்தம்") ||
+    query.includes("கபம்") ||
+    query.includes("திரிதோஷம்") ||
+    query.includes("தோஷம்") ||
+    query.includes("वात") ||
+    query.includes("पित्त") ||
+    query.includes("कफ") ||
+    query.includes("त्रिदोष") ||
+    query.includes("दोष");
+
+  const isClassicalFormulation =
+    qLower.includes("triphala") ||
+    qLower.includes("chyawanprash") ||
+    qLower.includes("trikatu") ||
+    qLower.includes("dashamula") ||
+    qLower.includes("sitopaladi") ||
+    qLower.includes("churnam") ||
+    qLower.includes("arishta") ||
+    qLower.includes("asava") ||
+    qLower.includes("kwatha") ||
+    query.includes("திரிபலா") ||
+    query.includes("சியவனபிராசம்") ||
+    query.includes("திரிகடுகம்") ||
+    query.includes("சூரணம்") ||
+    query.includes("त्रिफला") ||
+    query.includes("च्यवनप्राश") ||
+    query.includes("त्रिकटु") ||
+    query.includes("चूर्ण");
+
+  const isClinicalTherapeutics =
+    qLower.includes("treatment") ||
+    qLower.includes("treat") ||
+    qLower.includes("cure") ||
+    qLower.includes("therapy") ||
+    qLower.includes("panchakarma") ||
+    qLower.includes("digestion") ||
+    qLower.includes("agni") ||
+    qLower.includes("insomnia") ||
+    qLower.includes("arthritis") ||
+    qLower.includes("diabetes") ||
+    qLower.includes("immunity") ||
+    qLower.includes("ojas") ||
+    query.includes("சிகிச்சை") ||
+    query.includes("பஞ்சகர்மா") ||
+    query.includes("மருத்துவம்") ||
+    query.includes("செரிமானம்") ||
+    query.includes("மூட்டு வலி") ||
+    query.includes("தூக்கமின்மை") ||
+    query.includes("चिकित्सा") ||
+    query.includes("पंचकर्म") ||
+    query.includes("पाचन") ||
+    query.includes("संधिवात") ||
+    query.includes("मधुमेह");
+
+  const isHealthOrHerb =
+    qLower.includes("health") ||
+    qLower.includes("benefit") ||
+    qLower.includes("benefits") ||
+    qLower.includes("use") ||
+    qLower.includes("uses") ||
+    qLower.includes("good for") ||
+    qLower.includes("body") ||
+    qLower.includes("pain") ||
+    qLower.includes("remedy") ||
+    query.includes("பயன்") ||
+    query.includes("நன்மை") ||
+    query.includes("உடல்") ||
+    query.includes("மூலிகை") ||
+    query.includes("लाभ") ||
+    query.includes("स्वास्थ्य") ||
+    query.includes("जड़ी");
+
   // 3. Assemble response based on intent
   let shortAnswer = "";
   let classification = "Ayurvedic IP & Statutory Assessment";
@@ -691,27 +772,185 @@ export async function generateClientStatutoryResponse(
         `2. Phytopharmaceutical Drug Route: Standardized purified fractions may be developed under CDSCO Rule 122E as phytopharmaceuticals with preclinical and clinical trial data.\n\n` +
         `3. Mandatory NBA Clearance: Extracting and patenting active fractions from Indian bio-resources mandates prior Form III approval from the National Biodiversity Authority.`;
     }
+  } else if (isDoshaTheory) {
+    classification = language === "ta"
+      ? "ஆயுர்வேத திரிதோஷக் கொள்கை — வாதம், பித்தம், கபம்"
+      : language === "hi"
+      ? "आयुर्वेदिक त्रिदोष सिद्धांत — वात, पित्त, कफ संतुलन"
+      : "Classical Ayurvedic Tridosha Theory & Dosha Harmonization (Vata, Pitta, Kapha)";
+    ipRegimes = [
+      "Charaka Samhita (Sutrasthana Chapter 1 - Tridosha Doctrine)",
+      "Ashtanga Hridaya (Sutrasthana Chapter 1 - Ayushkamiya Adhyaya)",
+      "Ayurvedic Pharmacopoeia of India (API) Principles"
+    ];
+    regulatoryPathway = "Consult authoritative compendia for Prakriti/Vikriti constitutional assessment and individualized dietary, herbal, and lifestyle therapies.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `आयुर्वेद में त्रिदोष (वात, पित्त, कफ) के सिद्धांत एवं पित्त संतुलन के शास्त्रीय उपाय:\n\n` +
+        `1. त्रिदोष का स्वरूप:\n` +
+        `   • वात (वायु + आकाश): शरीर की गति, तंत्रिका तंत्र एवं श्वास का नियंत्रण करता है।\n` +
+        `   • पित्त (अग्नि + जल): पाचन अग्नि (जठराग्नि), चयापचय, शारीरिक ऊर्जा एवं दृष्टि का आधार है।\n` +
+        `   • कफ (जल + पृथ्वी): शारीरिक संरचना, मांसपेशियों की शक्ति और जोड़ों की चिकनाई बनाए रखता है।\n\n` +
+        `2. पित्त दोष का शमन: पित्त के असंतुलन से एसिडिटी, जलन, सूजन और त्वचा विकार होते हैं। इसे संतुलित करने के उपाय:\n` +
+        `   • आहार: अत्यधिक तीखा, खट्टा, तला हुआ और नमकीन भोजन बंद करें। आंवला, मिश्री, देशी घी, खीरा, नारियल पानी एवं सौंफ का सेवन करें।\n` +
+        `   • प्रमुख जड़ी-बूटियाँ: आमलकी (आंवला), शतावरी, गिलोय और चंदन पित्त के सर्वश्रेष्ठ शामक हैं।\n` +
+        `   • दिनचर्या: चरक संहिता के अनुसार शीतली प्राणायाम, पर्याप्त नींद और तनावमुक्ति से पित्त दोष प्राकृतिक रूप से शांत होता है।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `ஆயுர்வேதத்தில் முத்தோஷங்கள் (வாதம், பித்தம், கபம்) மற்றும் பித்த சமநிலைக்கான அதிகாரப்பூர்வ விளக்கம்:\n\n` +
+        `1. மூன்று தோஷங்கள் (திரிதோஷம்):\n` +
+        `   • வாதம் (காற்று + ஆகாயம்): உடலின் இயக்கம், நரம்பு மண்டலம் மற்றும் சுவாசத்தை இயக்குகிறது.\n` +
+        `   • பித்தம் (நெருப்பு + நீர்): செரிமானம் (அக்னி), உடலின் வெப்பம், வளர்ச்சிதை மாற்றம் மற்றும் அறிவை ஆளுகிறது.\n` +
+        `   • கபம் (பூமி + நீர்): உடலின் கட்டமைப்பு, மூட்டுகளின் உறுதி மற்றும் நோய் எதிர்ப்பு சக்தியைப் பாதுகாக்கிறது.\n\n` +
+        `2. பித்த தோஷத்தைக் குறைக்கும் முறைகள்: அதிக பித்தம் அமிலத்தன்மை, உஷ்ணம், நெஞ்செரிச்சல் மற்றும் தோல் நோய்களை ஏற்படுத்தும். அதைச் சரிசெய்ய:\n` +
+        `   • உணவுமுறை: காரம், புளிப்பு மற்றும் அதிக உப்பு கொண்ட உணவுகளைத் தவிர்க்கவும். வெள்ளரிக்காய், இளநீர், சீரகம், பசு நெய், மாதுளை போன்ற குளிர்ச்சியான உணவுகளை உட்கொள்ளவும்.\n` +
+        `   • மூலிகைகள்: நெல்லிக்காய் (அமலகி), சதாவரி, சந்தனம், மற்றும் சீந்தில் கொடி (கிலோய்) ஆகியவை பித்தத்தை தணிக்கும் சிறந்த மூலிகைகள்.\n` +
+        `   • வாழ்வியல் முறை: சரக சம்ஹிதை வழிகாட்டலின்படி, தேங்காய் எண்ணெய் மசாஜ், நல்ல தூக்கம் மற்றும் மன அழுத்தமின்மை பித்தத்தை சமன் செய்யும்.`;
+    } else {
+      shortAnswer =
+        `Authoritative Ayurvedic principles of Tridosha and Pitta dosha balancing:\n\n` +
+        `1. The Three Doshas: Governed by the Panchamahabhutas (five elements):\n` +
+        `   • Vata (Space + Air): Controls kinetic movement, respiration, nerve impulses, and circulation.\n` +
+        `   • Pitta (Fire + Water): Governs digestion (Agni), metabolism, cellular transformation, body temperature, and intellect.\n` +
+        `   • Kapha (Water + Earth): Controls biological structure, joint lubrication, physical strength, and tissue stability.\n\n` +
+        `2. Balancing Pitta Dosha: High Pitta manifests as inflammation, acid reflux, irritability, skin eruptions, and excess body heat. Balance via:\n` +
+        `   • Diet (Pathya): Prioritize cooling (Sheeta), sweet (Madhura), and bitter (Tikta) foods like ghee, cucumbers, melons, coconut water, and coriander. Avoid pungent (spicy), sour (fermented), and excessively salty foods.\n` +
+        `   • Herbal Interventions: Use cooling herbs documented in API: Amalaki (Emblica officinalis), Shatavari (Asparagus racemosus), Guduchi (Tinospora cordifolia), and Chandana (Sandalwood).\n` +
+        `   • Daily Regimen (Dinacharya): Practice Sheetali Pranayama, cooling coconut oil Abhyanga, and avoid midday sun exertion.`;
+    }
+  } else if (isClassicalFormulation) {
+    classification = language === "ta"
+      ? "சாஸ்திர ஆயுர்வேத மருந்துகள் — திரிபலா, சியவனபிராசம், திரிகடுகம்"
+      : language === "hi"
+      ? "शास्त्रीय आयुर्वेदिक योग — त्रिफला, च्यवनप्राश, त्रिकटु"
+      : "First Schedule Classical Ayurvedic Formulation & Therapeutic Indications";
+    ipRegimes = [
+      "Drugs & Cosmetics Act, 1940 (Section 3(a) & First Schedule Treatises)",
+      "Ayurvedic Pharmacopoeia of India (API) Formulation Standards",
+      "Patents Act, 1970 (Section 3(p) Traditional Knowledge Prior Art)"
+    ];
+    regulatoryPathway = "Classical formulations from First Schedule treatises are statutorily recognized and can be commercialized on Form 24-D without clinical trials under Rule 158B.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `शास्त्रीय आयुर्वेदिक फॉर्मूलेशन (त्रिफला, च्यवनप्राश, त्रिकटु) का वैधानिक एवं चिकित्सीय विवरण:\n\n` +
+        `1. घटक एवं स्वास्थ्य लाभ:\n` +
+        `   • त्रिफला: आमलकी, हरीतकी एवं बिभीषकी का समतुल्य योग है। यह रसायन, दीपन, पाचन एवं अनुलोमन (कब्ज निवारक) गुणों से युक्त होकर त्रिदोष का शमन करता है।\n` +
+        `   • च्यवनप्राश: चरक संहिता में वर्णित प्रमुख रसायन योग है, जो 40 से अधिक दिव्य औषधियों से निर्मित होकर फेफड़ों के स्वास्थ्य, ओज एवं रोग प्रतिरोधक क्षमता को बढ़ाता है।\n` +
+        `   • त्रिकटु: सोंठ, काली मिर्च और पिप्पली का त्रिक है, जो जठराग्नि को प्रदीप्त कर आम दोष (विषाक्त तत्वों) को नष्ट करता है।\n\n` +
+        `2. विनियामक एवं पेटेंट स्थिति: ये फॉर्मूलेशन TKDL में सुरक्षित हैं और धारा 3(p) के तहत गैर-पेटेंट योग्य हैं। आयुष नियम 158B के तहत फॉर्म 24-D प्राप्त कर कोई भी इनका व्यावसायिक निर्माण कर सकता है।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `பாரம்பரிய ஆயுர்வேத மருந்துகளின் (திரிபலா, சியவனபிராசம், திரிகடுகம்) மருத்துவ மற்றும் சட்ட விபரம்:\n\n` +
+        `1. தயாரிப்பு மற்றும் மருத்துவ நன்மைகள்:\n` +
+        `   • திரிபலா: நெல்லிக்காய், கடுக்காய், தான்றிக்காய் ஆகியவற்றின் சமவிகித கலவை. இது முத்தோஷங்களையும் சமன் செய்து, மலச்சிக்கலைப் போக்கி, கண் பார்வை மற்றும் செரிமானத்தை மேம்படுத்துகிறது.\n` +
+        `   • சியவனபிராசம்: நெல்லிக்காயை அடிப்படையாகக் கொண்டு 40-க்கும் மேற்பட்ட மூலிகைகளுடன் தயாரிக்கப்படும் முதன்மை காயகல்ப லேகியம். இது நோய் எதிர்ப்பு சக்தி (ஓஜஸ்) மற்றும் சுவாச ஆரோக்கியத்தை பலப்படுத்துகிறது.\n` +
+        `   • திரிகடுகம்: சுக்கு, மிளகு, திப்பிலி ஆகியவற்றின் கலவை. இது உடலின் செரிமானத் தீயை (அக்னி) தூண்டி, நச்சுக்களை (ஆமம்) நீக்குகிறது.\n\n` +
+        `2. சட்ட மற்றும் காப்புரிமை நிலை: மருந்துகள் சட்டம் 1940-ன் முதல் அட்டவணை நூல்களில் ஆவணப்படுத்தப்பட்டதால், இவை பொதுப் பயன்பாட்டு உரிமையுடையவை (TKDL). காப்புரிமை பெற முடியாது (பிரிவு 3(p)), ஆனால் படிவம் 24-D மூலம் யார் வேண்டுமானாலும் வணிகரீதியாக தயாரித்து விற்கலாம்.`;
+    } else {
+      shortAnswer =
+        `Statutory & therapeutic profile of classical Ayurvedic formulations (e.g. Triphala, Chyawanprash, Trikatu):\n\n` +
+        `1. Composition & Classical Authority: Classical formulations originate from authoritative treatises listed in the First Schedule of the Drugs & Cosmetics Act, 1940 (Charaka Samhita, Sushruta Samhita, Sharangadhara Samhita):\n` +
+        `   • Triphala: Balanced trifala powder of Amalaki (Emblica officinalis), Haritaki (Terminalia chebula), and Bibhitaki (Terminalia bellirica) acting as an exceptional Tridoshic rejuvenator (Rasayana) and digestive bowel regulator (Anulomana).\n` +
+        `   • Chyawanprash: Premier Rasayana combining Amalaki with 40+ medicinal herbs and spices, enhancing respiratory vitality (Pranavaha Srotas) and cellular immunity (Ojas).\n` +
+        `   • Trikatu: Synergistic triad of Shunthi (Dry Ginger), Maricha (Black Pepper), and Pippali (Long Pepper) enhancing metabolic fire (Deepana-Pachana) and nutrient bioavailability.\n\n` +
+        `2. Regulatory & IP Status: Codified across 360,000+ entries in the TKDL; classical formulations are non-patentable under Section 3(p). Commercial manufacture is permitted under Rule 158B (Form 24-D) without proprietary clinical trial mandates.`;
+    }
+  } else if (isClinicalTherapeutics) {
+    classification = language === "ta"
+      ? "ஆயுர்வேத மருத்துவ சிகிச்சை & பஞ்சகர்மா நெறிமுறைகள்"
+      : language === "hi"
+      ? "आयुर्वेदिक नैदानिक चिकित्सा एवं पंचकर्म सिद्धांत"
+      : "Ayurvedic Clinical Therapeutics & Holistic Disease Management";
+    ipRegimes = [
+      "Charaka Samhita (Chikitsasthana - Clinical Therapeutics)",
+      "Sushruta Samhita (Chikitsasthana - Systemic & Surgical Protocols)",
+      "AYUSH Standard Treatment Guidelines (Clinical Protocols)"
+    ];
+    regulatoryPathway = "Ayurvedic clinical treatment combines Nidana Parivarjana, internal Shamana medicines, and Shodhana (Panchakarma) detoxification.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `आयुर्वेदिक चिकित्सा पद्धति एवं समग्र रोग प्रबंधन के प्रामाणिक सिद्धांत:\n\n` +
+        `1. त्रिविध चिकित्सा सूत्र:\n` +
+        `   • निदान परिवर्जन: रोग के मूल कारणों, अस्वास्थ्यकर खान-पान एवं अनुचित जीवनशैली का त्याग करना।\n` +
+        `   • शमन चिकित्सा: शास्त्रोक्त औषधियों (क्वाथ, वटी, चूर्ण) के सेवन द्वारा शरीर में कुपित हुए दोषों को शांत करना।\n` +
+        `   • शोधन (पंचकर्म): शरीर में संचित विषाक्त पदार्थों (आम) को बाहर निकालने के लिए 5 मुख्य प्रक्रियाएं: वमन, विरेचन, बस्ति, नस्य और रक्तमोक्षण।\n\n` +
+        `2. प्रमुख रोगों में प्रयोग: संधिवात (गठिया) में गुग्गुलु व दशमूल, पाचन विकारों में हिंग्वाष्टक व त्रिकटु, तथा अनिद्रा व तनाव में अश्वगंधा और ब्राह्मी द्वारा रोग की जड़ पर प्रभावी उपचार किया जाता है।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `ஆயுர்வேத மருத்துவ சிகிச்சை மற்றும் நோய் தீர்க்கும் வழிமுறைகள்:\n\n` +
+        `1. முப்பெரும் சிகிச்சை முறைகள்:\n` +
+        `   • நிதான பரிவர்ஜனம்: நோயை உண்டாக்கும் மூல காரணங்கள் மற்றும் தவறான உணவுப் பழக்கங்களை நீக்குதல்.\n` +
+        `   • சமன சிகிச்சை: கஷாயங்கள், தைலங்கள் மற்றும் சூரணம் போன்ற ஆயுர்வேத மருந்துகள் மூலம் உடலில் அதிகரித்த தோஷங்களை தணித்து அமைதிப்படுத்துதல்.\n` +
+        `   • சோதன சிகிச்சை (பஞ்சகர்மா): உடலில் தங்கியுள்ள கழிவுகளையும் ஆம நச்சுக்களையும் முழுமையாக வெளியேற்றும் 5 தூய்மைப்படுத்தும் முறைகள் (வாந்தி, பேதி, வஸ்தி, நஸ்யம், ரத்தமோக்ஷணம்).\n\n` +
+        `2. மருத்துவப் பயன்: மூட்டு வலிக்கு குக்குலு மற்றும் தசாமுலம், செரிமானக் கோளாறுக்கு திரிகடுகம், தூக்கமின்மைக்கு அஸ்வகந்தா மற்றும் பிராமி போன்ற மருந்துகள் மூலம் மூல நோய்க்கு முழுமையான நிவாரணம் அளிக்கப்படுகிறது.`;
+    } else {
+      shortAnswer =
+        `Authoritative Ayurvedic clinical therapeutics and holistic disease management framework:\n\n` +
+        `1. Tri-fold Therapeutic Approach (Trividha Chikitsa):\n` +
+        `   • Nidana Parivarjana: Eliminating the root causative factors (dietary, environmental, lifestyle).\n` +
+        `   • Shamana Therapy: Internal pacification of vitiated doshas using targeted polyherbal formulations, dietary adjustments (Pathya), and lifestyle routines.\n` +
+        `   • Shodhana (Panchakarma): Radical purification to eliminate deep-seated metabolic toxins (Ama) through the 5 classical procedures: Vamana (emesis), Virechana (purgation), Basti (medicated enema), Nasya (nasal administration), and Raktamokshana (bloodletting).\n\n` +
+        `2. Clinical Application: Whether addressing Sandhivata (arthritis with Guggulu & Dashamula), Madhumeha (metabolic disorders with Vijaysar & Gudmar), or Anidra (insomnia with Ashwagandha & Tagara), treatment targets the root imbalance rather than merely suppressing symptoms.`;
+    }
   } else {
     // Dynamic query-tailored fallback
     const previewQ = query.length > 50 ? query.slice(0, 50) + "..." : query;
-    if (language === "hi") {
-      shortAnswer =
-        `आपके प्रश्न ('${previewQ}') के संबंध में आधिकारिक आयुर्वेदिक वैधानिक निर्धारण:\n\n` +
-        `1. पेटेंट योग्यता: भारतीय पेटेंट अधिनियम 1970 की धारा 3(p) (पारंपरिक ज्ञान) और धारा 3(e) (साधारण मिश्रण) के तहत बिना सहक्रियाशीलता के पेटेंट वर्जित है।\n\n` +
-        `2. निर्माण लाइसेंस (नियम 158B): व्यावसायिक उत्पादन हेतु राज्य आयुष लाइसेंसिंग प्राधिकरण (SLA) से फॉर्म 24-D लाइसेंस और शेड्यूल T GMP अनिवार्य है।\n\n` +
-        `3. जैव विविधता अनुपालन: भारतीय जैविक संसाधनों के उपयोग के लिए राष्ट्रीय जैव विविधता प्राधिकरण (NBA Form III) की पूर्व अनुमति आवश्यक है।`;
-    } else if (language === "ta") {
-      shortAnswer =
-        `உங்கள் கேள்விக்கான ('${previewQ}') அதிகாரப்பூர்வ ஆயுர்வேத சட்ட மதிப்பீடு:\n\n` +
-        `1. காப்புரிமை எல்லைகள்: இந்திய காப்புரிமைச் சட்டம் 1970 பிரிவு 3(p) (பாரம்பரிய அறிவு) மற்றும் பிரிவு 3(e) (மூலிகைக் கலவை) கீழ் வெறும் மூலிகைக் கலவைகளுக்கு காப்புரிமை பெற முடியாது.\n\n` +
-        `2. மருந்து உரிமம் (விதி 158B): வணிகரீதியான உற்பத்திக்கு மாநில ஆயுஷ் உரிம ஆணையத்திடம் (SLA) படிவம் 24-D உரிமம் மற்றும் Schedule T GMP கட்டாயமாகும்.\n\n` +
-        `3. பல்லுயிர் அனுமதி: இந்திய மூலிகைகளைப் பயன்படுத்த தேசிய பல்லுயிர் ஆணையம் (NBA Form III) அல்லது மாநில பன்முகத்தன்மை வாரியத்தின் (SBB) முன் அனுமதி பெற வேண்டும்.`;
+
+    if (isHealthOrHerb) {
+      classification = language === "ta"
+        ? "ஆயுர்வேத நலம் & மூலிகை பயன்பாட்டு வழிகாட்டல்"
+        : language === "hi"
+        ? "आयुर्वेदिक स्वास्थ्य एवं द्रव्यगुण मार्गदर्शन"
+        : "Ayurvedic Health, Dravyaguna & Classical Formulation Guidance";
+      ipRegimes = [
+        "Ayurvedic Pharmacopoeia of India (API) Part I & II Standards",
+        "Charaka Samhita & Sushruta Samhita Classical Treatises",
+        "Drugs & Cosmetics Act, 1940 (First Schedule ASU Treatises)"
+      ];
+      regulatoryPathway = "Classical herbs and formulations listed in First Schedule compendia operate under authentic Dravyaguna pharmacological principles.";
+
+      if (language === "hi") {
+        shortAnswer =
+          `आपके स्वास्थ्य/आयुर्वेदिक प्रश्न ('${previewQ}') पर शास्त्रीय निर्धारण:\n\n` +
+          `1. शास्त्रीय सिद्धांत: यह संदर्भ भारतीय आयुर्वेदिक फार्माकोपिया (API) एवं चरक/सुश्रुत संहिता के मौलिक सिद्धांतों पर आधारित है।\n\n` +
+          `2. द्रव्यगुण एवं प्रभाव: आयुर्वेद में औषधियों का प्रभाव रस (स्वाद), गुण, वीर्य (शीत/उष्ण), विपाक एवं त्रिदोष (वात, पित्त, कफ) संतुलन के आधार पर निर्धारित होता है।\n\n` +
+          `3. सुरक्षित उपयोग: शास्त्रोक्त शास्त्रीय योगों का सेवन उपयुक्त अनुपान (जैसे शहद, गुनगुना पानी या दूध) के साथ योग्य आयुष चिकित्सक की देखरेख में करें।`;
+      } else if (language === "ta") {
+        shortAnswer =
+          `உங்கள் ஆயுர்வேத நலம் சார்ந்த கேள்விக்கு ('${previewQ}') சாஸ்திர வழிகாட்டல்:\n\n` +
+          `1. சாஸ்திர அடிப்படைகள்: இந்திய ஆயுர்வேத பார்மகோபியா (API) மற்றும் சரக, சுஸ்ருத சம்ஹிதைகளின் சாஸ்திர விதிகளின்படி இந்த மூலிகை/பயன்பாடு அமைகிறது.\n\n` +
+          `2. திரவியகுண அறிவியல்: சுவை (ரசம்), வீரியம் (குளிர்ச்சி/வெப்பம்), விபாகம் மற்றும் பிரபாவம் ஆகியவற்றின் அடிப்படையில் வாத, பித்த, கப தோஷங்களை சமன் செய்கிறது.\n\n` +
+          `3. ஆரோக்கிய பயன்பாடு: முறையான பதப்படுத்தப்பட்ட மூலிகைகளை, தகுதியான ஆயுஷ் மருத்துவரின் ஆலோசனையுடன் தேவையான அளவு உட்கொள்வது நலம் தரும்.`;
+      } else {
+        shortAnswer =
+          `Authoritative Ayurvedic guidance regarding your health/herbal inquiry ('${previewQ}'):\n\n` +
+          `1. Classical Compendial Principles: Governed by the Ayurvedic Pharmacopoeia of India (API) and classical treatises (Charaka Samhita, Sushruta Samhita, Ashtanga Hridaya).\n\n` +
+          `2. Dravyaguna Pharmacological Basis: Actions are determined by Rasa (taste), Guna (attributes), Virya (potency - Sheeta/Ushna), Vipaka (post-digestive effect), and specific therapeutic Prabhava acting to balance Tridosha (Vata, Pitta, Kapha).\n\n` +
+          `3. Safe Usage & Administration: Classical Ayurvedic formulations should be consumed with appropriate Anupana (carrier vehicles such as warm water, milk, or honey) according to individual Prakriti.`;
+      }
     } else {
-      shortAnswer =
-        `Authoritative statutory guidance regarding your inquiry ('${previewQ}'):\n\n` +
-        `1. Patentability Exclusions (Sections 3(p) & 3(e)): Classical Ayurvedic knowledge codified in the Traditional Knowledge Digital Library (TKDL) and mere herbal admixtures are barred from patenting unless unexpected synergistic therapeutic efficacy is rigorously proven.\n\n` +
-        `2. Commercial Licensing (Rule 158B): Commercial manufacture requires an Ayurvedic drug license (Form 24-D) from the State Licensing Authority with mandatory Schedule T GMP compliance.\n\n` +
-        `3. Mandatory Biodiversity Clearance: Accessing Indian biological resources requires prior approval from the National Biodiversity Authority (NBA Form III) under Section 6 of the Biological Diversity Act, 2002 before patent grant.`;
+      if (language === "hi") {
+        shortAnswer =
+          `आपके प्रश्न ('${previewQ}') के संबंध में आधिकारिक आयुर्वेदिक वैधानिक निर्धारण:\n\n` +
+          `1. पेटेंट योग्यता: भारतीय पेटेंट अधिनियम 1970 की धारा 3(p) (पारंपरिक ज्ञान) और धारा 3(e) (साधारण मिश्रण) के तहत बिना सहक्रियाशीलता के पेटेंट वर्जित है।\n\n` +
+          `2. निर्माण लाइसेंस (नियम 158B): व्यावसायिक उत्पादन हेतु राज्य आयुष लाइसेंसिंग प्राधिकरण (SLA) से फॉर्म 24-D लाइसेंस और शेड्यूल T GMP अनिवार्य है।\n\n` +
+          `3. जैव विविधता अनुपालन: भारतीय जैविक संसाधनों के उपयोग के लिए राष्ट्रीय जैव विविधता प्राधिकरण (NBA Form III) की पूर्व अनुमति आवश्यक है।`;
+      } else if (language === "ta") {
+        shortAnswer =
+          `உங்கள் கேள்விக்கான ('${previewQ}') அதிகாரப்பூர்வ ஆயுர்வேத சட்ட மதிப்பீடு:\n\n` +
+          `1. காப்புரிமை எல்லைகள்: இந்திய காப்புரிமைச் சட்டம் 1970 பிரிவு 3(p) (பாரம்பரிய அறிவு) மற்றும் பிரிவு 3(e) (மூலிகைக் கலவை) கீழ் வெறும் மூலிகைக் கலவைகளுக்கு காப்புரிமை பெற முடியாது.\n\n` +
+          `2. மருந்து உரிமம் (விதி 158B): வணிகரீதியான உற்பத்திக்கு மாநில ஆயுஷ் உரிம ஆணையத்திடம் (SLA) படிவம் 24-D உரிமம் மற்றும் Schedule T GMP கட்டாயமாகும்.\n\n` +
+          `3. பல்லுயிர் அனுமதி: இந்திய மூலிகைகளைப் பயன்படுத்த தேசிய பல்லுயிர் ஆணையம் (NBA Form III) அல்லது மாநில பன்முகத்தன்மை வாரியத்தின் (SBB) முன் அனுமதி பெற வேண்டும்.`;
+      } else {
+        shortAnswer =
+          `Authoritative statutory guidance regarding your inquiry ('${previewQ}'):\n\n` +
+          `1. Patentability Exclusions (Sections 3(p) & 3(e)): Classical Ayurvedic knowledge codified in the Traditional Knowledge Digital Library (TKDL) and mere herbal admixtures are barred from patenting unless unexpected synergistic therapeutic efficacy is rigorously proven.\n\n` +
+          `2. Commercial Licensing (Rule 158B): Commercial manufacture requires an Ayurvedic drug license (Form 24-D) from the State Licensing Authority with mandatory Schedule T GMP compliance.\n\n` +
+          `3. Mandatory Biodiversity Clearance: Accessing Indian biological resources requires prior approval from the National Biodiversity Authority (NBA Form III) under Section 6 of the Biological Diversity Act, 2002 before patent grant.`;
+      }
     }
   }
 

@@ -314,7 +314,7 @@ export const ABSKioskPage: React.FC = () => {
     stopAllAudio();
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 18000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
     try {
       const res = await fetch(getApiUrl("/api/query"), {
