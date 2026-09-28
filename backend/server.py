@@ -8,19 +8,24 @@ ABS navigation, legal corpus catalog, and automated evaluation.
 import os
 import time
 import json
+import logging
+import urllib.parse
 from dotenv import load_dotenv
 load_dotenv()
 import io
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from gtts import gTTS
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger("server")
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
-from engine.retriever import retriever_instance
+from engine.retriever import retriever_instance, EMBEDDING_MODEL_NAME
 from engine.classifier import classifier_instance
 from engine.abs_advisor import abs_advisor_instance
 from engine.llm_guard import llm_guard_instance
@@ -65,20 +70,25 @@ class ABSRequest(BaseModel):
     traditional_knowledge_involved: bool = Field(default=False)
     biological_resource_name: Optional[str] = Field(default="Medicinal Plant Resource")
 
+
 # Endpoints
-@app.get("/data/{filename}")
-@app.head("/data/{filename}")
-def serve_pdf(filename: str):
+@app.get("/data/{filename:path}")
+@app.head("/data/{filename:path}")
+def serve_pdf(filename: str, request: Request):
     """
-    Safely serve reference PDFs for citations.
-    Enforces path traversal prevention: only .pdf files within backend/data are accessible.
+    Safely serve reference PDFs for citations with full HTTP Range request support.
+    Enforces strict path traversal prevention: only valid .pdf files within backend/data are accessible.
+    Validates PDF magic bytes (%PDF-).
     Supports URL-encoded filenames with spaces and special characters.
     """
-    import urllib.parse
-    decoded_name = urllib.parse.unquote(filename)
+    try:
+        decoded_name = urllib.parse.unquote(filename)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Malformed URL-encoded filename")
 
-    if ".." in decoded_name or "/" in decoded_name or "\\" in decoded_name:
-        raise HTTPException(status_code=400, detail="Invalid filename")
+    # Reject path traversal, directory separators, null bytes
+    if not decoded_name or ".." in decoded_name or "/" in decoded_name or "\\" in decoded_name or "\0" in decoded_name:
+        raise HTTPException(status_code=400, detail="Invalid filename or path traversal detected")
 
     safe_filename = os.path.basename(decoded_name)
     if not safe_filename.lower().endswith(".pdf"):
@@ -88,11 +98,25 @@ def serve_pdf(filename: str):
     real_data_dir = os.path.realpath(DATA_DIR)
     real_file_path = os.path.realpath(file_path)
 
+    # Path confinement verification
     if not real_file_path.startswith(real_data_dir):
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # Document existence verification
     if not os.path.exists(real_file_path) or not os.path.isfile(real_file_path):
         raise HTTPException(status_code=404, detail="Requested PDF document not found")
+
+    # Signature check: verify file begins with %PDF-
+    try:
+        with open(real_file_path, "rb") as f:
+            header = f.read(5)
+            if header != b"%PDF-":
+                raise HTTPException(status_code=400, detail="Corrupted or invalid PDF file header")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error reading PDF file %s: %s", safe_filename, e)
+        raise HTTPException(status_code=500, detail="Failed to read document")
 
     return FileResponse(
         real_file_path,
@@ -100,9 +124,11 @@ def serve_pdf(filename: str):
         headers={
             "Content-Disposition": f"inline; filename=\"{safe_filename}\"",
             "Accept-Ranges": "bytes",
-            "Access-Control-Allow-Origin": "*"
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length"
         }
     )
+
 
 @app.get("/")
 def root():
@@ -122,41 +148,80 @@ def root():
         }
     }
 
+
 @app.get("/health")
 def health_check():
+    """
+    Detailed health check distinguishing service availability from RAG readiness.
+    Reports FAISS index vector count, embedding model, and indexed corpus documents.
+    """
+    is_faiss_ready = retriever_instance.is_ready
+    vector_count = retriever_instance.get_vector_count()
+    corpus_count = len(retriever_instance.documents)
+    
+    pdf_count = 0
+    if os.path.exists(DATA_DIR):
+        pdf_count = len([f for f in os.listdir(DATA_DIR) if f.lower().endswith(".pdf")])
+
+    rag_status = "ready" if (is_faiss_ready and vector_count > 0) else "degraded"
+
     return {
         "status": "ok",
         "service": "IP-SAKTI Sahayak Backend",
         "version": "1.0.0",
+        "rag_status": rag_status,
+        "faiss_ready": is_faiss_ready,
+        "vectorstore_index_count": vector_count,
+        "embedding_model": EMBEDDING_MODEL_NAME,
+        "corpus_documents_loaded": corpus_count,
+        "pdf_documents_available": pdf_count,
         "jurisdictions_supported": ["India", "International"],
-        "corpus_documents_loaded": len(retriever_instance.documents),
         "environment": os.getenv("ENVIRONMENT", "development")
     }
 
+
 @app.post("/api/query")
 def process_query(req: QueryRequest):
+    if not req.query or not req.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
     start_time = time.time()
-    result = llm_guard_instance.synthesize_grounded_response(
-        query=req.query,
-        jurisdiction=req.jurisdiction,
-        language=req.language
-    )
-    result["latency_seconds"] = round(time.time() - start_time, 4)
-    return result
+    try:
+        result = llm_guard_instance.synthesize_grounded_response(
+            query=req.query,
+            jurisdiction=req.jurisdiction,
+            language=req.language
+        )
+        result["latency_seconds"] = round(time.time() - start_time, 4)
+        return result
+    except Exception as e:
+        logger.error("Error processing query '%s': %s", req.query[:50], e, exc_info=True)
+        raise HTTPException(status_code=500, detail="An error occurred while evaluating the query. Please retry.")
+
 
 @app.post("/api/classify")
 def classify_formulation(req: ClassificationRequest):
     start_time = time.time()
-    result = classifier_instance.classify(req.dict())
-    result["latency_seconds"] = round(time.time() - start_time, 4)
-    return result
+    try:
+        result = classifier_instance.classify(req.dict())
+        result["latency_seconds"] = round(time.time() - start_time, 4)
+        return result
+    except Exception as e:
+        logger.error("Error classifying formulation: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Classification pipeline error.")
+
 
 @app.post("/api/abs-check")
 def evaluate_abs(req: ABSRequest):
     start_time = time.time()
-    result = abs_advisor_instance.evaluate(req.dict())
-    result["latency_seconds"] = round(time.time() - start_time, 4)
-    return result
+    try:
+        result = abs_advisor_instance.evaluate(req.dict())
+        result["latency_seconds"] = round(time.time() - start_time, 4)
+        return result
+    except Exception as e:
+        logger.error("Error evaluating ABS: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="ABS evaluation pipeline error.")
+
 
 @app.get("/api/corpus")
 def get_corpus():
@@ -164,6 +229,7 @@ def get_corpus():
         "total_documents": len(retriever_instance.documents),
         "documents": retriever_instance.documents
     }
+
 
 @app.get("/api/benchmarks")
 def get_benchmarks():
@@ -173,6 +239,7 @@ def get_benchmarks():
             data = json.load(f)
         return data
     return {"error": "Benchmark file not found"}
+
 
 @app.post("/api/evaluate")
 def run_evaluation():
@@ -211,7 +278,7 @@ def run_evaluation():
         if resp.get("citations") and len(resp["citations"]) > 0:
             grounded_citations += 1
 
-        if resp["status"] == "ABSTAINED" and item.get("should_abstain", False):
+        if resp["status"] in ["ABSTAINED", "INSUFFICIENT_EVIDENCE"] and item.get("should_abstain", False):
             safe_abstentions += 1
 
     adversarial_count = sum(1 for b in benchmarks if b.get("is_adversarial", False))
@@ -225,6 +292,7 @@ def run_evaluation():
         "average_latency_seconds": round(total_latency / total, 4),
         "abstention_safety": "VERIFIED_ACTIVE"
     }
+
 
 @app.get("/api/tts")
 async def text_to_speech(text: str, lang: str = "en"):
@@ -245,7 +313,6 @@ async def text_to_speech(text: str, lang: str = "en"):
         
     try:
         fp = io.BytesIO()
-        # Limit to 400 characters for snappy auditory playback
         clean_text = text.strip()[:400]
         tts = gTTS(text=clean_text, lang=lang)
         tts.write_to_fp(fp)
@@ -256,7 +323,9 @@ async def text_to_speech(text: str, lang: str = "en"):
             headers={"Content-Disposition": "inline; filename=speech.mp3"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS Generation Error: {str(e)}")
+        logger.error("TTS generation error: %s", e)
+        raise HTTPException(status_code=500, detail="Text-to-Speech generation failed.")
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -8,20 +8,34 @@ intent-aware lexical boosting, source prioritization, and precision filtering.
 import os
 import re
 import json
-from typing import List, Dict, Any, Optional, Tuple
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
+import logging
+from typing import List, Dict, Any, Optional, Tuple, Set
 
-from .query_router import classify_query_intent, normalize_query
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    from langchain_community.vectorstores import FAISS
+except ImportError:
+    from langchain.embeddings import HuggingFaceEmbeddings
+    from langchain.vectorstores import FAISS
 
-CORPUS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "corpus", "legal_corpus.json")
-FAISS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vectorstore", "db_faiss")
+from .query_router import classify_query_intent, normalize_query, KNOWN_HERBS
+
+logger = logging.getLogger("rag.retriever")
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(BASE_DIR, "data")
+CORPUS_PATH = os.path.join(BASE_DIR, "corpus", "legal_corpus.json")
+FAISS_PATH = os.path.join(BASE_DIR, "vectorstore", "db_faiss")
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 MULTILINGUAL_EXPANSION = {
     # Tamil
     "அஸ்வகந்தா": "ashwagandha withania somnifera medicinal plant",
+    "அமுக்கரா": "ashwagandha withania somnifera",
     "துளசி": "tulsi ocimum sanctum holy basil",
-    "மஞ்சள்": "turmeric curcuma longa",
+    "மஞ்சள்": "turmeric curcuma longa curcumin",
     "வேம்பு": "neem azadirachta indica",
     "முருங்கை": "moringa oleifera",
     "பிராமி": "brahmi bacopa monnieri",
@@ -45,7 +59,7 @@ MULTILINGUAL_EXPANSION = {
     # Hindi
     "अश्वगंधा": "ashwagandha withania somnifera medicinal plant",
     "तुलसी": "tulsi ocimum sanctum holy basil",
-    "हल्दी": "turmeric curcuma longa",
+    "हल्दी": "turmeric curcuma longa curcumin",
     "नीम": "neem azadirachta indica",
     "सहजन": "moringa oleifera",
     "ब्राह्मी": "brahmi bacopa monnieri",
@@ -69,78 +83,82 @@ MULTILINGUAL_EXPANSION = {
 }
 
 
-
 def clean_pdf_text(text: str) -> str:
-    """Filter out legacy PDF font mapping garbage, binary dumps, and non-printable Mojibake."""
+    """Filter out PDF font artifacts, control characters, binary dumps, and non-printable Mojibake."""
     if not text:
         return ""
-    # Remove sequences of non-printable or corrupt font characters
     cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', ' ', text)
-    cleaned = re.sub(r'[A-Za-z0-9+/=]{45,}', ' ', cleaned) # base64 / font binary dumps
-    cleaned = re.sub(r'[^\w\s\.,\(\)\-\':;\?\!/\u0900-\u097F\u0B80-\u0BFF]', ' ', cleaned) # keep Indic script, ASCII, punctuation
+    cleaned = re.sub(r'[A-Za-z0-9+/=]{45,}', ' ', cleaned)  # base64 / binary artifact dumps
+    cleaned = re.sub(r'[^\w\s\.,\(\)\-\':;\?\!/\u0900-\u097F\u0B80-\u0BFF%]', ' ', cleaned)
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
     return cleaned
 
 
 def extract_focused_excerpt(text: str, query: str, max_len: int = 320) -> str:
-    """Ensure the excerpt highlights the actual targeted statutory or botanical text."""
-    q_lower = query.lower()
-    t_lower = text.lower()
-    
-    # Priority targets based on query
-    target_terms = []
-    if "admixture" in q_lower or "3(e)" in q_lower:
-        target_terms.extend(["mere admixture", "(e) a substance obtained", "aggregation of the properties"])
-    if "traditional" in q_lower or "3(p)" in q_lower:
-        target_terms.extend(["(p) an invention which", "traditional knowledge"])
-    if "3(d)" in q_lower or "new form" in q_lower:
-        target_terms.extend(["(d) the mere discovery", "known efficacy"])
-    if "10(4)" in q_lower or "origin" in q_lower or "biological material" in q_lower:
-        target_terms.extend(["geographical origin", "biological material"])
-    if "section 39" in q_lower or "foreign" in q_lower or "international" in q_lower:
-        target_terms.extend(["39. residents not to apply", "outside india without prior permission", "six weeks"])
-    if "ashwagandha" in q_lower or "withania" in q_lower:
-        target_terms.extend(["withania somnifera", "asvagandha", "dried mature roots"])
-    if "brahmi" in q_lower or "bacopa" in q_lower:
-        target_terms.extend(["bacopa monnieri", "brahmi", "brahmi ghrutha"])
-    if "ayurveda" in q_lower and any(w in q_lower for w in ["what is", "formulation", "use"]):
-        target_terms.extend(["ayurveda is", "science of life", "doshas", "charaka", "rasayana", "definition"])
+    """Extract a representative, clean sentence excerpt matching the query concepts."""
+    clean = clean_pdf_text(text)
+    if not clean:
+        return ""
 
-    # Statutory and literature fallback terms
-    target_terms.extend([
+    q_lower = query.lower()
+    t_lower = clean.lower()
+
+    # Priority target terms based on query intent & content
+    priority_terms = []
+    if "3(e)" in q_lower or "admixture" in q_lower:
+        priority_terms.extend(["mere admixture", "(e) a substance obtained", "aggregation of the properties"])
+    if "3(p)" in q_lower or "traditional" in q_lower:
+        priority_terms.extend(["(p) an invention which", "traditional knowledge", "known properties"])
+    if "3(d)" in q_lower or "efficacy" in q_lower:
+        priority_terms.extend(["(d) the mere discovery", "known efficacy", "enhancement of the known efficacy"])
+    if "10(4)" in q_lower or "origin" in q_lower or "biological" in q_lower:
+        priority_terms.extend(["geographical origin", "biological material", "source and geographical origin"])
+    if "section 39" in q_lower or "foreign" in q_lower or "international" in q_lower:
+        priority_terms.extend(["39. residents not to apply", "outside india without prior permission", "six weeks"])
+    if "ashwagandha" in q_lower or "withania" in q_lower:
+        priority_terms.extend(["withania somnifera", "ashwagandha", "asvagandha", "dried mature roots", "withanolides"])
+    if "curcumin" in q_lower or "turmeric" in q_lower or "curcuma" in q_lower:
+        priority_terms.extend(["curcuma longa", "haridra", "curcuminoids", "rhizome"])
+    if "brahmi" in q_lower or "bacopa" in q_lower:
+        priority_terms.extend(["bacopa monnieri", "brahmi", "bacoside"])
+    if "neem" in q_lower or "azadirachta" in q_lower:
+        priority_terms.extend(["azadirachta indica", "nimba"])
+    if "tulsi" in q_lower or "ocimum" in q_lower:
+        priority_terms.extend(["ocimum sanctum", "tulasi"])
+
+    # Fallback standard markers
+    priority_terms.extend([
         "(p) an invention which",
         "traditional knowledge",
         "(e) a substance obtained",
         "mere admixture",
-        "(d) the mere discovery",
         "withania somnifera",
-        "dried mature roots",
+        "curcuma longa",
         "bacopa monnieri",
         "science of life",
-        "charaka samhita"
+        "charaka samhita",
+        "ayurvedic pharmacopoeia"
     ])
 
     best_idx = -1
-    for term in target_terms:
+    for term in priority_terms:
         idx = t_lower.find(term.lower())
         if idx != -1:
             if best_idx == -1 or idx < best_idx:
                 best_idx = idx
 
     if best_idx != -1 and best_idx > 30:
-        start = max(0, best_idx - 10)
-        prev_nl = text.rfind('\n', max(0, best_idx - 60), best_idx)
-        if prev_nl != -1:
-            start = prev_nl + 1
-        snippet = text[start:].strip()
+        start = max(0, best_idx - 15)
+        snippet = clean[start:].strip()
         if len(snippet) > max_len:
             snippet = snippet[:max_len] + "..."
         if start > 0:
             snippet = "..." + snippet
-        return snippet.replace("\n", " ")
+        return snippet
 
-    clean = clean_pdf_text(text).replace("\n", " ").strip()
-    return clean[:max_len] + ("..." if len(clean) > max_len else "")
+    if len(clean) > max_len:
+        return clean[:max_len] + "..."
+    return clean
 
 
 class FAISSSemanticRetriever:
@@ -150,6 +168,8 @@ class FAISSSemanticRetriever:
         self.documents: List[Dict[str, Any]] = []
         self.db: Optional[FAISS] = None
         self.embeddings: Optional[HuggingFaceEmbeddings] = None
+        self.is_ready: bool = False
+        self.load_error: Optional[str] = None
         
         # Load statutory catalog for backward compatibility with /api/corpus and /health
         self.load_corpus()
@@ -158,39 +178,63 @@ class FAISSSemanticRetriever:
         self.load_faiss_index()
 
     def load_corpus(self):
-        """Preserve legal_corpus.json loading so /api/corpus and /health continue working."""
+        """Preserve legal_corpus.json loading so /api/corpus and catalog lookups continue working."""
         if os.path.exists(self.corpus_path):
             try:
                 with open(self.corpus_path, "r", encoding="utf-8") as f:
                     self.documents = json.load(f)
+                logger.info("Loaded %d legal corpus catalog entries from %s", len(self.documents), self.corpus_path)
             except Exception as e:
-                print(f"Warning: Could not load legal_corpus.json: {e}")
+                logger.warning("Could not load legal_corpus.json: %s", e)
                 self.documents = []
+        else:
+            self.documents = []
 
     def load_faiss_index(self):
-        """Load the FAISS vector database from disk."""
+        """Load the FAISS vector database from disk using the matching HuggingFace embedding model."""
         if not os.path.exists(self.faiss_path):
-            print(f"Notice: FAISS path not found at {self.faiss_path}. Run ingest.py first.")
+            self.load_error = f"FAISS index path not found at: {self.faiss_path}"
+            self.is_ready = False
+            logger.warning("FAISS index not found at %s. Please run ingest.py.", self.faiss_path)
+            return
+
+        index_file = os.path.join(self.faiss_path, "index.faiss")
+        pkl_file = os.path.join(self.faiss_path, "index.pkl")
+        if not os.path.exists(index_file) or not os.path.exists(pkl_file):
+            self.load_error = f"FAISS index files (index.faiss/index.pkl) missing in {self.faiss_path}"
+            self.is_ready = False
+            logger.error(self.load_error)
             return
 
         try:
-            print(f"Loading FAISS vectorstore from {self.faiss_path}...")
+            logger.info("Initializing HuggingFace embeddings (%s)...", EMBEDDING_MODEL_NAME)
             self.embeddings = HuggingFaceEmbeddings(
-                model_name='sentence-transformers/all-MiniLM-L6-v2',
+                model_name=EMBEDDING_MODEL_NAME,
                 model_kwargs={'device': 'cpu'}
             )
+            logger.info("Loading FAISS vectorstore from %s...", self.faiss_path)
             self.db = FAISS.load_local(
                 self.faiss_path,
                 self.embeddings,
                 allow_dangerous_deserialization=True
             )
-            print(f"FAISS vectorstore loaded successfully ({self.db.index.ntotal} vectors).")
+            self.is_ready = True
+            self.load_error = None
+            logger.info("FAISS vectorstore successfully loaded (%d vectors).", self.db.index.ntotal)
         except Exception as e:
-            print(f"Error loading FAISS index: {e}")
             self.db = None
+            self.is_ready = False
+            self.load_error = f"Error loading FAISS vectorstore: {str(e)}"
+            logger.error("Failed to load FAISS index: %s", e)
+
+    def get_vector_count(self) -> int:
+        """Return total indexed vectors in FAISS index."""
+        if self.db and hasattr(self.db, "index") and self.db.index:
+            return int(self.db.index.ntotal)
+        return 0
 
     def expand_multilingual_query(self, query: str) -> str:
-        """Expand non-English query terms to English equivalents for semantic retrieval."""
+        """Expand non-English query terms (Tamil, Hindi) and botanical keywords for semantic retrieval."""
         expanded_parts = [query]
         q_lower = query.lower()
         for term, expansion in MULTILINGUAL_EXPANSION.items():
@@ -224,150 +268,130 @@ class FAISSSemanticRetriever:
         if self.db is None:
             self.load_faiss_index()
 
-        if self.db is None:
-            print("Warning: FAISS database unavailable for retrieval.")
+        if self.db is None or not self.is_ready:
+            logger.warning("FAISS database unavailable for retrieval: %s", self.load_error)
             return []
 
         # Step 1: Detect intent and normalize query
         router_info = classify_query_intent(query, jurisdiction or "India")
-        intent = router_info["intent"]
-        source_type = router_info["source_type"]
+        intent = router_info.get("intent", "GENERAL")
         q_norm = normalize_query(query)
         expanded_query = self.expand_multilingual_query(q_norm)
         q_lower = q_norm.lower()
 
         # Step 2: Base semantic similarity search via FAISS
+        candidates_map: Dict[str, Tuple[Any, float]] = {}
+
         try:
-            candidates = self.db.similarity_search_with_score(expanded_query, k=60)
+            primary_candidates = self.db.similarity_search_with_score(expanded_query, k=50)
+            for doc, dist in primary_candidates:
+                key = f"{doc.metadata.get('source', '')}-{doc.metadata.get('page', 0)}-{doc.page_content[:40]}"
+                candidates_map[key] = (doc, float(dist))
         except Exception as e:
-            print(f"FAISS similarity search error: {e}")
-            candidates = []
+            logger.error("FAISS primary similarity search error: %s", e)
 
-        # Step 3: Targeted intent-aware and docstore-backed matching
-        targeted = []
-        if self.db.docstore and hasattr(self.db.docstore, "_dict"):
-            for doc_id, doc in self.db.docstore._dict.items():
-                text_lower = doc.page_content.lower()
-                src = doc.metadata.get("source", "").lower()
-                page = doc.metadata.get("page", 0) + 1
+        # Step 3: Targeted query expansions for statutory sections & botanical entities
+        targeted_queries = []
+        if "3(p)" in q_lower or "traditional" in q_lower or intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE":
+            targeted_queries.append("Section 3(p) traditional knowledge patents act 1970")
+        if "3(e)" in q_lower or "admixture" in q_lower or intent == "PATENTABILITY_MERE_ADMIXTURE":
+            targeted_queries.append("Section 3(e) mere admixture aggregation properties patents act 1970")
+        if "3(d)" in q_lower:
+            targeted_queries.append("Section 3(d) mere discovery new form known substance efficacy")
+        if "section 39" in q_lower or intent == "INTERNATIONAL_IP":
+            targeted_queries.append("Section 39 residents not to apply for patents outside India without prior permission")
+        if "ashwagandha" in q_lower or "withania" in q_lower:
+            targeted_queries.append("Withania somnifera ashwagandha dried mature roots API monograph")
+        if "curcumin" in q_lower or "turmeric" in q_lower or "curcuma" in q_lower:
+            targeted_queries.append("Curcuma longa rhizome turmeric curcuminoids API monograph")
+        if "brahmi" in q_lower or "bacopa" in q_lower:
+            targeted_queries.append("Bacopa monnieri brahmi bacoside API monograph")
 
-                # INTENT: PATENTABILITY_MERE_ADMIXTURE (Section 3(e))
-                if intent == "PATENTABILITY_MERE_ADMIXTURE":
-                    if "patents_act" in src and page == 10 and "mere admixture" in text_lower:
-                        targeted.append((doc, 0.05))
+        for tq in targeted_queries:
+            try:
+                t_candidates = self.db.similarity_search_with_score(tq, k=10)
+                for doc, dist in t_candidates:
+                    key = f"{doc.metadata.get('source', '')}-{doc.metadata.get('page', 0)}-{doc.page_content[:40]}"
+                    if key not in candidates_map or dist < candidates_map[key][1]:
+                        candidates_map[key] = (doc, float(dist))
+            except Exception as e:
+                logger.debug("Targeted query search failed for '%s': %s", tq, e)
 
-                # INTENT: PATENTABILITY_TRADITIONAL_KNOWLEDGE (Section 3(p))
-                elif intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE":
-                    if "patents_act" in src and page == 10 and "traditional knowledge" in text_lower:
-                        targeted.append((doc, 0.05))
-
-                # INTENT: PATENTABILITY_POLYHERBAL_COMBINATION
-                elif intent == "PATENTABILITY_POLYHERBAL_COMBINATION":
-                    if "patents_act" in src and page == 10:
-                        targeted.append((doc, 0.06))
-                    if "ashwagandha" in q_lower and "api-vol-1" in src and page == 31:
-                        targeted.append((doc, 0.08))
-                    if "brahmi" in q_lower and "api-vol-2" in src and ("bacopa" in text_lower or page == 92):
-                        targeted.append((doc, 0.08))
-
-                # INTENT: HERB_MONOGRAPH
-                elif intent == "HERB_MONOGRAPH":
-                    if "ashwagandha" in q_lower and "api-vol-1" in src and page == 31:
-                        targeted.append((doc, 0.04))
-                    elif "brahmi" in q_lower and "api-vol-2" in src and page == 92:
-                        targeted.append((doc, 0.04))
-                    elif "turmeric" in q_lower or "curcumin" in q_lower:
-                        if "api-vol-1" in src and ("curcuma" in text_lower or "haridra" in text_lower):
-                            targeted.append((doc, 0.04))
-                    elif "neem" in q_lower and "api-vol-2" in src and ("azadirachta" in text_lower or "nimba" in text_lower):
-                        targeted.append((doc, 0.04))
-                    elif "tulsi" in q_lower and "api-vol-2" in src and ("ocimum" in text_lower or "tulsi" in text_lower):
-                        targeted.append((doc, 0.04))
-                    elif "giloy" in q_lower and "api-vol-1" in src and ("tinospora" in text_lower or "guduchi" in text_lower):
-                        targeted.append((doc, 0.04))
-                    elif "triphala" in q_lower and ("api-vol-1" in src or "charaka" in src) and "triphala" in text_lower:
-                        targeted.append((doc, 0.04))
-
-                # INTENT: INTERNATIONAL_IP (Section 39 Patents Act)
-                elif intent == "INTERNATIONAL_IP":
-                    if "patents_act" in src and page == 26 and "residents not to apply" in text_lower:
-                        targeted.append((doc, 0.05))
-                    elif "patents_act" in src and page == 28:
-                        targeted.append((doc, 0.08))
-
-                # INTENT: GENERAL_AYURVEDA
-                elif intent == "GENERAL_AYURVEDA":
-                    if "science_of_self_healing" in src or "yoga_of_herbs" in src or "charaka" in src:
-                        if any(k in text_lower for k in ["ayurveda is", "science of life", "three doshas", "vata, pitta", "rasayana"]):
-                            targeted.append((doc, 0.08))
-
-                # INTENT: CLASSICAL_VS_PROPRIETARY / COMMERCIAL_SALE_LICENSING
-                elif intent in ("CLASSICAL_VS_PROPRIETARY", "COMMERCIAL_SALE_LICENSING"):
-                    if "charaka" in src and ("compendium" in text_lower or "treatise" in text_lower or page in (1, 2, 7)):
-                        targeted.append((doc, 0.08))
-                    elif "api-vol-1" in src and page == 1:
-                        targeted.append((doc, 0.10))
-
-                # INTENT: BIODIVERSITY_ABS
-                elif intent == "BIODIVERSITY_ABS":
-                    if "patents_act" in src and page in (13, 21, 22, 35) and any(k in text_lower for k in ["biological", "geographical origin", "biodiversity"]):
-                        targeted.append((doc, 0.05))
-
-                # INTENT: TRADITIONAL_KNOWLEDGE_TKDL
-                elif intent == "TRADITIONAL_KNOWLEDGE_TKDL":
-                    if "patents_act" in src and page == 10 and "traditional knowledge" in text_lower:
-                        targeted.append((doc, 0.05))
-                    elif "charaka" in src and page in (1, 7, 10):
-                        targeted.append((doc, 0.09))
-
-        # Step 4: Demote irrelevant or misaligned pages based on Intent & Source Type
-        filtered_candidates = []
-        for doc, dist in candidates:
-            src = doc.metadata.get("source", "").lower()
-            page = doc.metadata.get("page", 0) + 1
+        # Step 4: Hybrid Scoring (Dense distance + Lexical & Statutory Ranking Aid)
+        scored_candidates = []
+        for key, (doc, raw_dist) in candidates_map.items():
+            meta = doc.metadata or {}
+            src = meta.get("source", meta.get("file_name", "")).lower()
+            page = int(meta.get("page", 0)) + 1
             text_lower = doc.page_content.lower()
 
-            # Rule A: If asking for HERB_MONOGRAPH or GENERAL_AYURVEDA, demote Patents Act heavily
+            # Adjusted distance starts at raw FAISS Euclidean distance
+            adj_dist = raw_dist
+
+            # Lexical entity matching boost
+            if "ashwagandha" in q_lower or "withania" in q_lower:
+                if "withania somnifera" in text_lower or "asvagandha" in text_lower:
+                    adj_dist -= 0.25
+            if "curcumin" in q_lower or "turmeric" in q_lower or "curcuma" in q_lower:
+                if "curcuma longa" in text_lower or "haridra" in text_lower or "curcumin" in text_lower:
+                    adj_dist -= 0.25
+            if "brahmi" in q_lower or "bacopa" in q_lower:
+                if "bacopa monnieri" in text_lower or "brahmi" in text_lower:
+                    adj_dist -= 0.25
+            if "neem" in q_lower or "azadirachta" in q_lower:
+                if "azadirachta indica" in text_lower or "nimba" in text_lower:
+                    adj_dist -= 0.25
+            if "tulsi" in q_lower or "ocimum" in q_lower:
+                if "ocimum sanctum" in text_lower or "tulsi" in text_lower:
+                    adj_dist -= 0.25
+
+            # Statutory section lexical match boost
+            if ("3(p)" in q_lower or "traditional" in q_lower or intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE") and "patents_act" in src:
+                if "traditional knowledge" in text_lower or "(p) an invention" in text_lower:
+                    adj_dist -= 0.40
+            if ("3(e)" in q_lower or "admixture" in q_lower or intent == "PATENTABILITY_MERE_ADMIXTURE") and "patents_act" in src:
+                if "mere admixture" in text_lower or "(e) a substance" in text_lower:
+                    adj_dist -= 0.40
+            if ("3(d)" in q_lower) and "patents_act" in src:
+                if "known efficacy" in text_lower or "(d) the mere discovery" in text_lower:
+                    adj_dist -= 0.40
+            if ("section 39" in q_lower or "foreign" in q_lower or intent == "INTERNATIONAL_IP") and "patents_act" in src:
+                if "residents not to apply" in text_lower or "outside india" in text_lower:
+                    adj_dist -= 0.40
+
+            # Intent-based source weighting (Ranking Aid)
             if intent in ("HERB_MONOGRAPH", "GENERAL_AYURVEDA") and "patents_act" in src:
-                dist += 3.0
-
-            # Rule B: If asking for PATENTABILITY or INTERNATIONAL_IP, demote non-substantive procedural patent pages
-            if intent.startswith("PATENTABILITY") and "patents_act" in src:
-                if page in (41, 42, 44, 45, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63):
+                adj_dist += 1.5  # Demote patent statute when asking about herb pharmacopoeia
+            elif intent.startswith("PATENTABILITY") and "patents_act" in src:
+                # Demote purely procedural patent pages (administrative tables)
+                if page in (41, 42, 44, 45, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65):
                     if "mere admixture" not in text_lower and "traditional knowledge" not in text_lower:
-                        dist += 2.5
+                        adj_dist += 1.0
 
-            # Rule C: If asking for VAGUE_CLARIFICATION, demote specific patent penalty pages
-            if intent == "VAGUE_CLARIFICATION":
-                if "patents_act" in src and page != 10:
-                    dist += 1.5
+            scored_candidates.append((doc, max(0.01, adj_dist)))
 
-            # Rule D: If asking for TRADEMARK or COMMERCIAL, boost classical catalog references
-            if intent in ("BRAND_PROTECTION_TRADEMARK", "COMMERCIAL_SALE_LICENSING") and "patents_act" in src:
-                dist += 1.0
+        # Step 5: Rank and Deduplicate
+        scored_candidates.sort(key=lambda x: x[1])
 
-            filtered_candidates.append((doc, dist))
-
-        # Step 5: Combine, rank, and deduplicate
-        combined = targeted + filtered_candidates
-        combined.sort(key=lambda x: x[1])
-
-        seen = set()
         results = []
-        for doc, raw_score in combined:
+        seen_chunks: Set[str] = set()
+
+        for doc, dist in scored_candidates:
             meta = doc.metadata or {}
             source_raw = meta.get("source", meta.get("file_name", "unknown.pdf"))
             pdf_filename = os.path.basename(source_raw)
             page_num = int(meta.get("page", 0)) + 1
             chunk_text = doc.page_content.strip()
 
-            dedup_key = (pdf_filename, page_num)
-            if dedup_key in seen:
+            # Deduplication key based on document, page, and chunk signature
+            clean_snippet = clean_pdf_text(chunk_text[:100])
+            dedup_key = f"{pdf_filename}#p{page_num}#{clean_snippet}"
+            if dedup_key in seen_chunks:
                 continue
-            seen.add(dedup_key)
+            seen_chunks.add(dedup_key)
 
-            raw_dist = float(raw_score)
-            relevance_score = round(1.0 / (1.0 + raw_dist), 4)
+            # Convert distance to normalized relevance score [0.0, 1.0]
+            relevance_score = round(1.0 / (1.0 + float(dist)), 4)
             authority = self.infer_authority(pdf_filename)
             doc_id = f"{pdf_filename.replace('.pdf', '')}-p{page_num}"
             focused_excerpt = extract_focused_excerpt(chunk_text, query)
@@ -378,7 +402,7 @@ class FAISSSemanticRetriever:
                 "chunk_text": focused_excerpt,
                 "full_chunk_text": chunk_text,
                 "similarity_score": relevance_score,
-                "raw_distance": round(raw_dist, 4),
+                "raw_distance": round(float(dist), 4),
                 "relevance_score": relevance_score,
                 "document": {
                     "document_id": doc_id,
@@ -394,6 +418,17 @@ class FAISSSemanticRetriever:
 
             if len(results) >= top_k:
                 break
+
+        # Log diagnostics without leaking sensitive data
+        logger.info(
+            "Retrieval for query '%s' [Intent: %s]: %d results returned (top score: %s, top file: %s p.%s)",
+            query[:50],
+            intent,
+            len(results),
+            results[0]["relevance_score"] if results else "N/A",
+            results[0]["pdf_filename"] if results else "None",
+            results[0]["page_number"] if results else "None"
+        )
 
         return results
 

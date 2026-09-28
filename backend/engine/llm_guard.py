@@ -7,10 +7,13 @@ Grounded directly in retrieved FAISS chunks from backend/data/*.pdf.
 
 import os
 import re
+import logging
 from typing import Dict, Any, List, Optional
-from .retriever import retriever_instance
+from .retriever import retriever_instance, DATA_PATH
 from .query_router import classify_query_intent, normalize_query
 from .statutory_synthesis import generate_dynamic_statutory_response
+
+logger = logging.getLogger("rag.llm_guard")
 
 # Adversarial prompt injection keywords & patterns
 ADVERSARIAL_PATTERNS = [
@@ -27,12 +30,14 @@ ADVERSARIAL_PATTERNS = [
 
 class LLMGuard:
     def __init__(self):
+        # Read API keys strictly from environment variables; never hardcode or log them
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
 
     def detect_prompt_injection(self, query: str) -> Optional[str]:
         for pattern in ADVERSARIAL_PATTERNS:
             if re.search(pattern, query, re.IGNORECASE):
+                logger.warning("Adversarial prompt injection pattern detected in query.")
                 return (
                     "Security Notice: Prompt injection or instruction override attempt detected. "
                     "IP-SAKTI Sahayak strictly processes legal queries based on verified statutory corpus. "
@@ -40,10 +45,30 @@ class LLMGuard:
                 )
         return None
 
-    def calculate_confidence(self, query: str, retrieved_docs: List[Dict[str, Any]], intent: str) -> Dict[str, Any]:
+    def calculate_confidence(
+        self,
+        query: str,
+        retrieved_docs: List[Dict[str, Any]],
+        intent: str,
+        citations: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        """
+        Dynamically calculate confidence based on actual retrieval scores,
+        citation validation, and domain grounding.
+        """
+        if intent == "OUT_OF_SCOPE":
+            return {
+                "score": 85,
+                "label": "HIGH",
+                "evidence_quality": "OUT_OF_SCOPE_DETECTED",
+                "sources_found": 0,
+                "abstain_recommended": True,
+                "reason": "Query identified as outside Ayurvedic statutory scope (plant breeding / non-Ayush topic). Abstention with boundary guidance enforced."
+            }
+
         if not retrieved_docs:
             return {
-                "score": 25,
+                "score": 20,
                 "label": "LOW",
                 "evidence_quality": "INSUFFICIENT",
                 "sources_found": 0,
@@ -54,69 +79,70 @@ class LLMGuard:
         num_docs = len(retrieved_docs)
         top_score = retrieved_docs[0].get("similarity_score", 0.0)
 
-        # For out-of-scope inquiries
-        if intent == "OUT_OF_SCOPE":
-            return {
-                "score": 92,
-                "label": "HIGH",
-                "evidence_quality": "OUT_OF_SCOPE_DETECTED",
-                "sources_found": 0,
-                "abstain_recommended": False,
-                "reason": "Inquiry accurately identified as non-Ayurvedic / out-of-scope with boundary guidance."
-            }
-
         # For vague queries that need clarification
         if intent in ("VAGUE_CLARIFICATION", "VAGUE_USE_AYURVEDA", "VAGUE_PATENT_THIS"):
             return {
-                "score": 85,
+                "score": 75,
                 "label": "MEDIUM",
                 "evidence_quality": "EXPLORATORY",
                 "sources_found": num_docs,
                 "abstain_recommended": False,
-                "reason": "Structured clarification options generated across AYUSH statutory pathways."
+                "reason": "Structured multi-pathway clarification options generated across AYUSH statutory pathways."
             }
 
-        # Base confidence on normalized FAISS relevance score (0.0 to 1.0)
-        if top_score >= 0.50 and num_docs >= 2:
-            score = min(96, int(75 + (top_score * 22)))
+        # Count verified citations that actively support the claim
+        verified_count = 0
+        if citations:
+            verified_count = sum(1 for c in citations if c.get("supports_claim", False))
+
+        # Dynamic formula based on actual retrieval distance and citation grounding
+        if top_score >= 0.55 and verified_count >= 1:
+            score = min(94, int(60 + (top_score * 35)))
             label = "HIGH"
             quality = "STRONG"
             abstain = False
-        elif top_score >= 0.40:
-            score = min(82, int(55 + (top_score * 25)))
+            reason = "Authoritative statutory provisions and pharmacopoeial standards verified in vectorstore."
+        elif top_score >= 0.45:
+            score = min(78, int(45 + (top_score * 30)))
             label = "MEDIUM"
             quality = "MODERATE"
             abstain = False
+            reason = "Relevant statutory or pharmacopoeial passages retrieved with moderate confidence."
         else:
-            score = max(35, int(top_score * 60))
+            score = max(25, int(top_score * 50))
             label = "LOW"
             quality = "WEAK"
             abstain = True
+            reason = "Retrieval relevance score below confidence safety threshold."
 
         return {
             "score": score,
             "label": label,
             "evidence_quality": quality,
             "sources_found": num_docs,
+            "verified_citations": verified_count,
             "abstain_recommended": abstain,
-            "reason": "Authoritative statutory sources verified in vectorstore" if not abstain else "Relevance score below safety threshold"
+            "reason": reason
         }
 
     def verify_citations(
         self,
-        citations: List[Dict[str, Any]],
+        raw_citations: List[Dict[str, Any]],
         retrieved_docs: List[Dict[str, Any]],
         query: str = "",
         intent: str = "GENERAL_STATUTORY_QUERY"
     ) -> List[Dict[str, Any]]:
         """
-        Verify citations based on whether the cited chunk ACTUALLY supports the statement/query.
-        Marks VERIFIED_STATUTORY_RECORD vs SUPPLEMENTARY_RECORD.
+        Verify citations based on actual source existence, valid page numbers,
+        and whether the retrieved chunk text supports the query/claim.
         """
+        if intent == "OUT_OF_SCOPE":
+            return []
+
         verified = []
         q_lower = query.lower()
 
-        # Build map of doc_id -> chunk text
+        # Map doc_id to full chunk text
         doc_texts = {}
         for d in retrieved_docs:
             doc_dict = d.get("document", {})
@@ -124,15 +150,22 @@ class LLMGuard:
             if doc_id:
                 doc_texts[doc_id] = (d.get("full_chunk_text", "") + " " + d.get("chunk_text", "")).lower()
 
-        if intent == "OUT_OF_SCOPE":
-            return []
-
-        for c in citations:
+        for c in raw_citations:
             doc_id = c.get("document_id")
-            title = c.get("title", "").lower()
-            section = c.get("section", "").lower()
+            title = c.get("title", "")
+            fname = os.path.basename(title)
+            page_str = c.get("section", "")
+            
+            # Verify file exists on disk
+            pdf_disk_path = os.path.join(DATA_PATH, fname)
+            file_exists = os.path.exists(pdf_disk_path) and os.path.isfile(pdf_disk_path)
+            
+            # Extract page number
+            page_match = re.search(r"\d+", page_str)
+            page_num = int(page_match.group()) if page_match else 1
+            page_valid = (page_num > 0)
 
-            if doc_id not in doc_texts:
+            if not file_exists or not page_valid or doc_id not in doc_texts:
                 c["verification_status"] = "SUPPLEMENTARY_RECORD"
                 c["supports_claim"] = False
                 verified.append(c)
@@ -140,49 +173,32 @@ class LLMGuard:
 
             text = doc_texts[doc_id]
             supports = False
+            statutory = False
 
-            # Intent-specific evidence verification
-            if intent == "VAGUE_CLARIFICATION":
-                supports = False
-            elif intent == "PATENTABILITY_MERE_ADMIXTURE":
-                if "patents_act" in title and ("page 10" in section or "mere admixture" in text):
+            # Content verification based on retrieved text
+            if "patents_act" in fname.lower():
+                statutory = True
+                if "3(p)" in q_lower or "traditional knowledge" in q_lower or intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE":
+                    if "traditional knowledge" in text or "(p) an invention" in text:
+                        supports = True
+                elif "3(e)" in q_lower or "admixture" in q_lower or intent == "PATENTABILITY_MERE_ADMIXTURE":
+                    if "mere admixture" in text or "(e) a substance" in text:
+                        supports = True
+                elif "3(d)" in q_lower or "efficacy" in q_lower:
+                    if "known efficacy" in text or "(d) the mere discovery" in text:
+                        supports = True
+                elif "section 39" in q_lower or intent == "INTERNATIONAL_IP":
+                    if "residents not to apply" in text or "outside india" in text:
+                        supports = True
+                elif any(k in text for k in ["invention", "patent", "specification", "biological"]):
                     supports = True
-            elif intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE":
-                if "patents_act" in title and ("page 10" in section or "traditional knowledge" in text):
-                    supports = True
-            elif intent == "PATENTABILITY_POLYHERBAL_COMBINATION":
-                if ("patents_act" in title and "page 10" in section) or ("api-vol-1" in title and "page 31" in section) or ("api-vol-2" in title and "page 92" in section):
-                    supports = True
-            elif intent == "HERB_MONOGRAPH":
-                if any(h in q_lower for h in ["ashwagandha", "withania"]) and "api-vol-1" in title and "page 31" in section:
-                    supports = True
-                elif any(h in q_lower for h in ["brahmi", "bacopa"]) and "api-vol-2" in title and "page 92" in section:
-                    supports = True
-                elif "api-vol" in title or "yoga_of_herbs" in title:
-                    supports = True
-            elif intent == "INTERNATIONAL_IP":
-                if "patents_act" in title and ("page 26" in section or "page 28" in section or "residents not to apply" in text):
-                    supports = True
-            elif intent in ("GENERAL_AYURVEDA", "CLASSICAL_VS_PROPRIETARY"):
-                if "charaka" in title or "science_of_self_healing" in title or "yoga_of_herbs" in title or "api-vol" in title:
-                    supports = True
-            elif intent == "BIODIVERSITY_ABS":
-                if ("patents_act" in title and ("page 13" in section or "page 21" in section or "page 22" in section or "page 35" in section or "biological" in text)) or "bda" in text or "biodiversity" in text:
-                    supports = True
-            elif intent == "TRADITIONAL_KNOWLEDGE_TKDL":
-                if ("patents_act" in title and "page 10" in section) or "charaka" in title:
-                    supports = True
-            elif intent in ("BRAND_PROTECTION_TRADEMARK", "COMMERCIAL_SALE_LICENSING"):
-                if "api-vol" in title or "charaka" in title or "yoga_of_herbs" in title:
-                    supports = True
-            else:
-                # Generic match
-                words = [w for w in q_lower.split() if len(w) > 4 and w not in ["patent", "india", "can", "about", "what", "which", "will"]]
-                if any(w in text for w in words):
+            elif "api-vol" in fname.lower() or "charaka" in fname.lower() or "frawley" in fname.lower():
+                # Pharmacopoeial / classical compendium
+                if any(h in text for h in ["withania", "ashwagandha", "curcuma", "haridra", "bacopa", "brahmi", "azadirachta", "nimba", "ocimum", "tulsi", "tinospora", "triphala", "rasayana", "dosha"]):
                     supports = True
 
             if supports:
-                c["verification_status"] = "VERIFIED_STATUTORY_RECORD"
+                c["verification_status"] = "VERIFIED_STATUTORY_RECORD" if statutory else "VERIFIED_MONOGRAPH_RECORD"
                 c["supports_claim"] = True
             else:
                 c["verification_status"] = "SUPPLEMENTARY_RECORD"
@@ -245,7 +261,7 @@ class LLMGuard:
                 f"CRITICAL GROUNDING RULES:\n"
                 f"1. If the question is ambiguous (e.g. 'Can I use ayurveda'), ask a clear structured clarification across Formulation, Commercial Licensing, and IP pathways.\n"
                 f"2. Make ONLY claims that are directly supported by the retrieved excerpts or official statutory standards.\n"
-                f"3. Do NOT invent legal sections, citations, mathematical formulas (e.g., do NOT invent 'Combination Index < 1.0'), or external requirements not present in the excerpts.\n"
+                f"3. Do NOT invent legal sections, citations, mathematical formulas, or external requirements not present in the excerpts.\n"
                 f"4. Cite the retrieved PDF filenames and page numbers accurately."
             )
             resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10.0)
@@ -255,7 +271,7 @@ class LLMGuard:
                 if text and len(text.strip()) > 50:
                     return text.strip()
         except Exception as e:
-            print(f"Gemini API synthesis notice: {e}")
+            logger.debug("Gemini API call skipped/failed: %s", e)
         return None
 
     def synthesize_grounded_response(
@@ -276,7 +292,14 @@ class LLMGuard:
                 "regulatory_pathway": "N/A",
                 "abs_considerations": "N/A",
                 "citations": [],
-                "confidence": {"score": 0, "label": "ZERO", "evidence_quality": "BLOCKED", "sources_found": 0},
+                "confidence": {
+                    "score": 0,
+                    "label": "ZERO",
+                    "evidence_quality": "BLOCKED",
+                    "sources_found": 0,
+                    "abstain_recommended": True,
+                    "reason": "Adversarial security filter triggered."
+                },
                 "important_limitations": "Adversarial security filter triggered.",
                 "actionable_next_steps": ["Submit an authentic IP or regulatory question."],
                 "disclaimer": "Security policy enforced. Information only — not legal advice."
@@ -284,16 +307,43 @@ class LLMGuard:
 
         # Step 2: Intelligent Query Intent Routing & Entity Extraction
         router_info = classify_query_intent(query, selected_jurisdiction=jurisdiction)
-        intent = router_info["intent"]
-        detected_language = router_info["language"]
+        intent = router_info.get("intent", "GENERAL")
+        detected_language = router_info.get("language", "en")
         if language == "en" and detected_language in ("ta", "hi"):
             language = detected_language
 
-        # Step 3: Intent-Aware Top-5 Hybrid Semantic Retrieval via FAISS
-        retrieved = retriever_instance.retrieve(query, jurisdiction=jurisdiction, top_k=5)
-        confidence = self.calculate_confidence(query, retrieved, intent)
+        # Step 3: Handle OUT_OF_SCOPE Queries (Wheat breeding, non-Ayurvedic topics)
+        if intent == "OUT_OF_SCOPE":
+            dynamic_answer, dynamic_cat, dynamic_ip_regimes, dynamic_reg_pathway = generate_dynamic_statutory_response(
+                query=query,
+                retrieved_docs=[],
+                jurisdiction=jurisdiction,
+                language=language
+            )
+            confidence = self.calculate_confidence(query, [], intent=intent)
+            return {
+                "status": "ABSTAINED",
+                "short_answer": dynamic_answer,
+                "product_classification": dynamic_cat or "Out-of-Scope Inquiry — Non-Ayurvedic / Plant Breeding Topic",
+                "jurisdiction": jurisdiction.upper(),
+                "applicable_ip_regimes": dynamic_ip_regimes,
+                "regulatory_pathway": dynamic_reg_pathway,
+                "abs_considerations": "Not applicable for non-Ayurvedic agricultural breeding inquiries.",
+                "traditional_knowledge_guidance": "Not applicable.",
+                "citations": [],
+                "confidence": confidence,
+                "important_limitations": "This system specializes exclusively in Ayurvedic intellectual property, ASU drug regulations, and biological diversity access compliance.",
+                "actionable_next_steps": [
+                    "Consult the Protection of Plant Varieties and Farmers' Rights Authority (PPV&FRA) for plant variety registration.",
+                    "Review Section 3(j) of the Patents Act, 1970 regarding the patent exclusion of plants and essentially biological processes."
+                ],
+                "disclaimer": "Informational notice. Non-Ayurvedic agricultural query."
+            }
 
-        # Step 4: Build Verified Citations from Retrieved PDF Chunks
+        # Step 4: Hybrid Semantic Retrieval via FAISS
+        retrieved = retriever_instance.retrieve(query, jurisdiction=jurisdiction, top_k=5)
+
+        # Step 5: Build Raw Citations from Retrieved PDF Chunks
         raw_citations = []
         for idx, item in enumerate(retrieved):
             pdf_fname = item.get("pdf_filename", "document.pdf")
@@ -314,8 +364,9 @@ class LLMGuard:
             })
 
         verified_citations = self.verify_citations(raw_citations, retrieved, query=query, intent=intent)
+        confidence = self.calculate_confidence(query, retrieved, intent, citations=verified_citations)
 
-        # Step 5: Dynamic Question-Specific Statutory Intelligence & Grounded Synthesis
+        # Step 6: Dynamic Question-Specific Statutory Intelligence & Grounded Synthesis
         dynamic_answer, dynamic_cat, dynamic_ip_regimes, dynamic_reg_pathway = generate_dynamic_statutory_response(
             query=query,
             retrieved_docs=retrieved,
@@ -327,10 +378,8 @@ class LLMGuard:
         ip_regimes = dynamic_ip_regimes
         reg_pathway = dynamic_reg_pathway
 
-        # Try Gemini dynamic synthesis first if configured (skip for fixed out-of-scope intent)
-        gemini_answer = None
-        if intent != "OUT_OF_SCOPE":
-            gemini_answer = self.call_gemini_synthesis(
+        # Try Gemini dynamic synthesis if configured
+        gemini_answer = self.call_gemini_synthesis(
             query=query,
             retrieved_docs=retrieved,
             category=category,
@@ -340,6 +389,11 @@ class LLMGuard:
         )
 
         short_answer = gemini_answer if gemini_answer else dynamic_answer
+
+        # Determine overall execution status
+        status = "SUCCESS"
+        if confidence.get("abstain_recommended", False) and not retrieved:
+            status = "INSUFFICIENT_EVIDENCE"
 
         # Localized disclaimer & action steps
         if language == "hi":
@@ -368,7 +422,7 @@ class LLMGuard:
             ]
 
         return {
-            "status": "SUCCESS",
+            "status": status,
             "short_answer": short_answer,
             "product_classification": category,
             "jurisdiction": jurisdiction.upper(),
