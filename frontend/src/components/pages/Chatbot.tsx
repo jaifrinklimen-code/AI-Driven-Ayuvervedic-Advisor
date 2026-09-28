@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
@@ -85,6 +85,18 @@ export const Chatbot: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
+    };
+  }, []);
 
   const handleOpenPdf = (sourceUrl: string, e?: React.MouseEvent) => {
     const formatted = formatCitationUrl(sourceUrl);
@@ -211,44 +223,104 @@ export const Chatbot: React.FC = () => {
   };
 
   const handleVoiceInput = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.lang = language === "hi" ? "hi-IN" : language === "ta" ? "ta-IN" : "en-IN";
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        setIsListening(true);
-        recognition.onstart = () => setIsListening(true);
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          setQuery(transcript);
-          setIsListening(false);
-          handleSearch(transcript);
-        };
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
-        recognition.start();
-        return;
-      } catch {
-        // Fall back below
+    // If currently listening, toggle off
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
       }
+      setIsListening(false);
+      return;
     }
 
-    // Accessible simulated voice prompt if microphone is blocked
-    setIsListening(true);
-    setTimeout(() => {
-      setIsListening(false);
-      const voiceQ =
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setErrorMessage(
         language === "ta"
-          ? "அஸ்வகந்தா மற்றும் மஞ்சள் சேர்த்து தயாரிக்கும் மருந்துக்கு இந்தியாவில் காப்புரிமை பெற முடியுமா?"
+          ? "இந்த உலாவியில் குரல் அறிதல் ஆதரிக்கப்படவில்லை. Google Chrome அல்லது Edge உலாவியைப் பயன்படுத்தவும்."
           : language === "hi"
-          ? "क्या मैं अश्वगंधा और हल्दी से बने आयुर्वेदिक फॉर्मूलेशन पर पेटेंट प्राप्त कर सकता हूँ?"
-          : "Can I patent an Ayurvedic herbal formulation of Ashwagandha and Turmeric in India?";
-      setQuery(voiceQ);
-      handleSearch(voiceQ);
-    }, 1400);
+          ? "इस ब्राउज़र में वॉयस रिकग्निशन समर्थित नहीं है। कृपया Google Chrome या Edge का उपयोग करें।"
+          : "Speech recognition is not supported in this browser. Please use Chrome/Edge or type your question."
+      );
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.lang = language === "hi" ? "hi-IN" : language === "ta" ? "ta-IN" : "en-IN";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      setIsListening(true);
+      setErrorMessage(null);
+
+      let accumulated = "";
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = "";
+        let final = "";
+        for (let i = 0; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript + " ";
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        accumulated = (final + interim).trim();
+        if (accumulated) {
+          setQuery(accumulated);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        setIsListening(false);
+        if (event.error === "not-allowed" || event.error === "permission-denied") {
+          setErrorMessage(
+            language === "ta"
+              ? "மைக்ரோஃபோன் அணுகல் மறுக்கப்பட்டது. உங்கள் உலாவி அமைப்புகளில் மைக் அனுமதியை வழங்கவும்."
+              : language === "hi"
+              ? "माइक्रोफ़ोन एक्सेस अस्वीकृत कर दिया गया। कृपया ब्राउज़र सेटिंग्स में अनुमति दें।"
+              : "Microphone access denied. Please allow microphone access in your browser settings."
+          );
+        } else if (event.error === "no-speech") {
+          setErrorMessage(
+            language === "ta"
+              ? "குரல் தெளிவாகக் கேட்கவில்லை. மீண்டும் மைக்ரோஃபோனைத் தட்டிப் பேசவும்."
+              : language === "hi"
+              ? "आवाज़ स्पष्ट सुनाई नहीं दी। कृपया पुनः माइक दबाकर बोलें।"
+              : "No speech detected. Please tap the microphone and speak clearly."
+          );
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        const finalTrimmed = accumulated.trim();
+        if (finalTrimmed && finalTrimmed.length >= 2) {
+          handleSearch(finalTrimmed);
+        }
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error("Speech recognition initialization error:", err);
+      setIsListening(false);
+      setErrorMessage(
+        language === "ta"
+          ? "மைக்ரோஃபோன் சேவையை தொடங்க முடியவில்லை."
+          : language === "hi"
+          ? "माइक्रोफ़ोन सेवा प्रारंभ नहीं हो सकी।"
+          : "Failed to initialize microphone service."
+      );
+    }
   };
 
   const handleBookmarkToggle = () => {
@@ -488,13 +560,26 @@ export const Chatbot: React.FC = () => {
               className="w-full bg-parchment-50/50 dark:bg-forest-950/60 border border-parchment-200 dark:border-forest-800 rounded-2xl p-3.5 pr-32 text-xs sm:text-sm text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/40 dark:placeholder:text-parchment-300/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none transition-all leading-relaxed"
             />
 
-            <div className="absolute right-3 bottom-3 flex items-center space-x-2">
+            <div className="absolute right-3 bottom-3 flex items-center space-x-1.5">
+              <button
+                type="button"
+                onClick={() => setLanguage(language === "en" ? "ta" : language === "ta" ? "hi" : "en")}
+                title={`Active speech & answer language (Click to switch): ${language.toUpperCase()}`}
+                className="px-2 py-1 rounded-lg text-[11px] font-bold bg-parchment-200 dark:bg-forest-800 text-forest-900 dark:text-parchment-200 border border-parchment-300 dark:border-forest-700 hover:border-amber-500/50 transition-colors"
+              >
+                {language === "ta" ? "தமிழ்" : language === "hi" ? "हिंदी" : "EN"}
+              </button>
+
               <button
                 type="button"
                 onClick={handleVoiceInput}
-                title={isListening ? "Listening to microphone..." : "Voice input"}
+                title={
+                  isListening
+                    ? `Listening in ${language === "ta" ? "தமிழ் (ta-IN)" : language === "hi" ? "हिंदी (hi-IN)" : "English (en-IN)"}... Click to stop`
+                    : `Speak question in ${language === "ta" ? "தமிழ் (ta-IN)" : language === "hi" ? "हिंदी (hi-IN)" : "English (en-IN)"}`
+                }
                 className={`p-2 rounded-xl border border-parchment-200 dark:border-forest-800 text-forest-800 dark:text-parchment-200 hover:bg-parchment-100 dark:hover:bg-forest-800 transition-colors ${
-                  isListening ? "bg-rose-500 text-white animate-pulse" : "bg-white dark:bg-forest-900"
+                  isListening ? "bg-rose-500 text-white animate-pulse ring-2 ring-rose-400" : "bg-white dark:bg-forest-900"
                 }`}
               >
                 <Mic className="w-4 h-4" />

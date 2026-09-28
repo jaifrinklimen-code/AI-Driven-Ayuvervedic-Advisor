@@ -80,6 +80,8 @@ export const ABSKioskPage: React.FC = () => {
   // Audio player & recognition refs for interruptibility and cleanup
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const silenceTimerRef = useRef<any>(null);
+  const latestTranscriptRef = useRef<string>("");
 
   // Localized sample prompt suggestions
   const samplePrompts: Record<SupportedLanguage, string[]> = {
@@ -389,8 +391,12 @@ export const ABSKioskPage: React.FC = () => {
       return;
     }
 
-    // Stop active audio and abort existing recognition instance
+    // Stop active audio and clear timers
     stopAllAudio();
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
     if (recognitionRef.current) {
       try {
         recognitionRef.current.abort();
@@ -409,49 +415,54 @@ export const ABSKioskPage: React.FC = () => {
         ta: "ta-IN"
       };
       recognition.lang = langLocales[language] || "en-IN";
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
       setVoiceState("listening");
       setKioskErrorMessage(null);
       setTranscriptPreview("");
+      latestTranscriptRef.current = "";
 
       recognition.onstart = () => {
         setVoiceState("listening");
       };
 
-      recognition.onresult = async (event: any) => {
+      recognition.onresult = (event: any) => {
         let interim = "";
         let final = "";
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        for (let i = 0; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            final += event.results[i][0].transcript;
+            final += event.results[i][0].transcript + " ";
           } else {
             interim += event.results[i][0].transcript;
           }
         }
 
-        if (interim) {
+        const combined = (final.trim() ? final.trim() + " " : "") + interim;
+        const currentClean = combined.trim();
+        if (currentClean) {
+          latestTranscriptRef.current = currentClean;
           setVoiceState("transcribing");
-          setTranscriptPreview(interim);
+          setTranscriptPreview(currentClean);
         }
 
-        if (final) {
-          const finalTrimmed = final.trim();
-          if (finalTrimmed) {
-            setTranscriptPreview("");
-            setKioskQuery(finalTrimmed);
-            setVoiceState("processing");
+        // Reset silence timer on every speech event
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        // When user pauses for 1400ms after speaking, automatically finalize and submit the full question
+        silenceTimerRef.current = setTimeout(async () => {
+          const finalQuery = latestTranscriptRef.current.trim();
+          if (finalQuery && finalQuery.length >= 3) {
             try {
               recognition.stop();
-            } catch (e) {
-              // ignore
-            }
-            await handleProcessKioskQuery(finalTrimmed);
+            } catch (e) {}
+            setTranscriptPreview("");
+            setKioskQuery(finalQuery);
+            setVoiceState("processing");
+            await handleProcessKioskQuery(finalQuery);
           }
-        }
+        }, 1400);
       };
 
       recognition.onerror = (event: any) => {
@@ -485,7 +496,15 @@ export const ABSKioskPage: React.FC = () => {
       };
 
       recognition.onend = () => {
-        if (voiceState === "listening" || voiceState === "transcribing") {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        const finalQuery = latestTranscriptRef.current.trim();
+        // If question was not already sent to processing, send now
+        if (finalQuery && finalQuery.length >= 3 && voiceState !== "processing" && voiceState !== "speaking") {
+          setTranscriptPreview("");
+          setKioskQuery(finalQuery);
+          setVoiceState("processing");
+          handleProcessKioskQuery(finalQuery);
+        } else if (voiceState === "listening" || voiceState === "transcribing") {
           setVoiceState("idle");
         }
       };
@@ -498,7 +517,7 @@ export const ABSKioskPage: React.FC = () => {
     }
   };
 
-  // Main Microphone Button Controller (Supports Interruptions)
+  // Main Microphone Button Controller (Supports Interruptions and Done-Speaking Trigger)
   const handleMicrophoneClick = () => {
     if (voiceState === "speaking") {
       // User tapped mic while AI was speaking -> interrupt speech and immediately listen
@@ -506,7 +525,8 @@ export const ABSKioskPage: React.FC = () => {
       setVoiceState("idle");
       startListening();
     } else if (voiceState === "listening" || voiceState === "transcribing") {
-      // User tapped mic while listening -> cancel listening
+      // User tapped mic while listening -> stop and immediately submit the full query
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -514,7 +534,15 @@ export const ABSKioskPage: React.FC = () => {
           // ignore
         }
       }
-      setVoiceState("idle");
+      const finalQuery = latestTranscriptRef.current.trim() || transcriptPreview.trim();
+      if (finalQuery && finalQuery.length >= 3) {
+        setTranscriptPreview("");
+        setKioskQuery(finalQuery);
+        setVoiceState("processing");
+        handleProcessKioskQuery(finalQuery);
+      } else {
+        setVoiceState("idle");
+      }
     } else {
       // Idle or error state -> start speech recognition
       startListening();
@@ -525,6 +553,9 @@ export const ABSKioskPage: React.FC = () => {
   useEffect(() => {
     return () => {
       stopAllAudio();
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+      }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
