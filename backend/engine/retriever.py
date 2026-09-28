@@ -9,8 +9,15 @@ import os
 import re
 import json
 from typing import List, Dict, Any, Optional, Tuple
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
+
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    from langchain_community.vectorstores import FAISS
+    HAS_FAISS = True
+except ImportError:
+    HuggingFaceEmbeddings = None
+    FAISS = None
+    HAS_FAISS = False
 
 from .query_router import classify_query_intent, normalize_query
 
@@ -169,6 +176,10 @@ class FAISSSemanticRetriever:
 
     def load_faiss_index(self):
         """Load the FAISS vector database from disk."""
+        if not HAS_FAISS:
+            self.db = None
+            return
+
         if not os.path.exists(self.faiss_path):
             print(f"Notice: FAISS path not found at {self.faiss_path}. Run ingest.py first.")
             return
@@ -186,7 +197,7 @@ class FAISSSemanticRetriever:
             )
             print(f"FAISS vectorstore loaded successfully ({self.db.index.ntotal} vectors).")
         except Exception as e:
-            print(f"Error loading FAISS index: {e}")
+            print(f"Notice: FAISS index unavailable ({e}). Falling back to legal corpus engine.")
             self.db = None
 
     def expand_multilingual_query(self, query: str) -> str:
@@ -211,6 +222,123 @@ class FAISSSemanticRetriever:
             return "Authoritative Ayurvedic Pharmacognosy & Clinical Literature"
         return "Government of India / Ministry of Ayush"
 
+    def _fallback_retrieve(
+        self,
+        query: str,
+        jurisdiction: Optional[str] = "India",
+        top_k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Statutory & Ayurvedic corpus retrieval fallback when FAISS/LangChain is unavailable.
+        Uses intent classification, lexical keyword scoring, and authority prioritization.
+        """
+        router_info = classify_query_intent(query, jurisdiction or "India")
+        intent = router_info.get("intent", "GENERAL_AYURVEDA")
+        q_norm = normalize_query(query)
+        expanded_query = self.expand_multilingual_query(q_norm)
+        q_tokens = set(re.findall(r'\w+', expanded_query.lower()))
+
+        scored = []
+        for doc in self.documents:
+            text = doc.get("text", "")
+            title = doc.get("title", "")
+            section = doc.get("section", "")
+            doc_id = doc.get("document_id", "")
+            doc_jurisdiction = doc.get("jurisdiction", "India")
+            m_page = re.search(r'\d+', str(doc.get("page", 1)))
+            page_num = int(m_page.group()) if m_page else 1
+
+            score = 0.0
+
+            # Jurisdiction matching
+            if jurisdiction and jurisdiction.lower() in doc_jurisdiction.lower():
+                score += 1.0
+
+            # Token overlap
+            doc_words = set(re.findall(r'\w+', (title + " " + section + " " + text).lower()))
+            overlap = len(q_tokens.intersection(doc_words))
+            score += overlap * 1.5
+
+            # Intent-based statutory boosting
+            if intent == "PATENTABILITY_MERE_ADMIXTURE" and "3(e)" in (title + section):
+                score += 12.0
+            elif intent == "PATENTABILITY_TRADITIONAL_KNOWLEDGE" and "3(p)" in (title + section):
+                score += 12.0
+            elif intent == "PATENTABILITY_POLYHERBAL_COMBINATION" and any(k in (title + section) for k in ["3(p)", "3(e)"]):
+                score += 10.0
+            elif intent == "HERB_MONOGRAPH" and any(k in (title + section + text).lower() for k in ["monograph", "pharmacopoeia", "ashwagandha", "brahmi", "turmeric", "neem"]):
+                score += 10.0
+            elif intent == "BIODIVERSITY_ABS" and any(k in (title + section + text).lower() for k in ["biological diversity", "nba", "abs", "form i", "form iii", "section 3"]):
+                score += 10.0
+            elif intent == "INTERNATIONAL_IP" and any(k in (title + section + text).lower() for k in ["section 39", "foreign", "pct", "paris"]):
+                score += 12.0
+            elif intent in ("CLASSICAL_VS_PROPRIETARY", "COMMERCIAL_SALE_LICENSING") and any(k in (title + section + text).lower() for k in ["rule 158b", "manufacturing", "classical"]):
+                score += 10.0
+            elif intent == "BRAND_PROTECTION_TRADEMARK" and "trademark" in (title + section + text).lower():
+                score += 10.0
+
+            if score > 0:
+                focused_excerpt = extract_focused_excerpt(text, query)
+                relevance_score = round(min(0.99, 0.45 + (score / 25.0)), 4)
+                pdf_fname = f"{doc_id.lower().replace('-', '_')}.pdf"
+
+                scored.append({
+                    "score": score,
+                    "result": {
+                        "pdf_filename": pdf_fname,
+                        "page_number": page_num,
+                        "chunk_text": focused_excerpt,
+                        "full_chunk_text": text,
+                        "similarity_score": relevance_score,
+                        "raw_distance": round(1.0 - relevance_score, 4),
+                        "relevance_score": relevance_score,
+                        "document": {
+                            "document_id": doc_id,
+                            "title": title,
+                            "section": section,
+                            "authority": doc.get("authority", self.infer_authority(pdf_fname)),
+                            "jurisdiction": doc.get("jurisdiction", jurisdiction or "India"),
+                            "version": doc.get("version", "Current"),
+                            "source_url": doc.get("source_url", f"http://localhost:8000/docs"),
+                            "text": focused_excerpt
+                        }
+                    }
+                })
+
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        if scored:
+            return [item["result"] for item in scored[:top_k]]
+
+        # Default documents if no specific match
+        default_results = []
+        for doc in self.documents[:top_k]:
+            doc_id = doc.get("document_id", "DOC-001")
+            text = doc.get("text", "")
+            m_p = re.search(r'\d+', str(doc.get("page", 1)))
+            page_num = int(m_p.group()) if m_p else 1
+            pdf_fname = f"{doc_id.lower().replace('-', '_')}.pdf"
+            focused_excerpt = extract_focused_excerpt(text, query)
+            default_results.append({
+                "pdf_filename": pdf_fname,
+                "page_number": page_num,
+                "chunk_text": focused_excerpt,
+                "full_chunk_text": text,
+                "similarity_score": 0.75,
+                "raw_distance": 0.25,
+                "relevance_score": 0.75,
+                "document": {
+                    "document_id": doc_id,
+                    "title": doc.get("title", ""),
+                    "section": doc.get("section", ""),
+                    "authority": doc.get("authority", self.infer_authority(pdf_fname)),
+                    "jurisdiction": doc.get("jurisdiction", jurisdiction or "India"),
+                    "version": doc.get("version", "Current"),
+                    "source_url": doc.get("source_url", f"http://localhost:8000/docs"),
+                    "text": focused_excerpt
+                }
+            })
+        return default_results
+
     def retrieve(
         self,
         query: str,
@@ -221,12 +349,11 @@ class FAISSSemanticRetriever:
         Perform top-k hybrid retrieval combining dense FAISS semantic similarity with
         intent-aware lexical boosting, source prioritization, and precision filtering.
         """
-        if self.db is None:
+        if self.db is None and HAS_FAISS:
             self.load_faiss_index()
 
         if self.db is None:
-            print("Warning: FAISS database unavailable for retrieval.")
-            return []
+            return self._fallback_retrieve(query, jurisdiction, top_k)
 
         # Step 1: Detect intent and normalize query
         router_info = classify_query_intent(query, jurisdiction or "India")
@@ -394,6 +521,9 @@ class FAISSSemanticRetriever:
 
             if len(results) >= top_k:
                 break
+
+        if not results:
+            return self._fallback_retrieve(query, jurisdiction, top_k)
 
         return results
 

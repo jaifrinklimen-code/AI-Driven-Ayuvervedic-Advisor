@@ -48,29 +48,53 @@ def generate_dynamic_statutory_response(
     # 0. OUT-OF-SCOPE / NON-AYURVEDIC INQUIRIES
     # -------------------------------------------------------------
     if intent == "OUT_OF_SCOPE":
-        category = "Out-of-Scope Inquiry — Non-Ayurvedic / Plant Breeding Topic"
-        ip_regimes = [
-            "Protection of Plant Varieties and Farmers' Rights Act, 2001 (PPV&FRA)",
-            "Patents Act, 1970 (Section 3(j) Biological Process Exclusions)",
-            "Biological Diversity Act, 2002"
-        ]
-        regulatory_pathway = "Plant varieties, seeds, and essentially biological processes are non-patentable under Section 3(j) of the Patents Act, 1970. Novel plant varieties may be registered under the Protection of Plant Varieties and Farmers' Rights Act, 2001."
+        is_plant_breeding = bool(re.search(r"\b(breed|breeding|crossbreed|cross-breed|hybridize|hybridization|graft|grafting)\b", query.lower())) or any(w in query.lower() for w in ["brinjal", "tomato", "potato", "plant breeding", "crop", "crops", "बैंगन", "கத்தரிக்காய்"])
+        if is_plant_breeding:
+            category = "Out-of-Scope Inquiry — Plant Breeding / PPV&FR Framework"
+            ip_regimes = [
+                "Protection of Plant Varieties and Farmers' Rights Act, 2001 (PPV&FRA)",
+                "Patents Act, 1970 (Section 3(j) Biological Process Exclusions)",
+                "Biological Diversity Act, 2002"
+            ]
+            regulatory_pathway = "Plant varieties, seeds, and essentially biological processes are non-patentable under Section 3(j) of the Patents Act, 1970. Novel plant varieties may be registered under the Protection of Plant Varieties and Farmers' Rights Act, 2001."
 
-        if language == "hi":
-            ans = (
-                "यह प्रश्न आयुर्वेद, बौद्धिक संपदा या आयुष विनियामक मार्गदर्शन के बजाय पादप प्रजनन (Plant Breeding) से संबंधित है।\n\n"
-                "यदि आप यह जानना चाहते हैं कि क्या किसी पादप प्रजनन आविष्कार को बौद्धिक संपदा (जैसे पौधे की किस्म और कृषक अधिकार संरक्षण अधिनियम, 2001 या पेटेंट अधिनियम की धारा 3(j) के तहत प्रतिबंधों) द्वारा संरक्षित किया जा सकता है, तो मैं इसमें आपकी सहायता कर सकता हूँ।"
-            )
-        elif language == "ta":
-            ans = (
-                "இந்தக் கேள்வி ஆயுர்வேதம் அல்லது அறிவுசார் சொத்துரிமை வழிகாட்டலை விட தாவர இனப்பெருக்கம் (Plant Breeding) பற்றியதாகும்.\n\n"
-                "தாவர இனப்பெருக்க கண்டுபிடிப்பை ஐபி உரிமைகள் மூலம் (தாவர வகைகள் மற்றும் விவசாயிகள் உரிமைகள் பாதுகாப்பு சட்டம் 2001 அல்லது காப்புரிமை சட்டம் பிரிவு 3(j) கீழ் உள்ள விலக்குகள்) பாதுகாக்க முடியுமா என்று நீங்கள் கேட்டால், அதற்கு நான் உதவ முடியும்."
-            )
+            if language == "hi":
+                ans = (
+                    "यह प्रश्न आयुर्वेद, बौद्धिक संपदा या आयुष विनियामक मार्गदर्शन के बजाय पादप प्रजनन (Plant Breeding) से संबंधित है।\n\n"
+                    "यदि आप यह जानना चाहते हैं कि क्या किसी पादप प्रजनन आविष्कार को बौद्धिक संपदा (जैसे पौधे की किस्म और कृषक अधिकार संरक्षण अधिनियम, 2001 या पेटेंट अधिनियम की धारा 3(j) के तहत प्रतिबंधों) द्वारा संरक्षित किया जा सकता है, तो मैं इसमें आपकी सहायता कर सकता हूँ।"
+                )
+            elif language == "ta":
+                ans = (
+                    "இந்தக் கேள்வி ஆயுர்வேதம் அல்லது அறிவுசார் சொத்துரிமை வழிகாட்டலை விட தாவர இனப்பெருக்கம் (Plant Breeding) பற்றியதாகும்.\n\n"
+                    "தாவர இனப்பெருக்க கண்டுபிடிப்பை ஐபி உரிமைகள் மூலம் (தாவர வகைகள் மற்றும் விவசாயிகள் உரிமைகள் பாதுகாப்பு சட்டம் 2001 அல்லது காப்புரிமை சட்டம் பிரிவு 3(j) கீழ் உள்ள விலக்குகள்) பாதுகாக்க முடியுமா என்று நீங்கள் கேட்டால், அதற்கு நான் உதவ முடியும்."
+                )
+            else:
+                ans = (
+                    "That question is about plant breeding rather than Ayurveda, intellectual property, or regulatory guidance.\n\n"
+                    "If you're asking whether a plant-breeding invention can be protected through IP (such as under the Protection of Plant Varieties and Farmers' Rights Act, 2001 or patent exclusions under Section 3(j) of the Patents Act, 1970), I can help with that."
+                )
         else:
-            ans = (
-                "That question is about plant breeding rather than Ayurveda, intellectual property, or regulatory guidance.\n\n"
-                "If you're asking whether a plant-breeding invention can be protected through IP (such as under the Protection of Plant Varieties and Farmers' Rights Act, 2001 or patent exclusions under Section 3(j) of the Patents Act, 1970), I can help with that."
-            )
+            category = "Out-of-Scope Inquiry — Non-Ayurvedic Subject"
+            ip_regimes = [
+                "IP-SAKTI Sahayak Statutory Scope Standard",
+                "Ministry of Ayush Regulatory Framework"
+            ]
+            regulatory_pathway = "This inquiry is outside the statutory mandate of Ayurvedic IP, ASU drug licensing, and the Biological Diversity Act."
+            if language == "hi":
+                ans = (
+                    "यह प्रश्न आयुर्वेद, बौद्धिक संपदा या आयुष विनियामक मार्गदर्शन के अधिकार क्षेत्र से बाहर है।\n\n"
+                    "IP-SAKTI सहायक विशेष रूप से आयुर्वेदिक पेटेंट (धारा 3(p), 3(e), 3(d)), TKDL पूर्व कला, जैव विविधता ABS अनुपालन, और आयुष दवा लाइसेंसिंग (नियम 158B) पर मार्गदर्शन प्रदान करता है। कृपया आयुर्वेद या बौद्धिक संपदा से संबंधित प्रश्न पूछें।"
+                )
+            elif language == "ta":
+                ans = (
+                    "இந்தக் கேள்வி ஆயுர்வேத அறிவுசார் சொத்துரிமை (IP) மற்றும் ஆயுஷ் ஒழுங்குமுறை வரம்பிற்கு அப்பாற்பட்டது.\n\n"
+                    "IP-SAKTI சகாயக் பிரத்யேகமாக ஆயுர்வேத காப்புரிமைகள் (பிரிவு 3(p), 3(e), 3(d)), TKDL முன் கலை, உயிரியல் பன்முகத்தன்மை ABS அனுமதி மற்றும் ஆயுஷ் உரிமங்கள் தொடர்பான கேள்விகளுக்கு வழிகாட்ட வடிவமைக்கப்பட்டுள்ளது. தயவுசெய்து ஆயுர்வேதம் தொடர்பான கேள்விகளை சமர்ப்பிக்கவும்."
+                )
+            else:
+                ans = (
+                    "This inquiry is outside the statutory domain of Ayurvedic intellectual property, AYUSH regulatory compliance, and biological diversity clearance.\n\n"
+                    "IP-SAKTI Sahayak specifically assists with Ayurvedic patentability (Sections 3(p), 3(e), 3(d)), TKDL prior art, NBA / ABS clearance, Rule 158B licensing, and botanical monographs. Please submit a question related to Ayurvedic formulations, patent clearances, or regulatory pathways."
+                )
         return ans, category, ip_regimes, regulatory_pathway
 
     # -------------------------------------------------------------

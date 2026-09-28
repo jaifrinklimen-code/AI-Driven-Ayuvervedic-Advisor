@@ -183,7 +183,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
     is_general_out_of_scope = (
         not entities["herbs"] and not entities["sections"] and
         not any(w in q_norm for w in ["ayurveda", "ayurvedic", "asu", "siddha", "unani", "ayush", "patent", "tkdl", "trademark", "fssai", "nba", "sbb", "cosmetic", "medicine", "herb", "drug", "herbal", "formulation", "phytopharmaceutical", "extract"]) and
-        any(w in q_norm for w in ["crypto", "bitcoin", "weather", "cricket", "football", "stock market", "coding", "python", "javascript", "car", "engine"])
+        any(w in q_norm for w in ["crypto", "bitcoin", "weather", "cricket", "football", "stock market", "stock price", "stock", "share price", "tesla", "apple stock", "coding", "python", "javascript", "car", "engine", "movie", "song", "recipe", "cooking", "election", "politics", "game", "gaming", "salary", "real estate", "mortgage", "flight", "hotel", "vacation", "instagram", "tiktok", "youtube", "facebook", "twitter", "elon musk", "jeff bezos", "netflix", "spotify"])
     )
 
     if is_plant_breeding or is_general_out_of_scope:
@@ -366,10 +366,7 @@ def classify_query_intent(query: str, selected_jurisdiction: str = "India") -> D
             "keywords": ["biological diversity act", "nba", "form iii", "section 6", "section 7", "abs"]
         }
 
-    # -------------------------------------------------------------
-    # 9. INTERNATIONAL PATENTING & WIPO TREATIES
-    # -------------------------------------------------------------
-    if any(w in q_norm for w in ["internationally", "outside india", "foreign patent", "wipo", "gratk", "pct application", "treaty", "export ip", "section 39", "foreign filing"]):
+    if any(w in q_norm for w in ["internationally", "international", "abroad", "outside india", "foreign patent", "foreign filing", "foreign", "overseas", "wipo", "gratk", "pct application", "pct", "treaty", "export ip", "section 39", "paris convention"]):
         return {
             "domain": "International IP",
             "intent": "INTERNATIONAL_IP",

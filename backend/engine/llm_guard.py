@@ -256,7 +256,7 @@ class LLMGuard:
                     "Content-Type": "application/json"
                 }
                 payload = {
-                    "model": "meta/llama-3.1-70b-instruct",
+                    "model": "meta/llama-3.2-11b-vision-instruct",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.2,
                     "max_tokens": 800
