@@ -12,9 +12,8 @@ const getInitialBase = (): string => {
   if (import.meta.env.DEV) {
     return "";
   }
-  // In production builds without VITE_BACKEND_URL configured,
-  // do NOT fall back to Vercel's host because the static frontend does not host the backend PDFs.
-  return "";
+  // In production builds, default to official deployed Render cloud backend
+  return "https://ai-driven-ayuvervedic-advisor-b44o.onrender.com";
 };
 
 export const API_BASE = getInitialBase();
