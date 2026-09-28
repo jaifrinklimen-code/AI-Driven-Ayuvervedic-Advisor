@@ -338,8 +338,8 @@ export const Chatbot: React.FC = () => {
 
   const handleExportDossier = () => {
     if (!response) return;
-    const authCites = response.citations.filter((c) => c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true);
-    const suppCites = response.citations.filter((c) => !(c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true));
+    const authCites = response.citations.filter((c) => (c.verification_status === "VERIFIED_STATUTORY_RECORD" || c.verification_status === "VERIFIED_MONOGRAPH_RECORD") && c.supports_claim === true);
+    const suppCites = response.citations.filter((c) => !((c.verification_status === "VERIFIED_STATUTORY_RECORD" || c.verification_status === "VERIFIED_MONOGRAPH_RECORD") && c.supports_claim === true));
     const text = `IP-SAKTI REGULATORY ASSESSMENT DOSSIER\n======================================\nGenerated: ${new Date().toLocaleString()}\nJurisdiction: ${response.jurisdiction}\nProduct Classification: ${response.product_classification}\nConfidence Score: ${response.confidence.score}%\n\nUSER QUERY:\n${query}\n\nSTATUTORY VERDICT:\n${response.short_answer}\n\nAPPLICABLE IP REGIMES:\n${response.applicable_ip_regimes.map((r) => `- ${r}`).join("\n")}\n\nREGULATORY PATHWAY:\n${response.regulatory_pathway}\n\nBIODIVERSITY / ABS COMPLIANCE:\n${response.abs_considerations}\n\nAUTHORITATIVE STATUTORY CITATIONS:\n${authCites.length > 0 ? authCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${formatCitationUrl(c.source_url)}`).join("\n\n") : "None"}${suppCites.length > 0 ? `\n\nSUPPLEMENTARY SOURCES:\n${suppCites.map((c, i) => `${i + 1}. [${c.section}] ${c.title}\n   Authority: ${c.authority}\n   Source: ${formatCitationUrl(c.source_url)}`).join("\n\n")}` : ""}\n\nACTIONABLE NEXT STEPS:\n${response.actionable_next_steps.map((s) => `[ ] ${s}`).join("\n")}\n\nDISCLAIMER:\n${response.disclaimer}`;
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -820,10 +820,18 @@ export const Chatbot: React.FC = () => {
               {/* Authoritative Citation Seals & Supplementary Sources */}
               {(() => {
                 const authCites = response.citations.filter(
-                  (c) => c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true
+                  (c) =>
+                    (c.verification_status === "VERIFIED_STATUTORY_RECORD" ||
+                      c.verification_status === "VERIFIED_MONOGRAPH_RECORD") &&
+                    c.supports_claim === true
                 );
                 const suppCites = response.citations.filter(
-                  (c) => !(c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true)
+                  (c) =>
+                    !(
+                      (c.verification_status === "VERIFIED_STATUTORY_RECORD" ||
+                        c.verification_status === "VERIFIED_MONOGRAPH_RECORD") &&
+                      c.supports_claim === true
+                    )
                 );
 
                 return (
