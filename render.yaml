@@ -18,7 +18,7 @@ services:
     name: ipsakti-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --legacy-peer-deps && npm run build
     staticPublishPath: dist
     routes:
       - type: rewrite
