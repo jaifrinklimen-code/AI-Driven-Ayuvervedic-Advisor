@@ -11,7 +11,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: NVIDIA_API_KEY
-        value: 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
+        value: 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
 
   # Frontend Static Site (React Vite)
   - type: web

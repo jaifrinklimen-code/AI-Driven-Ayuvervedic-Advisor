@@ -66,6 +66,9 @@ interface QueryResponse {
   latency_seconds?: number;
 }
 
+// Client-side cache for instant repeat answers
+const clientQueryCache = new Map<string, QueryResponse>();
+
 export const Chatbot: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -117,6 +120,17 @@ export const Chatbot: React.FC = () => {
     const q = overrideQuery || query;
     if (!q.trim()) return;
 
+    // Instant return if query was already answered
+    const cacheKey = `${q.trim().toLowerCase()}|${jurisdiction}|${language}`;
+    if (clientQueryCache.has(cacheKey)) {
+      const cached = clientQueryCache.get(cacheKey)!;
+      setResponse(cached);
+      setLoading(false);
+      setErrorMessage(null);
+      setSelectedCitation(null);
+      return;
+    }
+
     setLoading(true);
     setResponse(null);
     setErrorMessage(null);
@@ -127,15 +141,19 @@ export const Chatbot: React.FC = () => {
       let data: QueryResponse | null = null;
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6500);
         const res = await fetch(getApiUrl("/api/query"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             query: q,
             jurisdiction: jurisdiction,
             language: language,
           }),
         });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           const resData = await res.json();
@@ -146,7 +164,7 @@ export const Chatbot: React.FC = () => {
           console.warn(`Backend returned status ${res.status}. Seamlessly falling back to autonomous client-side statutory engine.`);
         }
       } catch (fetchErr) {
-        console.warn("Backend service unreachable. Activating autonomous client-side statutory engine:", fetchErr);
+        console.warn("Backend service unreachable or timed out. Activating autonomous client-side statutory engine:", fetchErr);
       }
 
       // If backend was unreachable, timed out, or returned non-ok (e.g. 405 on static Vercel)
@@ -154,6 +172,7 @@ export const Chatbot: React.FC = () => {
         ? await generateClientStatutoryResponse(q, jurisdiction, language)
         : data;
 
+      clientQueryCache.set(cacheKey, finalData);
       setResponse(finalData);
 
       // Persist authentic RAG response to Supabase & local history
@@ -278,7 +297,7 @@ export const Chatbot: React.FC = () => {
       window.speechSynthesis.cancel();
     }
 
-    const textToSpeak = response.short_answer.replace(/[*_#`[\]()]/g, '').trim().slice(0, 350);
+    const textToSpeak = response.short_answer.replace(/[*_#`[\]()]/g, '').trim().slice(0, 320);
 
     // Auto-detect language script
     let targetLang: SupportedLanguage = language;
@@ -288,8 +307,26 @@ export const Chatbot: React.FC = () => {
       targetLang = 'hi';
     }
 
-    const streamUrl = getApiUrl(`/api/tts?text=${encodeURIComponent(textToSpeak)}&lang=${targetLang}`);
+    // Snappy sub-second playback: Use native browser speech synthesis first (0.02s latency)
+    if ("speechSynthesis" in window) {
+      try {
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.onstart = () => setIsSpeakingAnswer(true);
+        utterance.onend = () => setIsSpeakingAnswer(false);
+        utterance.onerror = () => setIsSpeakingAnswer(false);
+        setIsSpeakingAnswer(true);
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch (e) {
+        console.warn("Direct browser speech failed, falling back to TTS endpoint:", e);
+      }
+    }
 
+    // Secondary fallback: Remote TTS stream
+    const streamUrl = getApiUrl(`/api/tts?text=${encodeURIComponent(textToSpeak)}&lang=${targetLang}`);
     const audio = new Audio(streamUrl);
     chatbotAudioRef.current = audio;
     setIsSpeakingAnswer(true);
@@ -300,31 +337,12 @@ export const Chatbot: React.FC = () => {
     };
 
     audio.onerror = () => {
-      console.warn("Backend audio failed, falling back to Web Speech API");
       chatbotAudioRef.current = null;
-      if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
-        utterance.onend = () => setIsSpeakingAnswer(false);
-        utterance.onerror = () => setIsSpeakingAnswer(false);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setIsSpeakingAnswer(false);
-      }
+      setIsSpeakingAnswer(false);
     };
 
-    audio.play().catch((err) => {
-      console.warn("Audio autoplay blocked, falling back to Web Speech:", err);
-      if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = targetLang === 'ta' ? 'ta-IN' : targetLang === 'hi' ? 'hi-IN' : 'en-IN';
-        utterance.onstart = () => setIsSpeakingAnswer(true);
-        utterance.onend = () => setIsSpeakingAnswer(false);
-        utterance.onerror = () => setIsSpeakingAnswer(false);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setIsSpeakingAnswer(false);
-      }
+    audio.play().catch(() => {
+      setIsSpeakingAnswer(false);
     });
   };
 

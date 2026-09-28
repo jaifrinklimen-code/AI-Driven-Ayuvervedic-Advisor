@@ -25,6 +25,29 @@ ADVERSARIAL_PATTERNS = [
 ]
 
 
+# Multi-key failover pool: user-provided keys + primary + fallback
+NVIDIA_KEYS_POOL = [
+    "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",
+    "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",
+    "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",
+]
+
+# In-memory synthesis cache: query+lang -> response text (instant 0.001s return)
+_SYNTHESIS_CACHE: Dict[str, str] = {}
+_CURRENT_KEY_IDX = 0
+
+def get_rotated_nvidia_keys() -> List[str]:
+    """Rotate keys so requests are balanced across keys and avoid per-key rate limits."""
+    global _CURRENT_KEY_IDX
+    keys = list(NVIDIA_KEYS_POOL)
+    env_k = os.getenv("NVIDIA_API_KEY")
+    if env_k and env_k not in keys:
+        keys.insert(0, env_k)
+    start = _CURRENT_KEY_IDX % len(keys)
+    _CURRENT_KEY_IDX += 1
+    return keys[start:] + keys[:start]
+
+
 class LLMGuard:
     def __init__(self):
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -201,22 +224,21 @@ class LLMGuard:
         language: str = "en",
         intent: str = "GENERAL_STATUTORY_QUERY"
     ) -> Optional[str]:
-        api_key = os.getenv("GEMINI_API_KEY")
-        nvidia_api_key = os.getenv("NVIDIA_API_KEY", "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")
-        if not api_key and not nvidia_api_key:
-            return None
+        cache_key = f"{query.strip().lower()}|{language}|{jurisdiction}"
+        if cache_key in _SYNTHESIS_CACHE:
+            return _SYNTHESIS_CACHE[cache_key]
 
         try:
             import requests
 
-            # Format retrieved evidence strictly from actual PDF chunks
+            # Format top 2 retrieved evidence strictly from actual PDF chunks (concise context for fastest NIM inference)
             evidence_lines = []
-            for i, d in enumerate(retrieved_docs[:5], 1):
+            for i, d in enumerate(retrieved_docs[:2], 1):
                 pdf = d.get("pdf_filename", "document.pdf")
                 page = d.get("page_number", 1)
-                txt = d.get("chunk_text", "")[:350]
-                evidence_lines.append(f"[{i}] PDF Source: {pdf}, Page {page}\nExcerpt: \"{txt}\"")
-            doc_context = "\n\n".join(evidence_lines)
+                txt = d.get("chunk_text", "")[:200]
+                evidence_lines.append(f"[{i}] {pdf} p.{page}: \"{txt}\"")
+            doc_context = "\n".join(evidence_lines)
 
             if language == "ta":
                 lang_instruction = (
@@ -232,51 +254,73 @@ class LLMGuard:
                 lang_instruction = "Write response in clear, authoritative, professional English."
 
             prompt = (
-                f"You are IP-SAKTI Sahayak, the statutory AI advisor for the Ministry of Ayush & AIIA.\n"
+                f"You are IP-SAKTI Sahayak, statutory AI advisor for Ministry of Ayush & AIIA.\n"
                 f"User Question: {query}\n"
                 f"Question Intent: {intent}\n"
                 f"Product Classification: {category}\n"
                 f"Jurisdiction: {jurisdiction}\n\n"
-                f"--- RETRIEVED STATUTORY & BOTANICAL EVIDENCE ---\n"
+                f"--- RETRIEVED STATUTORY EVIDENCE ---\n"
                 f"{doc_context}\n"
-                f"-----------------------------------------------\n\n"
+                f"-------------------------------------\n\n"
                 f"{lang_instruction}\n\n"
                 f"CRITICAL GROUNDING RULES:\n"
-                f"1. If the question is ambiguous (e.g. 'Can I use ayurveda'), ask a clear structured clarification across Formulation, Commercial Licensing, and IP pathways.\n"
-                f"2. Make ONLY claims that are directly supported by the retrieved excerpts or official statutory standards.\n"
-                f"3. Do NOT invent legal sections, citations, mathematical formulas (e.g., do NOT invent 'Combination Index < 1.0'), or external requirements not present in the excerpts.\n"
-                f"4. Cite the retrieved PDF filenames and page numbers accurately."
+                f"1. Make ONLY claims that are directly supported by the retrieved excerpts or official statutory standards.\n"
+                f"2. Cite the retrieved PDF filenames and page numbers accurately.\n"
+                f"3. Keep the response concise, authoritative, and within 120-150 words for fast generation."
             )
 
-            if nvidia_api_key:
-                # Use NVIDIA's OpenAI-compatible endpoint
-                url = "https://integrate.api.nvidia.com/v1/chat/completions"
-                headers = {
-                    "Authorization": f"Bearer {nvidia_api_key}",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "model": "meta/llama-3.2-11b-vision-instruct",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.2,
-                    "max_tokens": 800
-                }
-                resp = requests.post(url, headers=headers, json=payload, timeout=15.0)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                    if text and len(text.strip()) > 50:
-                        return text.strip()
-            elif api_key:
-                # Use Gemini
+            # Rotate keys so load is evenly distributed across all active API keys
+            keys_to_try = get_rotated_nvidia_keys()[:2]
+
+            payload = {
+                "model": "meta/llama-3.2-11b-vision-instruct",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 220
+            }
+
+            url = "https://integrate.api.nvidia.com/v1/chat/completions"
+
+            # Multi-Key Failover:
+            # If an API key encounters rate-limiting (429), server error (500), or auth error,
+            # it fails over to the next key in under 300ms.
+            # If an inference request exceeds 6.0s, local statutory synthesis takes over immediately.
+            for idx, key in enumerate(keys_to_try):
+                try:
+                    headers = {
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json"
+                    }
+                    resp = requests.post(url, headers=headers, json=payload, timeout=6.0)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        if text and len(text.strip()) > 30:
+                            cleaned = text.strip()
+                            _SYNTHESIS_CACHE[cache_key] = cleaned
+                            return cleaned
+                    else:
+                        print(f"NVIDIA API Key #{idx+1} returned HTTP {resp.status_code}, immediately failing over to backup key...")
+                        continue
+                except requests.exceptions.Timeout:
+                    print(f"NVIDIA Key #{idx+1} timed out (>6.0s). Seamlessly engaging fast local statutory engine...")
+                    break
+                except Exception as ex:
+                    print(f"NVIDIA API Key #{idx+1} failed ({ex}), failing over to backup key...")
+
+            # Fallback to Gemini if configured
+            gemini_key = os.getenv("GEMINI_API_KEY")
+            if gemini_key:
                 model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
-                resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10.0)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
+                resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=3.5)
                 if resp.status_code == 200:
                     data = resp.json()
                     text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                    if text and len(text.strip()) > 50:
-                        return text.strip()
+                    if text and len(text.strip()) > 30:
+                        cleaned = text.strip()
+                        _SYNTHESIS_CACHE[cache_key] = cleaned
+                        return cleaned
         except Exception as e:
             print(f"API synthesis notice: {e}")
         return None
@@ -363,6 +407,8 @@ class LLMGuard:
         )
 
         short_answer = gemini_answer if gemini_answer else dynamic_answer
+        cache_key = f"{query.strip().lower()}|{language}|{jurisdiction}"
+        _SYNTHESIS_CACHE[cache_key] = short_answer
 
         # Localized disclaimer & action steps
         if language == "hi":

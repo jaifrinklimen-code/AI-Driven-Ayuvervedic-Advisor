@@ -207,7 +207,7 @@ export const ABSKioskPage: React.FC = () => {
     }
   };
 
-  // Natural Text-to-Speech Streaming
+  // Natural Text-to-Speech Streaming (Instant browser speech with backend fallback)
   const speakTextAloud = (text: string) => {
     if (!text || !text.trim()) {
       setVoiceState("idle");
@@ -232,8 +232,15 @@ export const ABSKioskPage: React.FC = () => {
       .replace(/\b\d+\.\s+/g, "")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 380);
+      .slice(0, 320);
 
+    // Instant local speech synthesis if supported
+    if ("speechSynthesis" in window) {
+      fallbackBrowserSpeech(cleanSnippet, targetLang);
+      return;
+    }
+
+    // Fallback: Backend TTS stream
     const backendUrl = getApiUrl("");
     const streamUrl = `${backendUrl}/api/tts?text=${encodeURIComponent(cleanSnippet)}&lang=${targetLang}`;
 

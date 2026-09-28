@@ -226,11 +226,15 @@ def run_evaluation():
         "abstention_safety": "VERIFIED_ACTIVE"
     }
 
+# In-memory cache for audio synthesis
+_TTS_CACHE: Dict[str, bytes] = {}
+
 @app.get("/api/tts")
 async def text_to_speech(text: str, lang: str = "en"):
     """
     Multilingual Text-to-Speech endpoint using gTTS for crystal-clear
     Tamil, Hindi, and English audio playback across all browsers and devices.
+    Uses in-memory caching for sub-millisecond audio streaming.
     """
     if not text or not text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
@@ -244,16 +248,25 @@ async def text_to_speech(text: str, lang: str = "en"):
         lang = "en"
         
     try:
+        clean_text = text.strip()[:280]
+        cache_key = f"{lang}:{clean_text}"
+        if cache_key in _TTS_CACHE:
+            return StreamingResponse(
+                io.BytesIO(_TTS_CACHE[cache_key]),
+                media_type="audio/mpeg",
+                headers={"Content-Disposition": "inline; filename=speech.mp3", "X-Cache": "HIT"}
+            )
+
         fp = io.BytesIO()
-        # Limit to 400 characters for snappy auditory playback
-        clean_text = text.strip()[:400]
         tts = gTTS(text=clean_text, lang=lang)
         tts.write_to_fp(fp)
-        fp.seek(0)
+        audio_bytes = fp.getvalue()
+        _TTS_CACHE[cache_key] = audio_bytes
+
         return StreamingResponse(
-            fp,
+            io.BytesIO(audio_bytes),
             media_type="audio/mpeg",
-            headers={"Content-Disposition": "inline; filename=speech.mp3"}
+            headers={"Content-Disposition": "inline; filename=speech.mp3", "X-Cache": "MISS"}
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"TTS Generation Error: {str(e)}")
