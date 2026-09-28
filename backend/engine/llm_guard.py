@@ -202,13 +202,12 @@ class LLMGuard:
         intent: str = "GENERAL_STATUTORY_QUERY"
     ) -> Optional[str]:
         api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
+        nvidia_api_key = os.getenv("NVIDIA_API_KEY")
+        if not api_key and not nvidia_api_key:
             return None
 
         try:
             import requests
-            model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
             # Format retrieved evidence strictly from actual PDF chunks
             evidence_lines = []
@@ -248,14 +247,38 @@ class LLMGuard:
                 f"3. Do NOT invent legal sections, citations, mathematical formulas (e.g., do NOT invent 'Combination Index < 1.0'), or external requirements not present in the excerpts.\n"
                 f"4. Cite the retrieved PDF filenames and page numbers accurately."
             )
-            resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10.0)
-            if resp.status_code == 200:
-                data = resp.json()
-                text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                if text and len(text.strip()) > 50:
-                    return text.strip()
+
+            if nvidia_api_key:
+                # Use NVIDIA's OpenAI-compatible endpoint
+                url = "https://integrate.api.nvidia.com/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {nvidia_api_key}",
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "model": "meta/llama-3.1-70b-instruct",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.2,
+                    "max_tokens": 800
+                }
+                resp = requests.post(url, headers=headers, json=payload, timeout=15.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if text and len(text.strip()) > 50:
+                        return text.strip()
+            elif api_key:
+                # Use Gemini
+                model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                resp = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    if text and len(text.strip()) > 50:
+                        return text.strip()
         except Exception as e:
-            print(f"Gemini API synthesis notice: {e}")
+            print(f"API synthesis notice: {e}")
         return None
 
     def synthesize_grounded_response(

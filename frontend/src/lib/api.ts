@@ -8,9 +8,9 @@ const getInitialBase = (): string => {
   if (import.meta.env.VITE_BACKEND_URL) {
     return import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "");
   }
-  // In dev mode, default to the local FastAPI dev port
+  // In dev mode, use Vite proxy
   if (import.meta.env.DEV) {
-    return "http://localhost:8000";
+    return "";
   }
   // In production builds without VITE_BACKEND_URL configured,
   // do NOT fall back to Vercel's host because the static frontend does not host the backend PDFs.
