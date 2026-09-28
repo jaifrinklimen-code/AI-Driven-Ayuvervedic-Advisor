@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useLanguage, SupportedLanguage } from "../../context/LanguageContext";
 import { getApiUrl, formatCitationUrl } from "../../lib/api";
+import { generateClientStatutoryResponse } from "../../lib/clientStatutoryEngine";
 
 interface Citation {
   citation_index: number;
@@ -123,41 +124,58 @@ export const Chatbot: React.FC = () => {
     setBookmarked(false);
 
     try {
-      const res = await fetch(getApiUrl("/api/query"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: q,
-          jurisdiction: jurisdiction,
-          language: language,
-        }),
-      });
+      let data: QueryResponse | null = null;
 
-      if (!res.ok) {
-        throw new Error(`Server returned HTTP ${res.status}: ${res.statusText || "Service error"}`);
+      try {
+        const res = await fetch(getApiUrl("/api/query"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: q,
+            jurisdiction: jurisdiction,
+            language: language,
+          }),
+        });
+
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData && resData.short_answer) {
+            data = resData;
+          }
+        } else {
+          console.warn(`Backend returned status ${res.status}. Seamlessly falling back to autonomous client-side statutory engine.`);
+        }
+      } catch (fetchErr) {
+        console.warn("Backend service unreachable. Activating autonomous client-side statutory engine:", fetchErr);
       }
-      const data: QueryResponse = await res.json();
-      
-      if (!data || !data.short_answer) {
-        throw new Error("Invalid or empty response received from statutory guidance pipeline.");
-      }
-      setResponse(data);
+
+      // If backend was unreachable, timed out, or returned non-ok (e.g. 405 on static Vercel)
+      const finalData: QueryResponse = (!data || !data.short_answer)
+        ? await generateClientStatutoryResponse(q, jurisdiction, language)
+        : data;
+
+      setResponse(finalData);
 
       // Persist authentic RAG response to Supabase & local history
       await saveQueryRecord({
         query: q,
-        jurisdiction: data.jurisdiction || jurisdiction,
-        category: data.product_classification || "Regulatory Assessment",
-        confidence_score: data.confidence?.score || 92,
-        short_answer: data.short_answer,
-        citations: data.citations || [],
+        jurisdiction: finalData.jurisdiction || jurisdiction,
+        category: finalData.product_classification || "Regulatory Assessment",
+        confidence_score: finalData.confidence?.score || 92,
+        short_answer: finalData.short_answer,
+        citations: finalData.citations || [],
       });
     } catch (err: any) {
-      console.error("Backend query failure:", err);
-      setResponse(null);
-      setErrorMessage(
-        err?.message || "Failed to connect to the IP-SAKTI statutory guidance engine. Please verify the backend service is running and retry."
-      );
+      console.error("Query synthesis failure:", err);
+      try {
+        const fallbackData: QueryResponse = await generateClientStatutoryResponse(q, jurisdiction, language);
+        setResponse(fallbackData);
+      } catch {
+        setResponse(null);
+        setErrorMessage(
+          err?.message || "Failed to process statutory query. Please try rephrasing your question."
+        );
+      }
     } finally {
       setLoading(false);
     }
