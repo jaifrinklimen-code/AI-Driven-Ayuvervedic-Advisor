@@ -47,8 +47,8 @@ KNOWN_HERBS = {
         "family": "Plantaginaceae",
         "sanskrit": "ब्राह्मी (Brahmi)",
         "tamil": "பிராமி (Brahmi)",
-        "source_pdf": "API-Vol-2.1.pdf",
-        "page": 92,
+        "source_pdf": "API-Vol-2.pdf",
+        "page": 44,
         "actives": "bacosides (bacoside A, bacoside B), brahmine",
         "classical_use": "Medhya Rasayana (cognitive enhancer), Smritiprada, Unmada",
         "tkdl_status": "Documented in Charaka Samhita; prior art for memory and nootropic uses."
@@ -59,7 +59,7 @@ KNOWN_HERBS = {
         "sanskrit": "हरिद्रा (Haridra / Curcumin)",
         "tamil": "மஞ்சள் (Turmeric)",
         "source_pdf": "API-Vol-1.pdf",
-        "page": 45,
+        "page": 72,
         "actives": "curcuminoids (curcumin, demethoxycurcumin), volatile oils",
         "classical_use": "Varnya, Krimighna, Kushtaghna, Pramehahara",
         "tkdl_status": "Landmark CSIR patent revocation (US Patent 5,401,504) based on classical TKDL prior art."
@@ -70,7 +70,7 @@ KNOWN_HERBS = {
         "sanskrit": "हरिद्रा (Haridra)",
         "tamil": "மஞ்சள் சாறு (Curcumin)",
         "source_pdf": "API-Vol-1.pdf",
-        "page": 45,
+        "page": 72,
         "actives": "curcuminoids (95% standard fraction)",
         "classical_use": "Anti-inflammatory, wound healing, antioxidant",
         "tkdl_status": "Documented in TKDL; isolated fractions require Rule 122E CDSCO phytopharmaceutical clearance or Section 3(d) therapeutic efficacy proof."
@@ -81,7 +81,7 @@ KNOWN_HERBS = {
         "sanskrit": "निम्ब (Nimba)",
         "tamil": "வேம்பு (Neem)",
         "source_pdf": "API-Vol-2.pdf",
-        "page": 115,
+        "page": 187,
         "actives": "azadirachtin, nimbin, nimbidin",
         "classical_use": "Krimighna, Kushtaghna, Kandughna (antimicrobial, skin care)",
         "tkdl_status": "Landmark EPO revocation (EP 436257) based on Indian traditional knowledge."
@@ -92,7 +92,7 @@ KNOWN_HERBS = {
         "sanskrit": "तुलसी (Tulsi)",
         "tamil": "துளசி (Tulsi)",
         "source_pdf": "API-Vol-2.pdf",
-        "page": 165,
+        "page": 238,
         "actives": "eugenol, rosmarinic acid, caryophyllene",
         "classical_use": "Svasahara, Kasahara, Hridya (respiratory and adaptogenic)",
         "tkdl_status": "Documented across classical Ayurvedic literature; prior art against biopiracy."
@@ -102,8 +102,8 @@ KNOWN_HERBS = {
         "family": "Polyherbal Classical Combination",
         "sanskrit": "त्रिफला (Triphala)",
         "tamil": "திரிபலா (Triphala)",
-        "source_pdf": "API-Vol-1.pdf",
-        "page": 25,
+        "source_pdf": "API-Vol-2.1.pdf",
+        "page": 132,
         "actives": "gallic acid, ellagic acid, chebulagic acid, vitamin C",
         "classical_use": "Chakshushya, Deepana, Rasayana, Anulomana",
         "tkdl_status": "First Schedule classical formulation; public domain; barred from patenting under Sec 3(p) and generic trademark monopoly under Sec 9(1)(b)."
@@ -114,7 +114,7 @@ KNOWN_HERBS = {
         "sanskrit": "गुडूची / गिलोय (Guduchi / Giloy)",
         "tamil": "சீந்தில் கொடி (Giloy)",
         "source_pdf": "API-Vol-1.pdf",
-        "page": 41,
+        "page": 65,
         "actives": "tinosporide, cordifolide, berberine",
         "classical_use": "Jvarahara, Rasayana, Dahaprashamana, Tridoshashamana",
         "tkdl_status": "Prominent classical immunomodulator; extensively cataloged in TKDL."

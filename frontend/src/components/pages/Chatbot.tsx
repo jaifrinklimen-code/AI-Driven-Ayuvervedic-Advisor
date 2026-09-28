@@ -679,10 +679,18 @@ export const Chatbot: React.FC = () => {
               {/* Authoritative Citation Seals & Supplementary Sources */}
               {(() => {
                 const authCites = response.citations.filter(
-                  (c) => c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true
+                  (c) =>
+                    (c.verification_status === "VERIFIED_STATUTORY_RECORD" ||
+                      c.verification_status === "VERIFIED_MONOGRAPH_RECORD") &&
+                    c.supports_claim === true
                 );
                 const suppCites = response.citations.filter(
-                  (c) => !(c.verification_status === "VERIFIED_STATUTORY_RECORD" && c.supports_claim === true)
+                  (c) =>
+                    !(
+                      (c.verification_status === "VERIFIED_STATUTORY_RECORD" ||
+                        c.verification_status === "VERIFIED_MONOGRAPH_RECORD") &&
+                      c.supports_claim === true
+                    )
                 );
 
                 return (

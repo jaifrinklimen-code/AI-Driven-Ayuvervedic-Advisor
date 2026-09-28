@@ -12,8 +12,13 @@ const getInitialBase = (): string => {
   if (import.meta.env.DEV) {
     return "http://localhost:8000";
   }
-  // In production builds without VITE_BACKEND_URL configured,
-  // do NOT fall back to Vercel's host because the static frontend does not host the backend PDFs.
+  // In browser runtime, if deployed on Render or a host with backend routes (e.g. window.location.origin)
+  if (typeof window !== "undefined" && window.location && window.location.origin) {
+    // If not running on localhost and origin is available, use current origin
+    if (!window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")) {
+      return window.location.origin.replace(/\/+$/, "");
+    }
+  }
   return "";
 };
 
