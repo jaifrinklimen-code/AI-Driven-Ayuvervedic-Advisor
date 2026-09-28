@@ -700,6 +700,13 @@ export const RegulatoryKnowledgeGraph: React.FC<RegulatoryKnowledgeGraphProps> =
 
   return (
     <div className="bg-white dark:bg-forest-900/80 rounded-3xl border border-amber-500/30 dark:border-forest-700/80 p-5 sm:p-7 shadow-elevated-luxury space-y-6 backdrop-blur-xl">
+      {/* Mobile Unusable Warning */}
+      <div className="block lg:hidden bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-center mb-6">
+        <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+          <span className="font-bold">Device Screen Too Small:</span> The interactive statutory graph requires a larger viewport. Please use a desktop or tablet for the optimal visual experience.
+        </p>
+      </div>
+
       {/* 1. SUPER BRAIN HEADER & STATUS HUD */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-parchment-200/80 dark:border-forest-800/80">
         <div className="space-y-1.5">

@@ -1,8 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Scale, ExternalLink } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 export const Footer: React.FC = () => {
+  const { t } = useLanguage();
   return (
     <footer className="bg-forest-950 dark:bg-black text-parchment-200/90 border-t border-forest-900/60 transition-colors">
       {/* Main Footer Content */}
@@ -16,28 +18,28 @@ export const Footer: React.FC = () => {
               </div>
               <div>
                 <span className="font-display text-lg font-bold tracking-wider text-parchment-50">
-                  IP-SAKTI SAHAYAK
+                  {t("ft_brand")}
                 </span>
                 <p className="text-xs tracking-wider uppercase text-amber-400 font-semibold">
-                  National Regulatory Initiative • Ministry of Ayush / AIIA
+                  {t("ft_ministry")}
                 </p>
               </div>
             </div>
 
             <p className="text-sm text-parchment-300/80 leading-relaxed max-w-sm font-sans">
-              An advanced AI regulatory navigator and authoritative knowledge core engineered to classify Ayurvedic products, evaluate patentability under Section 3(p)/3(e), navigate National Biodiversity Authority clearance, and defend traditional medicine heritage.
+              {t("ft_desc")}
             </p>
 
             <div className="pt-2 flex items-center space-x-2 text-xs text-emerald-400 font-mono">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Verified Statutory RAG Engine • InPASS & TKDL Aligned</span>
+              <span>{t("ft_verified")}</span>
             </div>
           </div>
 
           {/* Col 1: Regulatory Engines */}
           <div className="space-y-3">
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-300 block">
-              Regulatory Engines
+              {t("ft_engines")}
             </span>
             <ul className="space-y-2.5 text-sm text-parchment-300/80">
               <li>
@@ -71,7 +73,7 @@ export const Footer: React.FC = () => {
           {/* Col 2: Statutory Frameworks */}
           <div className="space-y-3">
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-300 block">
-              Statutory Regimes
+              {t("ft_regimes")}
             </span>
             <ul className="space-y-2.5 text-sm text-parchment-300/80">
               <li>
@@ -105,7 +107,7 @@ export const Footer: React.FC = () => {
           {/* Col 3: Institutional Authority */}
           <div className="space-y-3">
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-300 block">
-              Institutional Links
+              {t("ft_links")}
             </span>
             <ul className="space-y-2.5 text-sm text-parchment-300/80">
               <li>
@@ -168,16 +170,16 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Ribbon with Statutory Legal Notice */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-parchment-300/70 space-y-4 sm:space-y-0">
-          <p>
-            © 2026 IP-SAKTI Sahayak. Developed in collaboration with Ministry of Ayush & All India Institute of Ayurveda.
+        <div className="pt-8 flex flex-col lg:flex-row flex-wrap items-center justify-between text-xs text-parchment-300/70 space-y-4 lg:space-y-0 gap-y-4 text-center lg:text-left">
+          <p className="w-full lg:w-auto">
+            {t("ft_copyright")}
           </p>
-          <div className="flex items-center space-x-4">
-            <span className="font-mono text-xs text-amber-400 font-semibold">
-              SHA-256 HASH VERIFIED • DPDP ACT COMPLIANT
+          <div className="flex flex-wrap items-center justify-center lg:justify-end space-x-2 lg:space-x-4 w-full lg:w-auto gap-y-2">
+            <span className="font-mono text-xs text-amber-400 font-semibold text-center">
+              {t("ft_hash_badge")}
             </span>
             <span className="hidden md:inline">•</span>
-            <span>Preliminary Informational Assessment • Not Legal Advice</span>
+            <span className="text-center">{t("ft_disclaimer")}</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import {
@@ -19,6 +20,7 @@ import {
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [heroQuery, setHeroQuery] = useState("");
 
   const handleHeroSubmit = (e: React.FormEvent) => {
@@ -122,51 +124,47 @@ export const LandingPage: React.FC = () => {
             {/* Editorial Badge */}
             <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-parchment-100/90 dark:bg-forest-900/60 text-forest-900 dark:text-amber-300 text-xs sm:text-sm font-semibold border border-amber-500/30 shadow-subtle-luxury animate-in fade-in-50">
               <Sparkles className="w-4 h-4 text-amber-500 animate-spin" style={{ animationDuration: '8s' }} />
-              <span className="font-display tracking-wider uppercase text-xs font-bold">National Regulatory Intelligence Portal • Ministry of Ayush & AIIA</span>
+              <span className="font-display tracking-wider uppercase text-xs font-bold">{t("lp_ribbon")}</span>
             </div>
 
             {/* Modern Display Title */}
             <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-forest-950 dark:text-parchment-50 leading-[1.05]">
-              Ancient Ayurvedic Wisdom,{" "}
-              <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400 bg-clip-text text-transparent">
-                Grounded
-              </span>{" "}
-              in Precision Law.
+              {t("lp_hero_title")}
             </h1>
 
             {/* Sub-headline */}
             <p className="text-base sm:text-lg text-forest-900/80 dark:text-parchment-200/90 max-w-2xl mx-auto leading-relaxed font-sans font-normal">
-              An enterprise-grade regulatory navigator that classifies Ayurvedic products, retrieves authoritative statutory law, calculates confidence, and prevents biopiracy across Indian and International regimes.
+              {t("lp_hero_subtitle")}
             </p>
 
             {/* Direct Command Center Composer Bar */}
             <div className="pt-3 max-w-2xl mx-auto">
               <form
                 onSubmit={handleHeroSubmit}
-                className="relative flex items-center bg-white dark:bg-forest-900/80 rounded-2xl border border-amber-500/30 dark:border-forest-700/60 p-2 shadow-elevated-luxury backdrop-blur-md focus-within:ring-2 focus-within:ring-amber-500/40 transition-all duration-300"
+                className="relative flex flex-col sm:flex-row items-center bg-white dark:bg-forest-900/80 rounded-2xl border border-amber-500/30 dark:border-forest-700/60 p-2 shadow-elevated-luxury backdrop-blur-md focus-within:ring-2 focus-within:ring-amber-500/40 transition-all duration-300"
               >
-                <div className="pl-3 text-amber-600 dark:text-amber-400">
+                <div className="hidden sm:block pl-3 text-amber-600 dark:text-amber-400">
                   <Search className="w-5 h-5" />
                 </div>
                 <input
                   type="text"
                   value={heroQuery}
                   onChange={(e) => setHeroQuery(e.target.value)}
-                  placeholder="Ask any Ayurvedic IP or regulatory question (e.g. Can I patent an Ashwagandha & Brahmi formulation in India?)..."
+                  placeholder={t("lp_search_placeholder")}
                   className="w-full bg-transparent px-3.5 py-2.5 text-sm sm:text-base text-forest-950 dark:text-parchment-50 placeholder:text-forest-900/50 dark:placeholder:text-parchment-300/50 focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-parchment-50 dark:text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all flex-shrink-0"
+                  className="w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400 dark:hover:bg-amber-300 text-parchment-50 dark:text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all flex-shrink-0"
                 >
-                  <span>Analyze</span>
+                  <span>{t("lp_ask_engine")}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
 
               {/* Sample Prompt Chips */}
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-forest-900/70 dark:text-parchment-300/80">
-                <span className="font-bold text-amber-700 dark:text-amber-400">Try asking:</span>
+                <span className="font-bold text-amber-700 dark:text-amber-400">{t("lp_sample_inquiries")}</span>
                 <button
                   onClick={() => navigate("/ask?q=Can+I+patent+an+Ayurvedic+formulation+of+Ashwagandha+and+Curcumin+in+India%3F")}
                   className="bg-parchment-200/60 dark:bg-forest-900/60 hover:bg-parchment-200 px-3 py-1 rounded-full border border-parchment-300/60 dark:border-forest-800 font-medium transition-colors"
@@ -189,7 +187,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Visual Metaphor: 3D Holographic Orbiting Knowledge Core */}
-            <div className="pt-4 pb-2 relative flex justify-center items-center">
+            <div className="pt-4 pb-2 relative flex justify-center items-center overflow-hidden">
               <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
                 {/* 3D Floor Shadow */}
                 <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 h-8 rounded-full orb-shadow-3d blur-sm pointer-events-none" />
@@ -209,10 +207,10 @@ export const LandingPage: React.FC = () => {
 
                 {/* Middle Orbit */}
                 <div className="absolute inset-7 rounded-full border border-forest-800/20 dark:border-emerald-500/20 animate-spin" style={{ animationDuration: '45s', animationDirection: 'reverse' }} />
-                <div className="absolute top-1/2 -right-5 -translate-y-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm">
+                <div className="hidden sm:block absolute top-1/2 -right-5 -translate-y-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm">
                   WIPO GRATK 2024
                 </div>
-                <div className="absolute top-1/2 -left-5 -translate-y-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm">
+                <div className="hidden sm:block absolute top-1/2 -left-5 -translate-y-1/2 px-3 py-0.5 rounded-full bg-white dark:bg-forest-900 text-xs font-mono font-bold text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm">
                   Rule 158B (ASU)
                 </div>
 
@@ -245,51 +243,51 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
+            <div className="p-4 sm:p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
               <div className="font-display text-3xl sm:text-4xl font-bold text-emerald-700 dark:text-emerald-400">
                 86.9%
               </div>
               <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
-                Classification Precision
+                {t("lp_metric_directives")}
               </div>
               <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
-                Statutory Category Deductions
+                {t("lp_metric_directives_sub")}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
+            <div className="p-4 sm:p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
               <div className="font-display text-3xl sm:text-4xl font-bold text-amber-600 dark:text-amber-300">
                 100.0%
               </div>
               <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
-                Statutory Grounding
+                {t("lp_metric_rag")}
               </div>
               <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
-                Zero Fabricated Citations
+                {t("lp_metric_rag_sub")}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
+            <div className="p-4 sm:p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
               <div className="font-display text-3xl sm:text-4xl font-bold text-blue-600 dark:text-blue-400">
                 100.0%
               </div>
               <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
-                Adversarial Defense
+                {t("lp_metric_scope")}
               </div>
               <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
-                Jailbreak & Bypass Blocked
+                {t("lp_metric_scope_sub")}
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
+            <div className="p-4 sm:p-5 rounded-2xl bg-parchment-50 dark:bg-forest-950/80 border border-parchment-200 dark:border-forest-800 shadow-subtle-luxury">
               <div className="font-display text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400">
                 &lt; 1 ms
               </div>
               <div className="text-sm font-bold text-forest-950 dark:text-parchment-100 mt-1.5">
-                Query Latency
+                {t("lp_metric_abs")}
               </div>
               <div className="text-xs text-forest-900/70 dark:text-parchment-300/80 mt-0.5 font-medium">
-                Sub-Millisecond Hybrid BM25
+                {t("lp_metric_abs_sub")}
               </div>
             </div>
           </div>
@@ -341,7 +339,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="mt-6 pt-4 border-t border-parchment-100 dark:border-forest-800/60 flex items-center justify-between text-sm font-bold text-forest-900 dark:text-amber-300 group-hover:text-amber-600">
-                <span>Access Module</span>
+                <span>{t("lp_explore")}</span>
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
@@ -354,10 +352,10 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
-              Interactive Case Demonstrations
+              {t("lp_precedents")}
             </span>
             <h2 className="font-display text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-2">
-              How IP-SAKTI Evaluates Real Innovations
+              {t("lp_real_world")}
             </h2>
           </div>
 
@@ -381,7 +379,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="p-3.5 bg-parchment-50 dark:bg-forest-900/40 rounded-xl border border-parchment-200/60 dark:border-forest-800 text-sm">
                   <span className="font-bold text-forest-950 dark:text-parchment-100 block mb-0.5">
-                    Statutory Classification:
+                    {t("lp_verdict")}
                   </span>
                   <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
                     {sc.verdict}
@@ -391,11 +389,11 @@ export const LandingPage: React.FC = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start space-x-2 text-rose-700 dark:text-rose-400">
                     <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span><strong>Statutory Hurdle:</strong> {sc.hurdle}</span>
+                    <span><strong>{t("lp_hurdle")}</strong> {sc.hurdle}</span>
                   </div>
                   <div className="flex items-start space-x-2 text-emerald-700 dark:text-emerald-400">
                     <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <span><strong>Path Forward:</strong> {sc.requirement}</span>
+                    <span><strong>{t("lp_prerequisite")}</strong> {sc.requirement}</span>
                   </div>
                 </div>
 
@@ -404,7 +402,7 @@ export const LandingPage: React.FC = () => {
                     to={`/ask?q=${encodeURIComponent(sc.title + " using " + sc.herbs)}`}
                     className="w-full inline-flex items-center justify-center space-x-1.5 py-2.5 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-amber-400/20 dark:hover:bg-amber-400/30 text-parchment-50 dark:text-amber-300 text-xs sm:text-sm font-bold transition-colors"
                   >
-                    <span>Inspect Case in Studio</span>
+                    <span>{t("lp_inspect")}</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -418,37 +416,37 @@ export const LandingPage: React.FC = () => {
       <section className="py-24 max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-14">
           <span className="font-display text-xs font-bold uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
-            Systematic Methodology
+            {t("lp_methodology")}
           </span>
           <h2 className="font-display text-3xl font-semibold text-forest-950 dark:text-parchment-50 mt-2">
-            The 5-Phase Regulatory Journey
+            {t("lp_5phase")}
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-sm">
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
             <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 1</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Product Intake</h4>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">{t("lp_phase_intake")}</h4>
             <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Normalizes botanical profile and commercial intent.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
             <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 2</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Classification</h4>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">{t("lp_phase_classify")}</h4>
             <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Deduces Classical vs Proprietary vs Phytopharma.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
             <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 3</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Statutory Search</h4>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">{t("lp_phase_search")}</h4>
             <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Hybrid BM25 search across versioned Acts & Rules.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
             <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 4</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">ABS Clearance</h4>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">{t("lp_phase_abs")}</h4>
             <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Flags mandatory NBA Form III approval before patent grant.</p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-forest-900/60 border border-parchment-200 dark:border-forest-800 shadow-sm">
             <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs">PHASE 5</span>
-            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">Verification</h4>
+            <h4 className="font-bold text-forest-950 dark:text-parchment-50 mt-1 text-sm sm:text-base">{t("lp_phase_verify")}</h4>
             <p className="text-forest-900/70 dark:text-parchment-300/80 text-xs sm:text-sm mt-1 leading-normal">Extracts verified citations & calculates confidence.</p>
           </div>
         </div>

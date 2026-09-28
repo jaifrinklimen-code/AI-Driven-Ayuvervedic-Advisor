@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase";
 import { ShieldCheck, User, Lock, Mail, Sparkles, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess }) => {
+  const { t } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -113,10 +115,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
             <ShieldCheck className="w-6 h-6 text-amber-500 dark:text-amber-400" />
           </div>
           <h3 className="font-display text-2xl font-bold text-forest-950 dark:text-parchment-50">
-            {isSignUp ? "Create IP-SAKTI Account" : "Access Regulatory Portal"}
+            {isSignUp ? t("am_create_title") : t("am_access_title")}
           </h3>
           <p className="text-sm text-forest-900/70 dark:text-parchment-300/70">
-            Secure authentication powered by Supabase with Row Level Security.
+            {t("am_secure_desc")}
           </p>
         </div>
 
@@ -143,10 +145,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-white text-sm font-bold shadow-md hover:shadow-glow-gold transition-all duration-200 disabled:opacity-50 active:scale-[0.99]"
           >
             <Sparkles className="w-4 h-4 text-amber-200 animate-spin" style={{ animationDuration: '6s' }} />
-            <span>1-Click Jury / Evaluator Sign-In</span>
+            <span>{t("am_oneclick")}</span>
           </button>
           <p className="text-xs text-center text-forest-900/70 dark:text-parchment-400/80 mt-2 font-medium">
-            Instant verification for competition judges & reviewers
+            {t("am_oneclick_desc")}
           </p>
         </div>
 
@@ -155,7 +157,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
           {isSignUp && (
             <div>
               <label className="block text-xs font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
-                Full Name
+                {t("am_name")}
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-forest-900/40 dark:text-parchment-400/40 absolute left-3.5 top-3" />
@@ -173,7 +175,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
 
           <div>
             <label className="block text-xs font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
-              Official Email
+              {t("am_email")}
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-forest-900/40 dark:text-parchment-400/40 absolute left-3.5 top-3" />
@@ -190,7 +192,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
 
           <div>
             <label className="block text-xs font-bold text-forest-900/80 dark:text-parchment-300/80 uppercase tracking-wider mb-1.5">
-              Password
+              {t("am_password")}
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-forest-900/40 dark:text-parchment-400/40 absolute left-3.5 top-3" />
@@ -210,7 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
             disabled={loading}
             className="w-full py-3 rounded-xl bg-forest-900 hover:bg-forest-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-bold shadow-md transition-all mt-2 disabled:opacity-50 active:scale-[0.99]"
           >
-            {loading ? "Verifying..." : isSignUp ? "Create Verified Account" : "Sign In to Portal"}
+            {loading ? "Verifying..." : isSignUp ? t("am_signup_btn") : t("am_signin_btn")}
           </button>
         </form>
 
@@ -220,7 +222,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuc
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 underline font-semibold transition-colors"
           >
-            {isSignUp ? "Already registered? Sign In" : "Need an account? Register Here"}
+            {isSignUp ? t("am_has_account") : t("am_switch_signup")}
           </button>
         </div>
       </div>

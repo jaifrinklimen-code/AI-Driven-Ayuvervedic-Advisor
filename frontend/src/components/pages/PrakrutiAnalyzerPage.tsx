@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import { Navbar } from "../ui/Navbar";
 import { Footer } from "../ui/Footer";
 import {
@@ -146,6 +147,7 @@ const QUESTIONS: DiagnosticQuestion[] = [
 
 export const PrakrutiAnalyzerPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, "vata" | "pitta" | "kapha">>({});
   const [isCompleted, setIsCompleted] = useState(false);
@@ -234,13 +236,13 @@ export const PrakrutiAnalyzerPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-white dark:bg-forest-900 border border-parchment-200 dark:border-forest-700 text-xs font-medium text-forest-900/80 dark:text-parchment-200 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>100% Offline & DPDP Act 2023 Compliant</span>
+              <span>{t('100% Offline & DPDP Act 2023 Compliant')}</span>
             </div>
             {totalAnswered > 0 && (
               <button
                 onClick={handleReset}
                 className="p-2 rounded-xl border border-parchment-200 dark:border-forest-700 bg-white dark:bg-forest-900 text-forest-800 dark:text-parchment-200 hover:text-rose-500 transition-colors"
-                title="Restart Assessment"
+                title={t('Restart Assessment')}
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -367,7 +369,7 @@ export const PrakrutiAnalyzerPage: React.FC = () => {
             </div>
 
             {/* Stepper Footer Controls */}
-            <div className="flex items-center justify-between pt-4 border-t border-parchment-200 dark:border-forest-800/60">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-parchment-200 dark:border-forest-800/60">
               <button
                 disabled={currentStep === 0}
                 onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
@@ -377,7 +379,7 @@ export const PrakrutiAnalyzerPage: React.FC = () => {
                 <span>Previous Parameter</span>
               </button>
 
-              <div className="flex items-center space-x-1.5">
+              <div className="hidden sm:flex items-center space-x-1.5">
                 {QUESTIONS.map((q, idx) => (
                   <button
                     key={q.id}
@@ -392,6 +394,10 @@ export const PrakrutiAnalyzerPage: React.FC = () => {
                     title={`Question ${idx + 1}`}
                   />
                 ))}
+              </div>
+
+              <div className="sm:hidden text-xs font-medium text-forest-900/60 dark:text-parchment-300/60">
+                Step {currentStep + 1} of {QUESTIONS.length}
               </div>
 
               <button
@@ -412,7 +418,7 @@ export const PrakrutiAnalyzerPage: React.FC = () => {
         ) : (
           /* Comprehensive Diagnostic Results Report */
           <div className="space-y-6 animate-in zoom-in-95 duration-300">
-            <div className="bg-white dark:bg-forest-900/80 rounded-3xl border border-amber-500/30 dark:border-forest-700/80 p-8 sm:p-12 shadow-elevated-luxury space-y-8 relative overflow-hidden">
+            <div className="bg-white dark:bg-forest-900/80 rounded-3xl border border-amber-500/30 dark:border-forest-700/80 p-4 sm:p-8 lg:p-12 shadow-elevated-luxury space-y-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-400/10 via-emerald-400/5 to-transparent rounded-full -mr-20 -mt-20 pointer-events-none" />
 
               {/* Verdict Banner */}

@@ -112,26 +112,26 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Low-Vision Accessibility Text Size Switcher */}
-          <div className="flex items-center space-x-1 bg-forest-900/90 dark:bg-forest-900/60 rounded-full px-2.5 py-1 border border-amber-500/30" title="Adjust Text Size for Low Vision">
+          <div className="hidden md:flex items-center space-x-1 bg-forest-900/90 dark:bg-forest-900/60 rounded-full px-2.5 py-1 border border-amber-500/30" title={t("nav_text_size")}>
             <span className="text-xs text-amber-300 font-bold mr-0.5">A</span>
             <button
               onClick={() => changeFontScale(1)}
               className={`px-1.5 py-0.5 rounded font-bold text-xs transition-colors ${fontScale === 1 ? "bg-amber-400 text-forest-950 font-extrabold" : "text-parchment-200 hover:text-white"}`}
-              title="Standard Size (100%)"
+              title={t("nav_standard")}
             >
               100%
             </button>
             <button
               onClick={() => changeFontScale(1.15)}
               className={`px-1.5 py-0.5 rounded font-bold text-xs transition-colors ${fontScale === 1.15 ? "bg-amber-400 text-forest-950 font-extrabold" : "text-parchment-200 hover:text-white"}`}
-              title="Large Size (115% - Low Vision)"
+              title={t("nav_large")}
             >
               115%
             </button>
             <button
               onClick={() => changeFontScale(1.3)}
               className={`px-1.5 py-0.5 rounded font-bold text-xs transition-colors ${fontScale === 1.3 ? "bg-amber-400 text-forest-950 font-extrabold" : "text-parchment-200 hover:text-white"}`}
-              title="Extra Large (130% - Maximum Legibility)"
+              title={t("nav_xlarge")}
             >
               130%
             </button>
@@ -141,7 +141,7 @@ export const Navbar: React.FC = () => {
           <button
             onClick={toggleTheme}
             className="p-1.5 rounded-full bg-forest-900/80 dark:bg-forest-900/50 text-amber-300 hover:text-amber-100 border border-amber-500/20 hover:border-amber-400/50 transition-all flex items-center justify-center"
-            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            title={theme === "dark" ? t("nav_theme_light") : t("nav_theme_dark")}
             aria-label="Toggle Theme"
           >
             {theme === "dark" ? (
@@ -153,7 +153,7 @@ export const Navbar: React.FC = () => {
 
           {/* Language Selector */}
           <div className="flex items-center space-x-1.5 bg-forest-900/80 dark:bg-forest-900/40 rounded-full px-2.5 py-1 border border-amber-500/20">
-            <span className="text-xs text-amber-300 font-semibold">Lang:</span>
+            <span className="text-xs text-amber-300 font-semibold">{t("nav_lang")}</span>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
@@ -205,11 +205,11 @@ export const Navbar: React.FC = () => {
                   IP-SAKTI
                 </span>
                 <span className="font-display text-xs px-2 py-0.5 rounded-full bg-parchment-200/70 text-forest-800 dark:bg-forest-900 dark:text-amber-300/90 border border-amber-500/20 font-medium">
-                  Sahayak
+                  {t("nav_brand_badge")}
                 </span>
               </div>
               <p className="text-xs uppercase tracking-wider text-parchment-800/90 dark:text-parchment-300/80 font-semibold">
-                Ayurvedic IP & Regulatory Navigator
+                {t("nav_brand_sub")}
               </p>
             </div>
           </Link>
