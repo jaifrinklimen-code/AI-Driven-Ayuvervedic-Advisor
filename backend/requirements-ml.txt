@@ -1,0 +1,6 @@
+# Optional Heavy ML Dependencies (Local GPU/High-RAM Machines only)
+-r requirements.txt
+langchain>=0.1.0
+langchain-community>=0.0.20
+faiss-cpu>=1.8.0
+sentence-transformers>=2.5.0
