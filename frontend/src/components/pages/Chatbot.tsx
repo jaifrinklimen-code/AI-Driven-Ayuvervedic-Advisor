@@ -164,7 +164,7 @@ export const Chatbot: React.FC = () => {
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6500);
+        const timeoutId = setTimeout(() => controller.abort(), 18000);
         const res = await fetch(getApiUrl("/api/query"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },

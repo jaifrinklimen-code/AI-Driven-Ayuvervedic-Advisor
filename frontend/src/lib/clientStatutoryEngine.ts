@@ -307,6 +307,75 @@ export async function generateClientStatutoryResponse(
       query.includes("பற்றி") ||
       query.includes("क्या है"));
 
+  const isCosmetics =
+    qLower.includes("soap") ||
+    qLower.includes("shampoo") ||
+    qLower.includes("cream") ||
+    qLower.includes("lotion") ||
+    qLower.includes("oil") ||
+    qLower.includes("hair") ||
+    qLower.includes("skin") ||
+    qLower.includes("face") ||
+    qLower.includes("cosmetic") ||
+    query.includes("சோப்பு") ||
+    query.includes("தைலம்") ||
+    query.includes("அழகு") ||
+    query.includes("साबुन") ||
+    query.includes("तेल") ||
+    query.includes("प्रसाधन");
+
+  const isCommercialLicensing =
+    qLower.includes("license") ||
+    qLower.includes("licence") ||
+    qLower.includes("manufactur") ||
+    qLower.includes("sell") ||
+    qLower.includes("selling") ||
+    qLower.includes("commercial") ||
+    qLower.includes("rule 158b") ||
+    qLower.includes("158b") ||
+    qLower.includes("form 24-d") ||
+    qLower.includes("gmp") ||
+    query.includes("உரிமம்") ||
+    query.includes("தயாரிப்பு") ||
+    query.includes("விற்பனை") ||
+    query.includes("लाइसेंस") ||
+    query.includes("विनिर्माण") ||
+    query.includes("बिक्री");
+
+  const isTrademark =
+    qLower.includes("trademark") ||
+    qLower.includes("trade mark") ||
+    qLower.includes("brand") ||
+    qLower.includes("logo") ||
+    qLower.includes("name") ||
+    query.includes("வர்த்தக முத்திரை") ||
+    query.includes("டிரேட்மார்க்") ||
+    query.includes("ट्रेडमार्क") ||
+    query.includes("ब्रांड");
+
+  const isFoodAahar =
+    qLower.includes("food") ||
+    qLower.includes("aahar") ||
+    qLower.includes("fssai") ||
+    qLower.includes("dietary") ||
+    qLower.includes("supplement") ||
+    qLower.includes("tea") ||
+    query.includes("ஆகார்") ||
+    query.includes("உணவு") ||
+    query.includes("आहार") ||
+    query.includes("पूरक");
+
+  const isPhytoExtract =
+    qLower.includes("extract") ||
+    qLower.includes("fraction") ||
+    qLower.includes("isolate") ||
+    qLower.includes("standardized") ||
+    qLower.includes("phytopharmaceutical") ||
+    qLower.includes("3(d)") ||
+    query.includes("சாறு") ||
+    query.includes("அடர்த்தி") ||
+    query.includes("अर्क");
+
   // 3. Assemble response based on intent
   let shortAnswer = "";
   let classification = "Ayurvedic IP & Statutory Assessment";
@@ -461,26 +530,188 @@ export async function generateClientStatutoryResponse(
         `• TKDL Status: ${herb.tkdl_status}\n\n` +
         `Regulatory Note: Classical formulations containing this herb are listed under the First Schedule of the Drugs & Cosmetics Act, 1940 and qualify for Rule 158B classical ASU manufacturing licenses without clinical trial requirements.`;
     }
-  } else {
-    // General statutory synthesis
+  } else if (isCosmetics) {
+    classification = language === "ta"
+      ? "ஆயுர்வேத அழகுசாதனப் பொருட்கள் (Cosmetics) — Schedule S & IS 4707"
+      : language === "hi"
+      ? "आयुर्वेदिक सौंदर्य प्रसाधन — अनुसूची S एवं BIS IS 4707 मानक"
+      : "Ayurvedic Cosmetic Formulation (Schedule S & BIS IS 4707 Standards)";
+    ipRegimes = [
+      "Drugs & Cosmetics Rules, 1945 (Schedule S & Schedule M-II Standards)",
+      "Bureau of Indian Standards (BIS) IS 4707 (Parts 1 & 2)",
+      "Patents Act, 1970 (Section 3(e) Mere Admixture Exclusion)",
+      "Trade Marks Act, 1999 (Nice Class 3 - Cosmetics & Soaps)"
+    ];
+    regulatoryPathway = "Obtain Cosmetic Manufacturing License on Form 32-A from the State Licensing Authority. Comply with BIS IS 4707 safety standards and refrain from therapeutic or medical claims on labels.";
+
     if (language === "hi") {
       shortAnswer =
-        `आयुर्वेदिक बौद्धिक संपदा और आयुष नियामक रूपरेखा के तहत आधिकारिक मार्गदर्शन:\n\n` +
-        `1. पेटेंट योग्यता: पारंपरिक ज्ञान (धारा 3(p)) और साधारण मिश्रण (धारा 3(e)) का पेटेंट नहीं हो सकता। केवल सहक्रियाशील प्रभाव (Synergistic Efficacy) सिद्ध होने पर ही विचार किया जा सकता है।\n\n` +
-        `2. औषधि लाइसेंस (नियम 158B): व्यावसायिक निर्माण के लिए राज्य आयुष लाइसेंसिंग प्राधिकरण (SLA) से फॉर्म 24-D के तहत लाइसेंस अनिवार्य है।\n\n` +
-        `3. जैव विविधता मंजूरी: भारतीय जड़ी-बूटियों के वाणिज्यिक उपयोग के लिए NBA / SBB नियमों का पालन आवश्यक है।`;
+        `आयुर्वेदिक सौंदर्य प्रसाधनों (जैसे साबुन, तेल या क्रीम) के संबंध में वैधानिक नियम:\n\n` +
+        `1. प्रसाधन विनिर्माण लाइसेंस: व्यावसायिक निर्माण के लिए राज्य लाइसेंसिंग प्राधिकरण (SLA) से फॉर्म 32-A पर लाइसेंस लेना अनिवार्य है।\n\n` +
+        `2. पेटेंट सीमाएं: सामान्य हर्बल घटकों का मिश्रण धारा 3(e) के तहत गैर-पेटेंट योग्य है जब तक कि अप्रत्याशित सहक्रियाशील प्रभाव सिद्ध न हो।\n\n` +
+        `3. लेबल एवं चिकित्सीय दावे: प्रसाधनों पर औषधीय या रोग निवारक दावे करना प्रतिबंधित है (BIS IS 4707 मानक)।`;
     } else if (language === "ta") {
       shortAnswer =
-        `ஆயுர்வேத அறிவுசார் சொத்துரிமை மற்றும் ஒழுங்குமுறை வழிகாட்டுதல்:\n\n` +
-        `1. காப்புரிமை தகுதி: பாரம்பரிய அறிவு (பிரிவு 3(p)) மற்றும் வெறும் மூலிகைக் கலவை (பிரிவு 3(e)) காப்புரிமை பெற முடியாது. தனித்துவமான மருத்துவ நன்மையை நிரூபித்தால் மட்டுமே பரிசீலிக்கப்படும்.\n\n` +
-        `2. மருந்து உரிமம் (விதி 158B): வணிகரீதியான உற்பத்திக்கு மாநில ஆயுஷ் உரிம ஆணையத்திடம் (SLA) படிவம் 24-D உரிமம் பெற வேண்டும்.\n\n` +
-        `3. பன்முகத்தன்மை அனுமதி: இந்திய மூலிகைகளை வணிக ரீதியாக பயன்படுத்தும்போது NBA / SBB அனுமதிகளைப் பெறுவது கட்டாயமாகும்.`;
+        `ஆயுர்வேத அழகுசாதனப் பொருட்கள் (சோப்பு, தைலம், கிரீம்) தயாரிப்பதற்கான சட்ட விதிகள்:\n\n` +
+        `1. உற்பத்தி உரிமம் (படிவம் 32-A): வணிகரீதியான தயாரிப்பிற்கு மாநில உரிம அதிகாரியிடம் படிவம் 32-A மூலம் அழகுசாதன உரிமம் பெற வேண்டும்.\n\n` +
+        `2. காப்புரிமை தகுதி: அறியப்பட்ட மூலிகைகளை வெறுமனே கலப்பது பிரிவு 3(e)-ன் கீழ் காப்புரிமை பெற முடியாது.\n\n` +
+        `3. லேபிள் விதிகள்: அழகுசாதனப் பொருட்களில் நோய்களைக் குணப்படுத்தும் மருத்துவக் கூற்றுக்களை குறிப்பிடுவது சட்டப்படி தடைசெய்யப்பட்டுள்ளது (BIS IS 4707).`;
     } else {
       shortAnswer =
-        `Official Guidance under Ayurvedic Intellectual Property & AYUSH Regulatory Framework:\n\n` +
-        `1. Patentability Boundaries: Under Sections 3(p) and 3(e) of the Indian Patents Act, 1970, classical Ayurvedic formulations and mere admixtures are barred from patenting. To claim an inventive step, applicants must demonstrate unexpected synergistic efficacy beyond the prior art documented in the Traditional Knowledge Digital Library (TKDL).\n\n` +
-        `2. ASU Manufacturing Licensing: Commercial manufacture requires an Ayurvedic drug license from the State Licensing Authority (SLA) under Rule 158B of the Drugs and Cosmetics Rules, 1945 (Form 24-D) along with Schedule T Good Manufacturing Practice (GMP) compliance.\n\n` +
-        `3. Biodiversity Compliance: Accessing biological resources from India triggers the Biological Diversity Act, 2002 requiring State Biodiversity Board (SBB) intimation or National Biodiversity Authority (NBA) approval.`;
+        `Statutory rules governing Ayurvedic cosmetics and personal care formulations (soaps, hair oils, creams):\n\n` +
+        `1. Cosmetic Manufacturing License: Governed under the Drugs and Cosmetics Rules, 1945, requiring licensing on Form 32-A from the State Licensing Authority.\n\n` +
+        `2. Patentability Exclusions: Standard herbal mixtures are excluded under Section 3(e) of the Patents Act, 1970 as mere admixtures unless unexpected synergistic therapeutic efficacy is scientifically proven.\n\n` +
+        `3. Quality & Label Boundaries: Formulations must comply with Bureau of Indian Standards (BIS) IS 4707 standards. Therapeutic or disease-curing claims are prohibited on cosmetic labels.`;
+    }
+  } else if (isCommercialLicensing) {
+    classification = language === "ta"
+      ? "ஆயுர்வேத மருந்து உற்பத்தி உரிமம் — விதி 158B / படிவம் 24-D"
+      : language === "hi"
+      ? "आयुर्वेदिक औषधि विनिर्माण लाइसेंस — नियम 158B / फॉर्म 24-D"
+      : "Ayurvedic Drug Manufacturing License — Rule 158B / Form 24-D";
+    ipRegimes = [
+      "Drugs & Cosmetics Rules, 1945 (Rules 153 & 158B)",
+      "Schedule T Good Manufacturing Practices (GMP)",
+      "Biological Diversity Act, 2002 (Section 7 SBB Intimation)"
+    ];
+    regulatoryPathway = "Apply to State Licensing Authority (SLA) on Form 24-D with Schedule T GMP compliance, qualified technical personnel, and batch testing documentation.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `व्यावसायिक स्तर पर आयुर्वेदिक उत्पाद के निर्माण एवं बिक्री के वैधानिक चरण:\n\n` +
+        `1. राज्य आयुष लाइसेंस (Form 24-D): औषधि नियम 1945 के नियम 158B के तहत राज्य लाइसेंसिंग प्राधिकरण से विनिर्माण लाइसेंस अनिवार्य है।\n\n` +
+        `2. शेड्यूल टी (GMP अनुपालन): उत्पादन इकाई में स्वच्छ वातावरण, मानकीकृत उपकरण और योग्य तकनीकी स्टाफ (BAMS / B.Pharm) आवश्यक है।\n\n` +
+        `3. SBB पूर्व सूचना: व्यावसायिक स्तर पर जैविक जड़ी-बूटियों के उपयोग से पूर्व राज्य जैव विविधता बोर्ड को फॉर्म I में सूचना देना अनिवार्य है।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `வணிக ரீதியாக ஆயுர்வேத மருந்துகளை தயாரித்து விற்பனை செய்வதற்கான சட்ட வழிமுறைகள்:\n\n` +
+        `1. மாநில ஆயுஷ் உரிமம் (Form 24-D): மருந்துகள் மற்றும் அழகுசாதனப் பொருட்கள் விதி 158B கீழ் மாநில உரிம அதிகாரியிடம் (SLA) உற்பத்தி உரிமம் பெற வேண்டும்.\n\n` +
+        `2. Schedule T (GMP தரக்கட்டுப்பாடு): உற்பத்தி கூடம் சுகாதார விதிமுறைகள், தகுதியான மருத்துவர் மற்றும் ஆய்வக வசதிகளுடன் இருக்க வேண்டும்.\n\n` +
+        `3. SBB தகவல்: மூலிகைகளை வணிக ரீதியாக பயன்படுத்துவதற்கு முன் மாநில பல்லுயிர் வாரியத்திற்கு (SBB) தெரிவிக்க வேண்டும்.`;
+    } else {
+      shortAnswer =
+        `Statutory steps for commercial manufacturing and selling Ayurvedic medicines in India:\n\n` +
+        `1. State AYUSH Drug License (Form 24-D): Governed under Rule 158B of the Drugs & Cosmetics Rules, 1945, requiring manufacturing licensure from the State Licensing Authority (SLA).\n\n` +
+        `2. Schedule T GMP Compliance: Facilities must maintain hygienic manufacturing infrastructure, qualified Ayurvedic technical personnel, and standard Quality Control batch testing.\n\n` +
+        `3. SBB Commercial Intimation: Commercial manufacturers must submit Form I intimation to the State Biodiversity Board under Section 7 of the Biological Diversity Act, 2002.`;
+    }
+  } else if (isTrademark) {
+    classification = language === "ta"
+      ? "வர்த்தக முத்திரை பாதுகாப்பு — வர்த்தக முத்திரை சட்டம் 1999"
+      : language === "hi"
+      ? "ट्रेडमार्क एवं ब्रांड सुरक्षा — व्यापार चिह्न अधिनियम 1999"
+      : "Patent / Proprietary Brand Protection — Trade Marks Act 1999";
+    ipRegimes = [
+      "Trade Marks Act, 1999 (Section 9(1)(b) Generic Terms Refusal)",
+      "Trade Marks Act, 1999 (Section 17 Anti-Dissection Rule)",
+      "Nice Classification (Class 5 Pharmaceuticals, Class 3 Cosmetics, Class 30 Aahar)"
+    ];
+    regulatoryPathway = "File trademark applications on ipindiaonline.gov.in. Adopt arbitrary coined marks and disclaim generic botanical words.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `व्यापार चिह्न अधिनियम, 1999 के तहत आयुर्वेदिक ब्रांड की सुरक्षा:\n\n` +
+        `1. सामान्य हर्बल नामों पर रोक: 'अश्वगंधा', 'त्रिफला' जैसे वानस्पतिक शब्दों पर कोई एकाधिकार नहीं ले सकता (धारा 9(1)(b))।\n\n` +
+        `2. संयुक्त नाम संरक्षण: सुरक्षा केवल विशिष्ट संयुक्त ब्रांड नाम को मिलती है (धारा 17)।\n\n` +
+        `3. उपयुक्त श्रेणियां: दवाओं के लिए वर्ग 5, सौंदर्य प्रसाधनों के लिए वर्ग 3 में पंजीकरण करें।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `வர்த்தக முத்திரை சட்டம், 1999 கீழ் ஆயுர்வேத பிராண்ட் பாதுகாப்பு:\n\n` +
+        `1. பொது பெயர்கள் தடை: 'அஸ்வகந்தா', 'திரிபலா' போன்ற பொது மூலிகைப் பெயர்களை தனித்து பதிவு செய்ய முடியாது (பிரிவு 9(1)(b)).\n\n` +
+        `2. பிரத்யேக பெயர்கள்: தனித்துவமான கூட்டு பிராண்ட் பெயர்களை மட்டுமே பதிவு செய்ய முடியும்.\n\n` +
+        `3. வகுப்புகள்: மருந்துகளுக்கு Class 5, அழகுசாதனப் பொருட்களுக்கு Class 3 ஆகியவற்றில் பதிவு செய்யவும்.`;
+    } else {
+      shortAnswer =
+        `Statutory brand protection guidelines under the Trade Marks Act, 1999 for Ayurvedic products:\n\n` +
+        `1. Generic Botanical Exclusion: Generic herbal and classical names (e.g. 'Ashwagandha', 'Triphala') cannot be registered as individual marks under Section 9(1)(b).\n\n` +
+        `2. Anti-Dissection Rule (Section 17): Protection is granted only to unique coined composite brand names as a whole, not descriptive prefixes.\n\n` +
+        `3. Relevant Classes: File under Nice Class 5 for therapeutic medicines, Class 3 for cosmetics/soaps, and Class 30 for health foods.`;
+    }
+  } else if (isFoodAahar) {
+    classification = language === "ta"
+      ? "ஆயுர்வேத ஆகார் — FSSAI 2022 உணவு ஒழுங்குமுறை"
+      : language === "hi"
+      ? "आयुर्वेद आहार — FSSAI 2022 खाद्य विनियमन"
+      : "Ayurveda-Aahar Dietary Formulation (FSSAI 2022 Standards)";
+    ipRegimes = [
+      "Food Safety and Standards (Ayurveda Aahar) Regulations, 2022",
+      "Drugs & Cosmetics Act, 1940 (Demarcation from ASU Drugs)",
+      "FoSCoS Portal Category 100 Licensing"
+    ];
+    regulatoryPathway = "Obtain FSSAI food license under Category 100 on FoSCoS. Comply with Schedule A permitted botanical lists and affix the official Ayurveda Aahar logo.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `आयुर्वेद आहार (FSSAI 2022) के तहत पोषण संबंधी उत्पादों के वैधानिक नियम:\n\n` +
+        `1. FSSAI खाद्य लाइसेंस: FoSCoS पोर्टल पर श्रेणी 100 (Ayurveda Aahar) में लाइसेंस लेना अनिवार्य है।\n\n` +
+        `2. अनुमत सामग्री: उत्पाद FSSAI अनुसूची A में सूचीबद्ध खाद्य सामग्रियों से ही बनाए जाने चाहिए।\n\n` +
+        `3. लोगो एवं लेबल: पैकेजिंग पर अनिवार्य 'आयुर्वेद आहार' लोगो प्रदर्शित करना होगा और औषधीय दावे नहीं किए जा सकते।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `ஆயுர்வேத ஆகார் (FSSAI 2022) உணவுப் பொருட்கள் தயாரிப்பதற்கான சட்ட விதிகள்:\n\n` +
+        `1. FSSAI உணவு உரிமம்: FoSCoS இணையதளத்தில் 'Ayurveda Aahar' வகை 100-ன் கீழ் உணவு பாதுகாப்பு உரிமம் பெற வேண்டும்.\n\n` +
+        `2. அனுமதிக்கப்பட்ட பொருட்கள்: FSSAI அட்டவணை A-ல் உள்ள பாரம்பரிய உணவு மூலிகைகளை மட்டுமே பயன்படுத்த வேண்டும்.\n\n` +
+        `3. லோகோ மற்றும் லேபிளிங்: பேக்கிங்கில் அதிகாரப்பூர்வ 'ஆயுர்வேத ஆகார்' லோகோவை அச்சிட வேண்டும்; மருத்துவக் கூற்றுக்கள் தவிர்க்கப்பட வேண்டும்.`;
+    } else {
+      shortAnswer =
+        `Statutory rules governing Ayurveda Aahar dietary products under FSSAI Regulations, 2022:\n\n` +
+        `1. Food Safety Licensing: Requires licensure on the FoSCoS portal under Category 100 (Ayurveda Aahar).\n\n` +
+        `2. Permitted Botanicals: Recipes must conform to authoritative First Schedule texts or Schedule A of the 2022 Regulations.\n\n` +
+        `3. Mandatory Logo: Products must display the official 'Ayurveda Aahar' logo and cannot make therapeutic disease-curing claims.`;
+    }
+  } else if (isPhytoExtract) {
+    classification = language === "ta"
+      ? "தாவர மருந்து சாறுகள் — பிரிவு 3(d) & CDSCO விதி 122E"
+      : language === "hi"
+      ? "मानकीकृत हर्बल अर्क — धारा 3(d) एवं CDSCO नियम 122E"
+      : "Phytopharmaceutical Extract — Section 3(d) Patents Act & CDSCO Rule 122E";
+    ipRegimes = [
+      "Patents Act, 1970 (Section 3(d) Enhanced Efficacy Requirement)",
+      "Drugs & Cosmetics Rules, 1945 (Rule 122E Phytopharmaceutical Route)",
+      "Biological Diversity Act, 2002 (Section 6 NBA Form III)"
+    ];
+    regulatoryPathway = "Provide comparative pharmacological data demonstrating significantly enhanced therapeutic efficacy for Section 3(d), or file Phytopharmaceutical IND with CDSCO.";
+
+    if (language === "hi") {
+      shortAnswer =
+        `मानकीकृत हर्बल अर्क एवं अंशों के संबंध में वैधानिक पेटेंट नियम:\n\n` +
+        `1. धारा 3(d) पेटेंट सीमा: किसी ज्ञात जड़ी-बूटी के अर्क या नए रूप पर पेटेंट तभी संभव है जब ज्ञात पदार्थ की तुलना में महत्वपूर्ण चिकित्सीय प्रभावकारिता (Enhanced Therapeutic Efficacy) सिद्ध की जाए।\n\n` +
+        `2. CDSCO फाइटोफार्मास्युटिकल मार्ग: शुद्ध किए गए अंशों को औषधि नियम 1945 के नियम 122E के तहत नए औषधि अनुमोदन की आवश्यकता हो सकती है।\n\n` +
+        `3. NBA अनुमोदन: भारतीय जड़ी-बूटियों से अर्क निकालने और पेटेंट कराने से पूर्व NBA Form III अनिवार्य है।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `தாவர சாறுகள் மற்றும் செறிவூட்டப்பட்ட மருந்துகளுக்கான காப்புரிமை விதிகள்:\n\n` +
+        `1. பிரிவு 3(d) நிபந்தனை: அறியப்பட்ட மூலிகையின் சாறு அல்லது தனித்த மூலக்கூறுக்கு காப்புரிமை பெற அறியப்பட்ட பொருளை விட குறிப்பிடத்தக்க கூடுதல் மருத்துவ நன்மையை (Enhanced Efficacy) நிரூபிக்க வேண்டும்.\n\n` +
+        `2. CDSCO फाइட்டோபார்மா ஒழுங்குமுறை: தீவிரமாக பிரித்தெடுக்கப்பட்ட சாறுகளுக்கு விதி 122E கீழ் புதிய மருந்து ஒப்புதல் தேவைப்படலாம்.\n\n` +
+        `3. NBA அனுமதி: மூலிகை சாறுகளை பயன்படுத்தி காப்புரிமை பெற தேசிய பல்லுயிர் ஆணையத்திடம் (NBA Form III) அனுமதி பெறுவது கட்டாயமாகும்.`;
+    } else {
+      shortAnswer =
+        `Statutory rules governing botanical extracts and standardized fractions:\n\n` +
+        `1. Section 3(d) Efficacy Standard: Isolated extracts or standardized fractions of known herbs are barred from patenting unless scientifically proven to possess significantly enhanced therapeutic efficacy over the known herbal substance.\n\n` +
+        `2. Phytopharmaceutical Drug Route: Standardized purified fractions may be developed under CDSCO Rule 122E as phytopharmaceuticals with preclinical and clinical trial data.\n\n` +
+        `3. Mandatory NBA Clearance: Extracting and patenting active fractions from Indian bio-resources mandates prior Form III approval from the National Biodiversity Authority.`;
+    }
+  } else {
+    // Dynamic query-tailored fallback
+    const previewQ = query.length > 50 ? query.slice(0, 50) + "..." : query;
+    if (language === "hi") {
+      shortAnswer =
+        `आपके प्रश्न ('${previewQ}') के संबंध में आधिकारिक आयुर्वेदिक वैधानिक निर्धारण:\n\n` +
+        `1. पेटेंट योग्यता: भारतीय पेटेंट अधिनियम 1970 की धारा 3(p) (पारंपरिक ज्ञान) और धारा 3(e) (साधारण मिश्रण) के तहत बिना सहक्रियाशीलता के पेटेंट वर्जित है।\n\n` +
+        `2. निर्माण लाइसेंस (नियम 158B): व्यावसायिक उत्पादन हेतु राज्य आयुष लाइसेंसिंग प्राधिकरण (SLA) से फॉर्म 24-D लाइसेंस और शेड्यूल T GMP अनिवार्य है।\n\n` +
+        `3. जैव विविधता अनुपालन: भारतीय जैविक संसाधनों के उपयोग के लिए राष्ट्रीय जैव विविधता प्राधिकरण (NBA Form III) की पूर्व अनुमति आवश्यक है।`;
+    } else if (language === "ta") {
+      shortAnswer =
+        `உங்கள் கேள்விக்கான ('${previewQ}') அதிகாரப்பூர்வ ஆயுர்வேத சட்ட மதிப்பீடு:\n\n` +
+        `1. காப்புரிமை எல்லைகள்: இந்திய காப்புரிமைச் சட்டம் 1970 பிரிவு 3(p) (பாரம்பரிய அறிவு) மற்றும் பிரிவு 3(e) (மூலிகைக் கலவை) கீழ் வெறும் மூலிகைக் கலவைகளுக்கு காப்புரிமை பெற முடியாது.\n\n` +
+        `2. மருந்து உரிமம் (விதி 158B): வணிகரீதியான உற்பத்திக்கு மாநில ஆயுஷ் உரிம ஆணையத்திடம் (SLA) படிவம் 24-D உரிமம் மற்றும் Schedule T GMP கட்டாயமாகும்.\n\n` +
+        `3. பல்லுயிர் அனுமதி: இந்திய மூலிகைகளைப் பயன்படுத்த தேசிய பல்லுயிர் ஆணையம் (NBA Form III) அல்லது மாநில பன்முகத்தன்மை வாரியத்தின் (SBB) முன் அனுமதி பெற வேண்டும்.`;
+    } else {
+      shortAnswer =
+        `Authoritative statutory guidance regarding your inquiry ('${previewQ}'):\n\n` +
+        `1. Patentability Exclusions (Sections 3(p) & 3(e)): Classical Ayurvedic knowledge codified in the Traditional Knowledge Digital Library (TKDL) and mere herbal admixtures are barred from patenting unless unexpected synergistic therapeutic efficacy is rigorously proven.\n\n` +
+        `2. Commercial Licensing (Rule 158B): Commercial manufacture requires an Ayurvedic drug license (Form 24-D) from the State Licensing Authority with mandatory Schedule T GMP compliance.\n\n` +
+        `3. Mandatory Biodiversity Clearance: Accessing Indian biological resources requires prior approval from the National Biodiversity Authority (NBA Form III) under Section 6 of the Biological Diversity Act, 2002 before patent grant.`;
     }
   }
 

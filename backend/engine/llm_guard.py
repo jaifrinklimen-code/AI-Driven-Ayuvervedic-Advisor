@@ -25,11 +25,10 @@ ADVERSARIAL_PATTERNS = [
 ]
 
 
-# Multi-key failover pool: user-provided keys + primary + fallback
+# Multi-key failover pool: user-provided keys with automatic rotation and failover
 NVIDIA_KEYS_POOL = [
     "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",
     "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",
-    "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",
 ]
 
 # In-memory synthesis cache: query+lang -> response text (instant 0.001s return)
@@ -253,20 +252,29 @@ class LLMGuard:
             else:
                 lang_instruction = "Write response in clear, authoritative, professional English."
 
+            ayurveda_rules_text = (
+                "AYURVEDIC STATUTORY RULES:\n"
+                "1. Sec 3(p) Patents Act: Classical Ayurvedic knowledge (Charaka/Sushruta/TKDL) is non-patentable prior art.\n"
+                "2. Sec 3(e) Patents Act: Mere herbal admixtures without proven synergistic efficacy are unpatentable.\n"
+                "3. Sec 3(d) Patents Act: Standardized extracts/fractions require proof of enhanced therapeutic efficacy.\n"
+                "4. Rule 158B ASU Rules: Manufacturing requires Form 24-D license from State Licensing Authority with Schedule T GMP.\n"
+                "5. Biological Diversity Act (Sec 6 & 7): Mandatory NBA Form III approval before patent grant; SBB Form I for manufacturing.\n"
+                "6. Trade Marks Act: Generic botanical names cannot be trademarked under Sec 9(1)(b) (Class 5 medicines, Class 3 cosmetics).\n"
+                "7. Cosmetics (Schedule S / IS 4707): Form 32-A license required; therapeutic disease-curing claims prohibited.\n"
+                "8. Ayurveda Aahar (FSSAI 2022): Category 100 license required with official logo; medicinal claims prohibited."
+            )
+
             prompt = (
-                f"You are IP-SAKTI Sahayak, statutory AI advisor for Ministry of Ayush & AIIA.\n"
+                f"You are IP-SAKTI Sahayak, official AI statutory advisor for Ministry of Ayush & AIIA.\n\n"
+                f"{ayurveda_rules_text}\n\n"
                 f"User Question: {query}\n"
-                f"Question Intent: {intent}\n"
                 f"Product Classification: {category}\n"
                 f"Jurisdiction: {jurisdiction}\n\n"
-                f"--- RETRIEVED STATUTORY EVIDENCE ---\n"
-                f"{doc_context}\n"
-                f"-------------------------------------\n\n"
                 f"{lang_instruction}\n\n"
-                f"CRITICAL GROUNDING RULES:\n"
-                f"1. Make ONLY claims that are directly supported by the retrieved excerpts or official statutory standards.\n"
-                f"2. Cite the retrieved PDF filenames and page numbers accurately.\n"
-                f"3. Keep the response concise, authoritative, and within 120-150 words for fast generation."
+                f"INSTRUCTIONS:\n"
+                f"1. Answer the question directly and dynamically in 3-4 concise bullet points (max 110 words).\n"
+                f"2. Apply the specific Ayurvedic rules above to the user's exact formulation or scenario.\n"
+                f"3. Do NOT repeat generic text; address the user's specific inquiry."
             )
 
             # Rotate keys so load is evenly distributed across all active API keys
@@ -276,22 +284,21 @@ class LLMGuard:
                 "model": "meta/llama-3.2-11b-vision-instruct",
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.2,
-                "max_tokens": 220
+                "max_tokens": 180
             }
 
             url = "https://integrate.api.nvidia.com/v1/chat/completions"
 
             # Multi-Key Failover:
-            # If an API key encounters rate-limiting (429), server error (500), or auth error,
-            # it fails over to the next key in under 300ms.
-            # Timeout is 3.0s per key to ensure super-fast, snappy user experience (<3s total latency).
+            # If an API key encounters rate-limiting (429), server error (500), or timeout,
+            # it fails over to the next key. Timeout is 9.8s per key for reliable LLM synthesis.
             for idx, key in enumerate(keys_to_try):
                 try:
                     headers = {
                         "Authorization": f"Bearer {key}",
                         "Content-Type": "application/json"
                     }
-                    resp = requests.post(url, headers=headers, json=payload, timeout=3.0)
+                    resp = requests.post(url, headers=headers, json=payload, timeout=9.8)
                     if resp.status_code == 200:
                         data = resp.json()
                         text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -310,7 +317,7 @@ class LLMGuard:
                         print(f"NVIDIA API Key #{idx+1} returned HTTP {resp.status_code}, immediately failing over to backup key...")
                         continue
                 except requests.exceptions.Timeout:
-                    print(f"NVIDIA Key #{idx+1} timed out (>3.0s). Seamlessly trying next key or fast local statutory engine...")
+                    print(f"NVIDIA Key #{idx+1} timed out (>9.8s). Seamlessly trying next key or fast local statutory engine...")
                     continue
                 except Exception as ex:
                     print(f"NVIDIA API Key #{idx+1} failed ({ex}), failing over to backup key...")
